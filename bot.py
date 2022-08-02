@@ -77,6 +77,27 @@ def event_info(name, points, date, resources):
     return embed
 
 
+def event_list_embed(page):
+    c.execute("SELECT name, date FROM events")
+    events = c.fetchall()[::-1]
+    max_pages = len(events) // 5 + 1
+    names = ''
+    dates = ''
+    selection = events[page * 5:(page + 1) * 5]
+    for event in selection:
+        names += event[0] + '\n'
+        dates += event[1] + '\n'
+    if len(names) == 0:
+        return None
+    embed = discord.Embed(title="Events", color=0xFFFFFF,
+                          description='find more info on an event by using /find_event name')
+    embed.add_field(name="Name", value=names, inline=True)
+    embed.add_field(name="Date", value=dates, inline=True)
+
+    embed.set_footer(text=f'page {page + 1}/{max_pages}')
+    return embed
+
+
 @app_commands.default_permissions(manage_events=True)
 @reg.command(name="create", description="create an event and track its attendance",
              guild=discord.Object(id=guild_id))
@@ -98,14 +119,22 @@ async def create(interaction: discord.Interaction, name: str, points: int, date:
              guild=discord.Object(id=guild_id))
 async def attend(interaction: discord.Interaction, code: str):
     code = code.upper()
-    # print(f"{interaction.user.name} has attended {code}")
-    c.execute("INSERT OR IGNORE INTO users VALUES (?, ?, 0, 0, 0, '')", (interaction.user.id, interaction.user.name))
-    conn.commit()
+    c.execute("SELECT grad_year FROM users WHERE user_id = ?", (interaction.user.id, ))
+    grad_year = c.fetchone()
+    if grad_year is None or grad_year[0] == 0:
+        prompt = "Please use /register to make a profile!"
+        c.execute("INSERT OR IGNORE INTO users VALUES (?, ?, 0, 0, 0, '')",
+                  (interaction.user.id, interaction.user.name))
+        conn.commit()
+    else:
+        prompt = ""
+
     c.execute("SELECT * FROM events WHERE code = ?", (code,))
     temp = c.fetchone()
     if temp is None:
         await interaction.response.send_message(f'{code} does not exist!', ephemeral=True)
         return
+
     name, _, points, date, resources, attended_users = temp
     if str(interaction.user.id) in attended_users.split():
         await interaction.response.send_message(f'You have already redeemed {code}!', ephemeral=True)
@@ -116,7 +145,7 @@ async def attend(interaction: discord.Interaction, code: str):
     c.execute("UPDATE events SET attended_users = attended_users || ?", (f" {interaction.user.id}",))
     conn.commit()
     embed = event_info(name, points, date, resources)
-    await interaction.response.send_message(f'Successfully registered for {code}!', embed=embed, ephemeral=True)
+    await interaction.response.send_message(f'Successfully registered for {code}! {prompt}', embed=embed, ephemeral=True)
 
 
 @reg.command(name="leaderboard", description="find the top students with the highest points",
@@ -230,27 +259,30 @@ async def find_event(interaction: discord.Interaction, code: str = "", name: str
     else:
         name, points, date, resources = temp
         embed = event_info(name, points, date, resources)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed)
+
+
+class PageDisplay(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.response = None  # Define a variable named response with the initial value set to None
+
+    @discord.ui.button(style=discord.ButtonStyle.primary, custom_id="el_next", label='1', emoji='▶')
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        page = int(button.label)
+        button.label = page + 1
+        embed = event_list_embed(page)
+        await interaction.response.edit_message(embed=embed, view=self)
 
 
 @reg.command(name="event_list", description="get a list of all events created", guild=discord.Object(id=guild_id))
 async def event_list(interaction: discord.Interaction):
-    c.execute("SELECT name, date FROM events")
-    events = c.fetchall()[::-1]
-    names = ''
-    dates = ''
-    selection = events[0:5]
-    for event in selection:
-        names += event[0] + '\n'
-        dates += event[1] + '\n'
-    if len(names) == 0:
-        await interaction.response.send_message("there are no events created yet", ephemeral=True)
+    my_view = PageDisplay()
+    embed = event_list_embed(0)
+    if embed is None:
+        await interaction.response.send_message("No events found", ephemeral=True)
         return
-    embed = discord.Embed(title="Events", color=0xFFFFFF)
-    embed.add_field(name="Name", value=names, inline=True)
-    embed.add_field(name="Date", value=dates, inline=True)
-    embed.set_footer(text='page 1')
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, view=my_view)
 
 
 @app_commands.default_permissions(manage_events=True)
@@ -265,5 +297,6 @@ async def award(interaction: discord.Interaction, user: discord.Member, points: 
     c.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (points, user.id))
     conn.commit()
     await interaction.response.send_message(f"Successfully added {points} points to {user.name} - {name}")
+
 
 client.run(os.environ['DISCORD_TOKEN'])
