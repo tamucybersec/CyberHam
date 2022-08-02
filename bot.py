@@ -153,7 +153,7 @@ async def register(interaction: discord.Interaction, name: str, grad_year: int, 
         return
 
     email = email.lower()
-    if not ('@' in email and email.endswith('tamu.edu')):
+    if ',' in email or ';' in email or email.count('@') != 1 or not email.endswith('tamu.edu'):
         await interaction.response.send_message("Please set a proper TAMU email address", ephemeral=True)
         return
     c.execute("SELECT email FROM users WHERE user_id = ?", (interaction.user.id,))
