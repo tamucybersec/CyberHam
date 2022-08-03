@@ -182,6 +182,11 @@ def find_event(code: str = "", name: str = ""):
         return "", data
 
 
+def event_list():
+    c.execute("SELECT name, date FROM events")
+    return c.fetchall()[::-1]
+
+
 def award(user_id: int, user_name: str, points: int):
     c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,))
     name = c.fetchone()

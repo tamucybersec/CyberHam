@@ -65,8 +65,7 @@ def event_info(name, points, date, resources):
 
 
 def event_list_embed(page):
-    c.execute("SELECT name, date FROM events")
-    events = c.fetchall()[::-1]
+    events = backend.event_list()
     max_pages = len(events) // 5 + 1
     names = ""
     dates = ""
@@ -76,6 +75,7 @@ def event_list_embed(page):
         dates += event[1] + "\n"
     if len(names) == 0:
         return None
+
     embed = discord.Embed(
         title="Events",
         color=0xFFFFFF,
