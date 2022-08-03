@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 
 import cyberham.backend as backend
-from cyberham.config import guild_id
+from cyberham.config import guild_id, discord_token
 
 """
 Define Bot Attributes
@@ -252,4 +252,4 @@ async def award(interaction: discord.Interaction, user: discord.Member, points: 
     await interaction.response.send_message(msg)
 
 
-client.run(os.environ["DISCORD_TOKEN"])
+client.run(discord_token)

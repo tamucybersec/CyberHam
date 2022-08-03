@@ -13,4 +13,4 @@ client_secret = project_path.joinpath("secrets")\
     .joinpath("client_secret_712155494453-5slbl4e29ibr63ug7mcrvvr0vbcdb88c.apps.googleusercontent.com.json")
 
 guild_id = 805821298193465384
-token = dotenv_values(project_path.joinpath("secrets").joinpath(".env"))["DISCORD_TOKEN"]
+discord_token = dotenv_values(project_path.joinpath("secrets").joinpath(".env"))["DISCORD_TOKEN"]
