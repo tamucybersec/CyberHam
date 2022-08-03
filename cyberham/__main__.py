@@ -30,6 +30,7 @@ class Bot(discord.Client):
 
 
 client = Bot()
+backend.init_db()
 reg = app_commands.CommandTree(client)
 
 """

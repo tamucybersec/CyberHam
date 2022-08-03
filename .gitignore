@@ -1,4 +1,5 @@
-attendance.db 
+attendance.db
+token.json
 __pycache__/
 venv/
 .idea/
