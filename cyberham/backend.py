@@ -156,7 +156,10 @@ def profile(user_id: int):
         "SELECT name, points, attended, grad_year, email FROM users WHERE user_id = ?",
         (user_id,),
     )
-    return c.fetchone()
+    query = c.fetchone()
+    if query is None:
+        return "Your profile does not exist", None
+    return "", query
 
 
 def find_event(code: str = "", name: str = ""):

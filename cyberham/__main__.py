@@ -70,7 +70,7 @@ def event_list_embed(page):
     max_pages = len(events) // 5 + 1
     names = ""
     dates = ""
-    selection = events[page * 5 : (page + 1) * 5]
+    selection = events[page * 5: (page + 1) * 5]
     for event in selection:
         names += event[0] + "\n"
         dates += event[1] + "\n"
@@ -114,11 +114,11 @@ async def size(interaction: discord.Interaction):
     guild=discord.Object(id=guild_id),
 )
 async def create(
-    interaction: discord.Interaction,
-    name: str,
-    points: int,
-    date: str,
-    resources: str = "",
+        interaction: discord.Interaction,
+        name: str,
+        points: int,
+        date: str,
+        resources: str = "",
 ):
     code = backend.create_event(name, points, date, resources)
     embed = event_info(name, points, date, resources)
@@ -147,7 +147,7 @@ async def attend(interaction: discord.Interaction, code: str):
     guild=discord.Object(id=guild_id),
 )
 async def leaderboard(
-    interaction: discord.Interaction, axis: Literal["points", "attended"], lim: int = 10
+        interaction: discord.Interaction, axis: Literal["points", "attended"], lim: int = 10
 ):
     lb = backend.leaderboard(axis, lim)
     if not lb:
@@ -171,7 +171,7 @@ async def leaderboard(
     guild=discord.Object(id=guild_id),
 )
 async def register(
-    interaction: discord.Interaction, name: str, grad_year: int, email: str
+        interaction: discord.Interaction, name: str, grad_year: int, email: str
 ):
     msg = backend.register(
         name, grad_year, email, interaction.user.id, interaction.user.name
@@ -252,5 +252,18 @@ async def award(interaction: discord.Interaction, user: discord.Member, points: 
     msg = backend.award(user.id, user.name, points)
     await interaction.response.send_message(msg)
 
+
+@app_commands.default_permissions(manage_events=True)
+@reg.command(
+    name="help",
+    description="get a list of all commands",
+    guild=discord.Object(id=guild_id),
+)
+async def list_of_commands(interaction: discord.Interaction):
+    commands = reg.get_commands(guild=discord.Object(id=guild_id))
+    output = ""
+    for command in commands:
+        output += command.name + "\n"
+    await interaction.response.send_message(output)
 
 client.run(discord_token)
