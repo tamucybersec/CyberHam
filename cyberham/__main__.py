@@ -113,6 +113,12 @@ async def size(interaction: discord.Interaction):
     description="create an event and track its attendance",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(
+    name='The name of the event',
+    points='The point value reward for attending',
+    date='The date of the event',
+    resources='Information to be shared with attendees'
+)
 async def create(
         interaction: discord.Interaction,
         name: str,
@@ -130,6 +136,7 @@ async def create(
     description="register at the event you are attending for rewards and resources",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(code='The code of the event given by the presenter')
 async def attend(interaction: discord.Interaction, code: str):
     msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
     if data is None:
@@ -145,6 +152,10 @@ async def attend(interaction: discord.Interaction, code: str):
     name="leaderboard",
     description="find the top students with the highest points",
     guild=discord.Object(id=guild_id),
+)
+@app_commands.describe(
+    axis='what criteria to sort by',
+    lim='the number of results to display'
 )
 async def leaderboard(
         interaction: discord.Interaction, axis: Literal["points", "attended"], lim: int = 10
@@ -170,6 +181,11 @@ async def leaderboard(
     description="register your information here",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(
+    name='please enter your full name/names you go by',
+    grad_year='your graduation year (yyyy)',
+    email='TAMU email'
+)
 async def register(
         interaction: discord.Interaction, name: str, grad_year: int, email: str
 ):
@@ -184,6 +200,7 @@ async def register(
     description="verify your TAMU email",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(code='Please enter the code sent to your TAMU email')
 async def verify(interaction: discord.Interaction, code: int):
     msg = backend.verify_email(code, interaction.user.id)
     await interaction.response.send_message(msg, ephemeral=True)
@@ -218,6 +235,10 @@ async def profile(interaction: discord.Interaction):
     description="get information on an event",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(
+    code='Search by event code',
+    name='Search by the exact event name'
+)
 async def find_event(interaction: discord.Interaction, code: str = "", name: str = ""):
     msg, data = backend.find_event(code, name)
     if data is None:
@@ -247,6 +268,10 @@ async def event_list(interaction: discord.Interaction):
     name="award",
     description="manually award points to a user",
     guild=discord.Object(id=guild_id),
+)
+@app_commands.describe(
+    user='The user to award the points to',
+    points='The number of points'
 )
 async def award(interaction: discord.Interaction, user: discord.Member, points: int):
     msg = backend.award(user.id, user.name, points)
