@@ -97,13 +97,18 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10):
 
 
 def register(name: str, grad_year: int, email: str, user_id: int, user_name: str):
+    if c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,)) is not None:
+        return "You have already registered"
+
     c.execute(
         "INSERT OR IGNORE INTO users VALUES (?, ?, 0, 0, 0, '')",
         (user_id, user_name),
     )
     conn.commit()
-    if not 1950 < grad_year < 2030:
-        return "Please set your graduation year in the format of 202X"
+
+    # assuming our users are standard mortals of the non-time-travelling variety
+    if not datetime.now().year - 100 < grad_year < datetime.now().year + 5:
+        return "Please set your graduation year in the format YYYY (e.g. 2022)"
 
     email = email.lower()
     if (
