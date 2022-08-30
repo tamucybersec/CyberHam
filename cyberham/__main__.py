@@ -3,6 +3,7 @@ from typing import Literal
 
 import discord
 from discord import app_commands
+from discord.ext import tasks
 
 import cyberham.backend as backend
 from cyberham.config import guild_id, discord_token
@@ -192,6 +193,7 @@ async def register(
     msg = backend.register(
         name, grad_year, email, interaction.user.id, interaction.user.name
     )
+
     await interaction.response.send_message(msg, ephemeral=True)
 
 

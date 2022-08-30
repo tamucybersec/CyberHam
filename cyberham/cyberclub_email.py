@@ -40,7 +40,8 @@ class CyberClub:
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
-        self.creds = Credentials.from_authorized_user_file(gmail_token, SCOPES)
+        if os.path.exists(gmail_token):
+            self.creds = Credentials.from_authorized_user_file(gmail_token, SCOPES)
         # If there are no (valid) credentials available, let the user log in.
         if not self.creds or not self.creds.valid:
             if self.creds and self.creds.expired and self.creds.refresh_token:
@@ -50,7 +51,7 @@ class CyberClub:
                     client_secret,
                     SCOPES,
                 )
-                creds = flow.run_local_server(port=0)
+                self.creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             gmail_token.write_text(self.creds.to_json())
 

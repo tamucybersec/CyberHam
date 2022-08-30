@@ -1,4 +1,4 @@
-git+https://github.com/Rapptz/discord.py
+discord~=2.0.1
 python-dotenv~=0.20.0
 google-api-python-client
 google-auth-httplib2
