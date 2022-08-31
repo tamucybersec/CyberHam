@@ -251,6 +251,7 @@ async def find_event(interaction: discord.Interaction, code: str = "", name: str
         await interaction.response.send_message(embed=embed)
 
 
+@app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="event_list",
     description="get a list of all events created",
