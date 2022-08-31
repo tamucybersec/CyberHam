@@ -102,8 +102,8 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10):
 
 
 def register(name: str, grad_year: int, email: str, user_id: int, user_name: str):
-    if c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,)) is not None:
-        return "You have already registered"
+    # if c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,)) is not None:
+    #     return "You have already registered"
 
     c.execute(
         "INSERT OR IGNORE INTO users VALUES (?, ?, 0, 0, 0, '')",

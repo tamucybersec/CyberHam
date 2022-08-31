@@ -62,10 +62,19 @@ class CyberClub:
 
             message = EmailMessage()
 
-            message.set_content(code)
+            message.set_content(
+                "Welcome to Texas A&M Cybersecurity Club!\n\n"
+                
+                "-----------------------------------------------------------\n"
+                f"CODE: [{code}]\n"
+                "-----------------------------------------------------------"
+                
+                "\n\nContact:\n"
+                "discord: bit~#5595"
+            )
 
             message["To"] = address
-            message["From"] = "tamucybersec@gmail.com"
+            message["From"] = "CyberHam<tamucybersec@gmail.com>"
             message["Subject"] = "CyberHam verification code"
 
             # encoded message

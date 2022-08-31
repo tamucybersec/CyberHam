@@ -197,6 +197,7 @@ async def register(
     await interaction.response.send_message(msg, ephemeral=True)
 
 
+@app_commands.checks.cooldown(3, 5 * 60)
 @reg.command(
     name="verify",
     description="verify your TAMU email",
@@ -206,6 +207,13 @@ async def register(
 async def verify(interaction: discord.Interaction, code: int):
     msg = backend.verify_email(code, interaction.user.id)
     await interaction.response.send_message(msg, ephemeral=True)
+
+
+@verify.error
+async def on_verify_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandOnCooldown):
+        await interaction.response.send_message("You have verified too many times! Please contact an officer",
+                                                ephemeral=True)
 
 
 @reg.command(
@@ -293,5 +301,6 @@ async def list_of_commands(interaction: discord.Interaction):
     for command in commands:
         output += command.name + "\n"
     await interaction.response.send_message(output)
+
 
 client.run(discord_token)
