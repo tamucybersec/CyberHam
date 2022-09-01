@@ -1,8 +1,8 @@
-import os
 from typing import Literal
 
 import discord
 from discord import app_commands
+# from discord.ext import tasks
 
 import cyberham.backend as backend
 from cyberham.config import guild_id, discord_token
@@ -41,9 +41,7 @@ Discord Bot UI
 class PageDisplay(discord.ui.View):
     def __init__(self):
         super().__init__()
-        self.response = (
-            None  # Define a variable named response with the initial value set to None
-        )
+        self.response = None
 
     @discord.ui.button(
         style=discord.ButtonStyle.primary, custom_id="el_next", label="1", emoji="▶"
@@ -52,13 +50,17 @@ class PageDisplay(discord.ui.View):
         page = int(button.label)
         button.label = page + 1
         embed = event_list_embed(page)
+        if embed is None:
+            await interaction.response.defer()
+            return
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-def event_info(name, points, date, resources):
+def event_info(name, points, date, code, resources):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
     embed.add_field(name="Points", value=points, inline=False)
+    embed.add_field(name="Code", value=code, inline=False)
     embed.add_field(name="Date", value=date, inline=False)
     if resources:
         embed.add_field(name="Resources", value=resources, inline=False)
@@ -113,6 +115,12 @@ async def size(interaction: discord.Interaction):
     description="create an event and track its attendance",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(
+    name='The name of the event',
+    points='The point value reward for attending',
+    date='The date of the event',
+    resources='Information to be shared with attendees'
+)
 async def create(
         interaction: discord.Interaction,
         name: str,
@@ -121,15 +129,17 @@ async def create(
         resources: str = "",
 ):
     code = backend.create_event(name, points, date, resources)
-    embed = event_info(name, points, date, resources)
+    embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
 
+@app_commands.checks.cooldown(5, 30 * 60)
 @reg.command(
     name="attend",
     description="register at the event you are attending for rewards and resources",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(code='The code of the event given by the presenter')
 async def attend(interaction: discord.Interaction, code: str):
     msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
     if data is None:
@@ -137,7 +147,7 @@ async def attend(interaction: discord.Interaction, code: str):
         return
 
     name, points, date, resources = data
-    embed = event_info(name, points, date, resources)
+    embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
 
 
@@ -145,6 +155,10 @@ async def attend(interaction: discord.Interaction, code: str):
     name="leaderboard",
     description="find the top students with the highest points",
     guild=discord.Object(id=guild_id),
+)
+@app_commands.describe(
+    axis='what criteria to sort by',
+    lim='the number of results to display'
 )
 async def leaderboard(
         interaction: discord.Interaction, axis: Literal["points", "attended"], lim: int = 10
@@ -170,23 +184,39 @@ async def leaderboard(
     description="register your information here",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(
+    name='please enter your full name/names you go by',
+    grad_year='your graduation year (yyyy)',
+    email='TAMU email'
+)
 async def register(
         interaction: discord.Interaction, name: str, grad_year: int, email: str
 ):
     msg = backend.register(
         name, grad_year, email, interaction.user.id, interaction.user.name
     )
+
     await interaction.response.send_message(msg, ephemeral=True)
 
 
+@app_commands.checks.cooldown(3, 5 * 60)
 @reg.command(
     name="verify",
     description="verify your TAMU email",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(code='Please enter the code sent to your TAMU email')
 async def verify(interaction: discord.Interaction, code: int):
     msg = backend.verify_email(code, interaction.user.id)
     await interaction.response.send_message(msg, ephemeral=True)
+
+
+@verify.error
+async def on_verify_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandOnCooldown):
+        backend.remove_pending(interaction.user.id)
+        await interaction.response.send_message("You have verified too many times! Please contact an officer",
+                                                ephemeral=True)
 
 
 @reg.command(
@@ -218,16 +248,21 @@ async def profile(interaction: discord.Interaction):
     description="get information on an event",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(
+    code='Search by event code',
+    name='Search by the exact event name'
+)
 async def find_event(interaction: discord.Interaction, code: str = "", name: str = ""):
     msg, data = backend.find_event(code, name)
     if data is None:
         await interaction.response.send_message(msg, ephemeral=True)
     else:
-        name, points, date, resources = data
-        embed = event_info(name, points, date, resources)
+        name, points, date, code, resources = data
+        embed = event_info(name, points, date, code, resources)
         await interaction.response.send_message(embed=embed)
 
 
+@app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="event_list",
     description="get a list of all events created",
@@ -248,12 +283,16 @@ async def event_list(interaction: discord.Interaction):
     description="manually award points to a user",
     guild=discord.Object(id=guild_id),
 )
+@app_commands.describe(
+    user='The user to award the points to',
+    points='The number of points'
+)
 async def award(interaction: discord.Interaction, user: discord.Member, points: int):
     msg = backend.award(user.id, user.name, points)
     await interaction.response.send_message(msg)
 
 
-@app_commands.default_permissions(manage_events=True)
+# @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="help",
     description="get a list of all commands",
@@ -261,9 +300,19 @@ async def award(interaction: discord.Interaction, user: discord.Member, points: 
 )
 async def list_of_commands(interaction: discord.Interaction):
     commands = reg.get_commands(guild=discord.Object(id=guild_id))
+    perm = interaction.user.resolved_permissions.manage_events
     output = ""
-    for command in commands:
-        output += command.name + "\n"
+    if perm:
+        for command in commands:
+            if command.default_permissions is None:
+                output += f"{command.name}\n"
+            else:
+                output += f"**{command.name}**\n"
+    else:
+        for command in commands:
+            if command.default_permissions is None:
+                output += f"{command.name}\n"
     await interaction.response.send_message(output)
+
 
 client.run(discord_token)

@@ -22,6 +22,11 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS "
         "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT)"
     )
+    # flagged: user_id, offences
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS "
+        "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
+    )
     conn.commit()
 
 
@@ -97,34 +102,29 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10):
 
 
 def register(name: str, grad_year: int, email: str, user_id: int, user_name: str):
+    # if c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,)) is not None:
+    #     return "You have already registered"
+
     c.execute(
         "INSERT OR IGNORE INTO users VALUES (?, ?, 0, 0, 0, '')",
         (user_id, user_name),
     )
     conn.commit()
-    if not 1950 < grad_year < 2030:
-        return "Please set your graduation year in the format of 202X"
+
+    # assuming our users are standard mortals of the non-time-travelling variety
+    if not datetime.now().year - 100 < grad_year < datetime.now().year + 5:
+        return "Please set your graduation year in the format YYYY (e.g. 2022)"
 
     email = email.lower()
     if (
-        "," in email
-        or ";" in email
-        or email.count("@") != 1
-        or not email.endswith("tamu.edu")
+            "," in email
+            or ";" in email
+            or email.count("@") != 1
+            or not email.endswith("tamu.edu")
     ):
         return "Please set a proper TAMU email address"
 
-    c.execute("SELECT email FROM users WHERE user_id = ?", (user_id,))
-    temp = c.fetchone()
-    if temp is not None and temp[0] == email:
-        ask_to_verify = ""
-    else:
-        verification = EmailPending(
-            user_id, email, random.randint(1000, 10000), datetime.now()
-        )
-        pending_emails[user_id] = verification
-        out_mail.send_email(email, str(verification.code))
-        ask_to_verify = "Please use /verify with the code you received in your email"
+    ask_to_verify = register_email(user_id, email)
 
     c.execute(
         "UPDATE users SET name = ?, grad_year = ? WHERE user_id = ?",
@@ -132,6 +132,36 @@ def register(name: str, grad_year: int, email: str, user_id: int, user_name: str
     )
     conn.commit()
     return f"You have successfully updated your profile! {ask_to_verify}"
+
+
+def register_email(user_id, email):
+    c.execute("SELECT email FROM users WHERE user_id = ?", (user_id,))
+    temp = c.fetchone()
+    if temp is not None and temp[0] == email:
+        return ""
+
+    if user_id in pending_emails:
+        c.execute("INSERT OR IGNORE INTO flagged VALUES (?, 0)", (user_id,))
+        c.execute("UPDATE flagged SET offences = offences + 1 WHERE user_id = ?", (user_id,))
+        conn.commit()
+        c.execute("SELECT offences FROM flagged WHERE user_id = ?", (user_id,))
+        flagged = c.fetchone()[0]
+        if flagged >= 3:
+            return "Too many failed attempts to email verification, please contact an officer"
+
+    c.execute("SELECT user_id FROM users WHERE email = ?", (email,))
+    temp = c.fetchone()
+    if temp is not None:
+        c.execute("UPDATE flagged SET offences = offences + 1 WHERE user_id = ?", (user_id,))
+        conn.commit()
+        return "This email has already been registered"
+
+    verification = EmailPending(
+        user_id, email, random.randint(1000, 10000), datetime.now()
+    )
+    pending_emails[user_id] = verification
+    out_mail.send_email(email, str(verification.code))
+    return "Please use /verify with the code you received in your email."
 
 
 def verify_email(code: int, user_id: int):
@@ -151,6 +181,10 @@ def verify_email(code: int, user_id: int):
         return "Please use /register to submit your email"
 
 
+def remove_pending(user_id: int = 0):
+    del pending_emails[user_id]
+
+
 def profile(user_id: int):
     c.execute(
         "SELECT name, points, attended, grad_year, email FROM users WHERE user_id = ?",
@@ -167,15 +201,15 @@ def find_event(code: str = "", name: str = ""):
         return "Please include an event name or code.", None
     elif code == "":
         c.execute(
-            "SELECT name, points, date, resources FROM events WHERE name = ?", (name,)
+            "SELECT name, points, date, code, resources FROM events WHERE name = ?", (name,)
         )
     elif name == "":
         c.execute(
-            "SELECT name, points, date, resources FROM events WHERE code = ?", (code,)
+            "SELECT name, points, date, code, resources FROM events WHERE code = ?", (code,)
         )
     else:
         c.execute(
-            "SELECT name, points, date, resources FROM events where name = ? AND code = ?",
+            "SELECT name, points, date, code, resources FROM events where name = ? AND code = ?",
             (name, code),
         )
     data = c.fetchone()
