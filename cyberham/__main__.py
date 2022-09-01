@@ -292,7 +292,7 @@ async def award(interaction: discord.Interaction, user: discord.Member, points: 
     await interaction.response.send_message(msg)
 
 
-@app_commands.default_permissions(manage_events=True)
+# @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="help",
     description="get a list of all commands",
@@ -300,9 +300,18 @@ async def award(interaction: discord.Interaction, user: discord.Member, points: 
 )
 async def list_of_commands(interaction: discord.Interaction):
     commands = reg.get_commands(guild=discord.Object(id=guild_id))
+    perm = interaction.user.resolved_permissions.manage_events
     output = ""
-    for command in commands:
-        output += command.name + "\n"
+    if perm:
+        for command in commands:
+            if command.default_permissions is None:
+                output += f"{command.name}\n"
+            else:
+                output += f"**{command.name}**\n"
+    else:
+        for command in commands:
+            if command.default_permissions is None:
+                output += f"{command.name}\n"
     await interaction.response.send_message(output)
 
 
