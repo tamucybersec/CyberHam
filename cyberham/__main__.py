@@ -208,6 +208,8 @@ async def register(
 @app_commands.describe(code='Please enter the code sent to your TAMU email')
 async def verify(interaction: discord.Interaction, code: int):
     msg = backend.verify_email(code, interaction.user.id)
+    if 'verified!' in msg:
+        await interaction.user.add_roles(discord.Object(id=1015024081432743996), reason='TAMU email verified')
     await interaction.response.send_message(msg, ephemeral=True)
 
 
