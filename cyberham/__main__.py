@@ -1,9 +1,8 @@
-import os
 from typing import Literal
 
 import discord
 from discord import app_commands
-from discord.ext import tasks
+# from discord.ext import tasks
 
 import cyberham.backend as backend
 from cyberham.config import guild_id, discord_token
@@ -42,9 +41,7 @@ Discord Bot UI
 class PageDisplay(discord.ui.View):
     def __init__(self):
         super().__init__()
-        self.response = (
-            None  # Define a variable named response with the initial value set to None
-        )
+        self.response = None
 
     @discord.ui.button(
         style=discord.ButtonStyle.primary, custom_id="el_next", label="1", emoji="▶"
@@ -53,13 +50,17 @@ class PageDisplay(discord.ui.View):
         page = int(button.label)
         button.label = page + 1
         embed = event_list_embed(page)
+        if embed is None:
+            await interaction.response.defer()
+            return
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-def event_info(name, points, date, resources):
+def event_info(name, points, date, code, resources):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
     embed.add_field(name="Points", value=points, inline=False)
+    embed.add_field(name="Code", value=code, inline=False)
     embed.add_field(name="Date", value=date, inline=False)
     if resources:
         embed.add_field(name="Resources", value=resources, inline=False)
@@ -128,10 +129,11 @@ async def create(
         resources: str = "",
 ):
     code = backend.create_event(name, points, date, resources)
-    embed = event_info(name, points, date, resources)
+    embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
 
+@app_commands.checks.cooldown(5, 30 * 60)
 @reg.command(
     name="attend",
     description="register at the event you are attending for rewards and resources",
@@ -145,7 +147,7 @@ async def attend(interaction: discord.Interaction, code: str):
         return
 
     name, points, date, resources = data
-    embed = event_info(name, points, date, resources)
+    embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
 
 
@@ -212,6 +214,7 @@ async def verify(interaction: discord.Interaction, code: int):
 @verify.error
 async def on_verify_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
+        backend.remove_pending(interaction.user.id)
         await interaction.response.send_message("You have verified too many times! Please contact an officer",
                                                 ephemeral=True)
 
@@ -254,8 +257,8 @@ async def find_event(interaction: discord.Interaction, code: str = "", name: str
     if data is None:
         await interaction.response.send_message(msg, ephemeral=True)
     else:
-        name, points, date, resources = data
-        embed = event_info(name, points, date, resources)
+        name, points, date, code, resources = data
+        embed = event_info(name, points, date, code, resources)
         await interaction.response.send_message(embed=embed)
 
 

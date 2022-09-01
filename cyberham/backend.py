@@ -2,7 +2,7 @@ import random
 import string
 
 from typing import Literal
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from cyberham.config import conn, c
 from cyberham.cyberclub_email import CyberClub, EmailPending
@@ -117,10 +117,10 @@ def register(name: str, grad_year: int, email: str, user_id: int, user_name: str
 
     email = email.lower()
     if (
-        "," in email
-        or ";" in email
-        or email.count("@") != 1
-        or not email.endswith("tamu.edu")
+            "," in email
+            or ";" in email
+            or email.count("@") != 1
+            or not email.endswith("tamu.edu")
     ):
         return "Please set a proper TAMU email address"
 
@@ -141,8 +141,8 @@ def register_email(user_id, email):
         return ""
 
     if user_id in pending_emails:
-        c.execute("INSERT OR IGNORE INTO flagged VALUES (?, 0)", (user_id, ))
-        c.execute("UPDATE flagged SET offences = offences + 1 WHERE user_id = ?", (user_id, ))
+        c.execute("INSERT OR IGNORE INTO flagged VALUES (?, 0)", (user_id,))
+        c.execute("UPDATE flagged SET offences = offences + 1 WHERE user_id = ?", (user_id,))
         conn.commit()
         c.execute("SELECT offences FROM flagged WHERE user_id = ?", (user_id,))
         flagged = c.fetchone()[0]
@@ -161,7 +161,7 @@ def register_email(user_id, email):
     )
     pending_emails[user_id] = verification
     out_mail.send_email(email, str(verification.code))
-    return "Please use /verify with the code you received in your email"
+    return "Please use /verify with the code you received in your email. This code will be valid for one hour."
 
 
 def verify_email(code: int, user_id: int):
@@ -181,6 +181,10 @@ def verify_email(code: int, user_id: int):
         return "Please use /register to submit your email"
 
 
+def remove_pending(user_id: int = 0):
+    del pending_emails[user_id]
+
+
 def profile(user_id: int):
     c.execute(
         "SELECT name, points, attended, grad_year, email FROM users WHERE user_id = ?",
@@ -197,15 +201,15 @@ def find_event(code: str = "", name: str = ""):
         return "Please include an event name or code.", None
     elif code == "":
         c.execute(
-            "SELECT name, points, date, resources FROM events WHERE name = ?", (name,)
+            "SELECT name, points, date, code, resources FROM events WHERE name = ?", (name,)
         )
     elif name == "":
         c.execute(
-            "SELECT name, points, date, resources FROM events WHERE code = ?", (code,)
+            "SELECT name, points, date, code, resources FROM events WHERE code = ?", (code,)
         )
     else:
         c.execute(
-            "SELECT name, points, date, resources FROM events where name = ? AND code = ?",
+            "SELECT name, points, date, code, resources FROM events where name = ? AND code = ?",
             (name, code),
         )
     data = c.fetchone()
