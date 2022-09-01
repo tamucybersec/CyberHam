@@ -2,7 +2,7 @@ import random
 import string
 
 from typing import Literal
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from cyberham.config import conn, c
 from cyberham.cyberclub_email import CyberClub, EmailPending
@@ -161,7 +161,7 @@ def register_email(user_id, email):
     )
     pending_emails[user_id] = verification
     out_mail.send_email(email, str(verification.code))
-    return "Please use /verify with the code you received in your email. This code will be valid for one hour."
+    return "Please use /verify with the code you received in your email."
 
 
 def verify_email(code: int, user_id: int):
