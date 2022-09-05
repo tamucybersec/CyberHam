@@ -201,15 +201,15 @@ def find_event(code: str = "", name: str = ""):
         return "Please include an event name or code.", None
     elif code == "":
         c.execute(
-            "SELECT name, points, date, code, resources FROM events WHERE name = ?", (name,)
+            "SELECT name, points, date, code, resources, attended_users FROM events WHERE name = ?", (name,)
         )
     elif name == "":
         c.execute(
-            "SELECT name, points, date, code, resources FROM events WHERE code = ?", (code,)
+            "SELECT name, points, date, code, resources, attended_users FROM events WHERE code = ?", (code,)
         )
     else:
         c.execute(
-            "SELECT name, points, date, code, resources FROM events where name = ? AND code = ?",
+            "SELECT name, points, date, code, resources, attended_users FROM events where name = ? AND code = ?",
             (name, code),
         )
     data = c.fetchone()

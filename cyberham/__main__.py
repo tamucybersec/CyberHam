@@ -56,7 +56,7 @@ class PageDisplay(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-def event_info(name, points, date, code, resources):
+def event_info(name, points, date, code, resources, attendees=""):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
     embed.add_field(name="Points", value=points, inline=False)
@@ -64,6 +64,9 @@ def event_info(name, points, date, code, resources):
     embed.add_field(name="Date", value=date, inline=False)
     if resources:
         embed.add_field(name="Resources", value=resources, inline=False)
+    if attendees != "":
+        count = len(attendees.split(" "))
+        embed.add_field(name="Attendance count", value=count, inline=False)
     return embed
 
 
@@ -259,8 +262,8 @@ async def find_event(interaction: discord.Interaction, code: str = "", name: str
     if data is None:
         await interaction.response.send_message(msg, ephemeral=True)
     else:
-        name, points, date, code, resources = data
-        embed = event_info(name, points, date, code, resources)
+        name, points, date, code, resources, attendees = data
+        embed = event_info(name, points, date, code, resources, attendees)
         await interaction.response.send_message(embed=embed)
 
 
