@@ -2,7 +2,6 @@ from typing import Literal
 
 import discord
 from discord import app_commands
-from discord.ext import tasks
 
 import cyberham.backend as backend
 from cyberham.config import guild_id, discord_token
@@ -26,15 +25,7 @@ class Bot(discord.Client):
         if not self.synced:
             await reg.sync(guild=discord.Object(id=guild_id))
             self.synced = True
-        self.token_reminder.start()
         print("bot online")
-
-    # send message if token expired
-    @tasks.loop(hours=1)
-    async def token_reminder(self):
-        if not backend.email_token_check():
-            return
-        await self.get_channel(1014740464601153536).send("Token expired, please refresh")
 
 
 client = Bot()
@@ -50,7 +41,6 @@ class PageDisplay(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.response = None
-        self.token_reminder.start()
 
     @discord.ui.button(
         style=discord.ButtonStyle.primary, custom_id="el_next", label="1", emoji="▶"
@@ -204,10 +194,14 @@ async def leaderboard(
 async def register(
         interaction: discord.Interaction, name: str, grad_year: int, email: str
 ):
-    msg = backend.register(
-        name, grad_year, email, interaction.user.id, interaction.user.name
-    )
-
+    try:
+        msg = backend.register(
+            name, grad_year, email, interaction.user.id, interaction.user.name
+        )
+    except:
+        await client.get_channel(1014740464601153536) \
+            .send(f"{interaction.user.mention} registration attempt, update token")
+        msg = "The verification code failed to send, an officer has been notified and will contact you soon"
     await interaction.response.send_message(msg, ephemeral=True)
 
 

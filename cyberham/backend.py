@@ -29,10 +29,6 @@ def init_db():
     )
     conn.commit()
 
-# true if expired
-def email_token_check():
-    return out_mail.check_valid()
-
 
 def create_event(name: str, points: int, date: str, resources: str):
     code = ""
@@ -166,6 +162,8 @@ def register_email(user_id, email):
     pending_emails[user_id] = verification
     out_mail.send_email(email, str(verification.code))
     return "Please use /verify with the code you received in your email."
+
+
 
 
 def verify_email(code: int, user_id: int):
