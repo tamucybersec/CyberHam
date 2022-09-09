@@ -2,7 +2,7 @@ from typing import Literal
 
 import discord
 from discord import app_commands
-# from discord.ext import tasks
+from discord.ext import tasks
 
 import cyberham.backend as backend
 from cyberham.config import guild_id, discord_token
@@ -26,7 +26,15 @@ class Bot(discord.Client):
         if not self.synced:
             await reg.sync(guild=discord.Object(id=guild_id))
             self.synced = True
+        self.token_reminder.start()
         print("bot online")
+
+    # send message if token expired
+    @tasks.loop(hours=1)
+    async def token_reminder(self):
+        if not backend.email_token_check():
+            return
+        await self.get_channel(1014740464601153536).send("Token expired, please refresh")
 
 
 client = Bot()
@@ -42,6 +50,7 @@ class PageDisplay(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.response = None
+        self.token_reminder.start()
 
     @discord.ui.button(
         style=discord.ButtonStyle.primary, custom_id="el_next", label="1", emoji="▶"
@@ -56,7 +65,7 @@ class PageDisplay(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-def event_info(name, points, date, code, resources):
+def event_info(name, points, date, code, resources, attendees=""):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
     embed.add_field(name="Points", value=points, inline=False)
@@ -64,6 +73,9 @@ def event_info(name, points, date, code, resources):
     embed.add_field(name="Date", value=date, inline=False)
     if resources:
         embed.add_field(name="Resources", value=resources, inline=False)
+    if attendees != "":
+        count = len(attendees.split(" "))
+        embed.add_field(name="Attendance count", value=count, inline=False)
     return embed
 
 
@@ -259,8 +271,8 @@ async def find_event(interaction: discord.Interaction, code: str = "", name: str
     if data is None:
         await interaction.response.send_message(msg, ephemeral=True)
     else:
-        name, points, date, code, resources = data
-        embed = event_info(name, points, date, code, resources)
+        name, points, date, code, resources, attendees = data
+        embed = event_info(name, points, date, code, resources, attendees)
         await interaction.response.send_message(embed=embed)
 
 
