@@ -29,6 +29,10 @@ def init_db():
     )
     conn.commit()
 
+# true if expired
+def email_token_check():
+    return out_mail.check_valid()
+
 
 def create_event(name: str, points: int, date: str, resources: str):
     code = ""
@@ -67,7 +71,7 @@ def attend_event(code: str, user_id: int, user_name: str):
         return f"{code} does not exist!", None
 
     name, _, points, date, resources, attended_users = temp
-    if str(user_id) in attended_users.split():
+    if f'{user_id}' in attended_users.split():
         return f"You have already redeemed {code}!", None
 
     c.execute(

@@ -55,6 +55,9 @@ class CyberClub:
             # Save the credentials for the next run
             gmail_token.write_text(self.creds.to_json())
 
+    def check_valid(self):
+        return self.creds.expired
+
     def send_email(self, address: str, code: str):
         try:
             # create gmail api client
