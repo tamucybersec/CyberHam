@@ -30,7 +30,7 @@ def init_db():
     conn.commit()
 
 
-def create_event(name: str, points: int, date: str, resources: str):
+def create_event(name: str, points: int, date: str, resources: str, user_id: int):
     code = ""
     code_list = [0]
     while code_list is not None:
@@ -39,8 +39,8 @@ def create_event(name: str, points: int, date: str, resources: str):
         code_list = c.fetchone()  # returns tuple of one if exists otherwise none
 
     c.execute(
-        "INSERT INTO events VALUES (?, ?, ?, ?, ?, '')",
-        (name, code, points, date, resources),
+        "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
+        (name, code, points, date, resources, f"{user_id}"),
     )
     conn.commit()
     return code
@@ -79,8 +79,8 @@ def attend_event(code: str, user_id: int, user_name: str):
         (user_id,),
     )
     c.execute(
-        "UPDATE events SET attended_users = attended_users || ?",
-        (f" {user_id}",),
+        "UPDATE events SET attended_users = attended_users || ? WHERE code = ?",
+        (f" {user_id}", code),
     )
     conn.commit()
     return f"Successfully registered for {code}! {prompt}", (
@@ -162,8 +162,6 @@ def register_email(user_id, email):
     pending_emails[user_id] = verification
     out_mail.send_email(email, str(verification.code))
     return "Please use /verify with the code you received in your email."
-
-
 
 
 def verify_email(code: int, user_id: int):

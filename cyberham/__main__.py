@@ -130,7 +130,7 @@ async def create(
         date: str,
         resources: str = "",
 ):
-    code = backend.create_event(name, points, date, resources)
+    code = backend.create_event(name, points, date, resources, interaction.user.id)
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
