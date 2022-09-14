@@ -42,6 +42,14 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
         "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
         (name, code, points, date, resources, f"{user_id}"),
     )
+    c.execute(
+        "UPDATE users SET points = points + ? WHERE user_id = ?",
+        (points, user_id),
+    )
+    c.execute(
+        "UPDATE users SET attended = attended + 1 WHERE user_id = ?",
+        (user_id,),
+    )
     conn.commit()
     return code
 
