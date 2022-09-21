@@ -13,7 +13,7 @@ def ncl_voucher(csv):
         count = 0
         c.execute("SELECT user_id FROM users WHERE email = ?", (email, ))
         _id = c.fetchone()
-        c.execute("SELECT code FROM events WHERE attended_users LIKE ?", (f"%{_id}%", ))
+        c.execute(f"SELECT code FROM events WHERE attended_users LIKE '%{_id}%'")
         events = c.fetchall()
 
         for event in events:
