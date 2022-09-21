@@ -228,7 +228,7 @@ def find_event(code: str = "", name: str = ""):
 
 
 def event_list():
-    c.execute("SELECT name, date FROM events")
+    c.execute("SELECT name, date, code FROM events")
     return c.fetchall()[::-1]
 
 
@@ -244,3 +244,4 @@ def award(user_id: int, user_name: str, points: int):
     )
     conn.commit()
     return f"Successfully added {points} points to {user_name} - {name}"
+
