@@ -23,7 +23,7 @@ class Bot(discord.Client):
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:
-            await reg.sync(guild=discord.Object(id=guild_id))
+            await reg.sync()
             self.synced = True
         print("bot online")
 
