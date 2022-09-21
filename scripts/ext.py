@@ -11,16 +11,19 @@ def ncl_voucher(csv):
     df = pd.read_csv(csv)
     for email in df['Username']:
         count = 0
-        c.execute("SELECT user_id FROM users WHERE email = ?", (email, ))
+        c.execute("SELECT user_id, name FROM users WHERE email = ?", (email, ))
         _id = c.fetchone()
-        c.execute(f"SELECT code FROM events WHERE attended_users LIKE '%{_id}%'")
+        if (_id is None):
+            print(f"{email} is not registered")
+            continue
+        c.execute(f"SELECT code FROM events WHERE attended_users LIKE '%{_id[0]}%'")
         events = c.fetchall()
 
         for event in events:
-            if event in ("OSDFT", "OZHIW", "WBYAG", "AWDAA"):
+            if event[0] in ("OSDFT", "OZHIW", "WBYAG", "AWDAA"):
                 count += 1
 
-        print(email, count)
+        print(f"<@{_id[0]}> {_id[1]} {email} - {count}")
 
 if __name__ == '__main__':
     if (sys.argv[1] == 'ncl'):
