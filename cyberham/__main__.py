@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 
 import cyberham.backend as backend
-from cyberham.config import discord_token
+from cyberham.config import guild_id, discord_token
 
 """
 Define Bot Attributes
@@ -23,7 +23,8 @@ class Bot(discord.Client):
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:
-            await reg.sync()
+            await reg.sync(guild=guild_ids[0])
+            await reg.sync(guild=guild_ids[1])
             self.synced = True
         print("bot online")
 
@@ -31,6 +32,9 @@ class Bot(discord.Client):
 client = Bot()
 backend.init_db()
 reg = app_commands.CommandTree(client)
+guild_ids = []
+for _id in guild_id:
+    guild_ids.append(discord.Object(id=_id))
 
 """
 Discord Bot UI
@@ -103,7 +107,8 @@ Register Discord Bot Commands
 
 @reg.command(
     name="size",
-    description="find the number of human members"
+    description="find the number of human members",
+    guilds=guild_ids
 )
 async def size(interaction: discord.Interaction):
     count = 0
@@ -116,7 +121,8 @@ async def size(interaction: discord.Interaction):
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="create",
-    description="create an event and track its attendance"
+    description="create an event and track its attendance",
+    guilds=guild_ids
 )
 @app_commands.describe(
     name='The name of the event',
@@ -139,7 +145,8 @@ async def create(
 @app_commands.checks.cooldown(5, 30 * 60)
 @reg.command(
     name="attend",
-    description="register at the event you are attending for rewards and resources"
+    description="register at the event you are attending for rewards and resources",
+    guilds=guild_ids
 )
 @app_commands.describe(code='The code of the event given by the presenter')
 async def attend(interaction: discord.Interaction, code: str):
@@ -155,7 +162,8 @@ async def attend(interaction: discord.Interaction, code: str):
 
 @reg.command(
     name="leaderboard",
-    description="find the top students with the highest points"
+    description="find the top students with the highest points",
+    guilds=guild_ids
 )
 @app_commands.describe(
     axis='what criteria to sort by',
@@ -182,7 +190,8 @@ async def leaderboard(
 
 @reg.command(
     name="register",
-    description="register your information here"
+    description="register your information here",
+    guilds=guild_ids
 )
 @app_commands.describe(
     name='please enter your full name/names you go by',
@@ -206,7 +215,8 @@ async def register(
 @app_commands.checks.cooldown(3, 5 * 60)
 @reg.command(
     name="verify",
-    description="verify your TAMU email"
+    description="verify your TAMU email",
+    guilds=guild_ids
 )
 @app_commands.describe(code='Please enter the code sent to your TAMU email')
 async def verify(interaction: discord.Interaction, code: int):
@@ -226,7 +236,8 @@ async def on_verify_error(interaction: discord.Interaction, error: app_commands.
 
 @reg.command(
     name="profile",
-    description="get your current attendance info!"
+    description="get your current attendance info!",
+    guilds=guild_ids
 )
 async def profile(interaction: discord.Interaction):
     msg, data = backend.profile(interaction.user.id)
@@ -249,7 +260,8 @@ async def profile(interaction: discord.Interaction):
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="find_event",
-    description="get information on an event"
+    description="get information on an event",
+    guilds=guild_ids
 )
 @app_commands.describe(
     code='Search by event code',
@@ -268,7 +280,8 @@ async def find_event(interaction: discord.Interaction, code: str = "", name: str
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="event_list",
-    description="get a list of all events created"
+    description="get a list of all events created",
+    guilds=guild_ids
 )
 async def event_list(interaction: discord.Interaction):
     my_view = PageDisplay()
@@ -282,7 +295,8 @@ async def event_list(interaction: discord.Interaction):
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="award",
-    description="manually award points to a user"
+    description="manually award points to a user",
+    guilds=guild_ids
 )
 @app_commands.describe(
     user='The user to award the points to',
@@ -296,7 +310,8 @@ async def award(interaction: discord.Interaction, user: discord.Member, points: 
 # @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="help",
-    description="get a list of all commands"
+    description="get a list of all commands",
+    guilds=guild_ids
 )
 async def list_of_commands(interaction: discord.Interaction):
     commands = reg.get_commands()
