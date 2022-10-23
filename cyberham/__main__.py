@@ -252,6 +252,30 @@ async def profile(interaction: discord.Interaction):
         embed.add_field(name="TAMU Email", value=email, inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+@reg.command(
+    name="profile_member",
+    description="get the attendance info for a specific member!",
+    guilds=guild_id
+)
+@app_commands.default_permissions(manage_events=True)
+@app_commands.describe(member="The profile for which member")
+async def profile(interaction: discord.Interaction, member: discord.Member):
+    msg, data = backend.profile(member.id)
+    if data is None:
+        await interaction.response.send_message(msg, ephemeral=True)
+        return
+
+    name, points, attended, grad_year, email = data
+    embed = discord.Embed(title="Profile", color=0xFFFFFF)
+    embed.add_field(name="Name", value=name, inline=False)
+    embed.add_field(name="Points", value=points, inline=False)
+    embed.add_field(name="Attended Events", value=attended, inline=False)
+    if grad_year > 0:
+        embed.add_field(name="Graduation Year", value=grad_year, inline=False)
+    if email:
+        embed.add_field(name="TAMU Email", value=email, inline=False)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
