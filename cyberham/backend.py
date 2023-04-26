@@ -109,7 +109,7 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10):
     return c.fetchall()
 
 
-def register(name: str, grad_year: int, email: str, user_id: int, user_name: str):
+def register(name: str, grad_year: int, email: str, user_id: int, user_name: str, guild_id: int):
     # if c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,)) is not None:
     #     return "You have already registered"
 
@@ -132,7 +132,7 @@ def register(name: str, grad_year: int, email: str, user_id: int, user_name: str
     ):
         return "Please set a proper TAMU email address"
 
-    ask_to_verify = register_email(user_id, email)
+    ask_to_verify = register_email(user_id, email, guild_id)
 
     c.execute(
         "UPDATE users SET name = ?, grad_year = ? WHERE user_id = ?",
@@ -142,7 +142,7 @@ def register(name: str, grad_year: int, email: str, user_id: int, user_name: str
     return f"You have successfully updated your profile! {ask_to_verify}"
 
 
-def register_email(user_id, email):
+def register_email(user_id, email, guild_id):
     c.execute("SELECT email FROM users WHERE user_id = ?", (user_id,))
     temp = c.fetchone()
     if temp is not None and temp[0] == email:
@@ -168,7 +168,7 @@ def register_email(user_id, email):
         user_id, email, random.randint(1000, 10000), datetime.now()
     )
     pending_emails[user_id] = verification
-    out_mail.send_email(email, str(verification.code))
+    out_mail.send_email(email, str(verification.code), 'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
     return "Please use /verify with the code you received in your email."
 
 

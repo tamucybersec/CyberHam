@@ -198,7 +198,7 @@ async def register(
 ):
     try:
         msg = backend.register(
-            name, grad_year, email, interaction.user.id, interaction.user.name
+            name, grad_year, email, interaction.user.id, interaction.user.name, interaction.guild_id
         )
     except:
         await client.get_channel(1014740464601153536) \
