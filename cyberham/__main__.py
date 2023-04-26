@@ -22,8 +22,8 @@ class Bot(discord.Client):
 
     async def on_ready(self):
         await self.wait_until_ready()
-        print(await reg.sync(guild=guild_id[0]))
-        print(await reg.sync(guild=guild_id[1]))
+        for g in guild_id:
+            await reg.sync(guild=g)
         self.synced = True
         print("bot online")
 
@@ -217,7 +217,7 @@ async def register(
 @app_commands.describe(code='Please enter the code sent to your TAMU email')
 async def verify(interaction: discord.Interaction, code: int):
     msg = backend.verify_email(code, interaction.user.id)
-    if 'verified!' in msg:
+    if 'verified!' in msg and interaction.guild_id == 631254092332662805:
         await interaction.user.add_roles(discord.Object(id=1015024081432743996), reason='TAMU email verified')
     await interaction.response.send_message(msg, ephemeral=True)
 

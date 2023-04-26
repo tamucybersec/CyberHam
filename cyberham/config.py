@@ -17,5 +17,5 @@ client_secret = project_path.joinpath("secrets")\
 class guild:
     id: int
 
-guild_id = (guild(631254092332662805), guild(805821298193465384))
+guild_id = (guild(631254092332662805), guild(805821298193465384), guild(1096793565478277256))
 discord_token = dotenv_values(project_path.joinpath("secrets").joinpath(".env"))["DISCORD_TOKEN"]
