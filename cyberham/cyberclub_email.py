@@ -70,7 +70,7 @@ class CyberClub:
                 "-----------------------------------------------------------"
                 
                 "\n\nContact:\n"
-                "discord: Bit#0821"
+                "discord: bit.py"
             )
 
             message["To"] = address
