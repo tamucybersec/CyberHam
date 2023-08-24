@@ -55,7 +55,7 @@ class CyberClub:
             # Save the credentials for the next run
             gmail_token.write_text(self.creds.to_json())
 
-    def send_email(self, org: str, address: str, code: str):
+    def send_email(self, address: str, code: str, org: str,):
         try:
             # create gmail api client
             service = build("gmail", "v1", credentials=self.creds)
