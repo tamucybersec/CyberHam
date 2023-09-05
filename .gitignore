@@ -1,6 +1,6 @@
 config.toml
-db/attendance.db
-secrets/*
-!secrets/.gitkeep
+cyberham/db/*.db
+cyberham/secrets/*.json
 
+cyberham/__pycache__/
 .idea/
