@@ -1,0 +1,6 @@
+config.toml
+db/attendance.db
+secrets/*
+!secrets/.gitkeep
+
+.idea/
