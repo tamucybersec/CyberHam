@@ -3,4 +3,5 @@ cyberham/db/*.db
 cyberham/secrets/*.json
 
 cyberham/__pycache__/
+venv/
 .idea/
