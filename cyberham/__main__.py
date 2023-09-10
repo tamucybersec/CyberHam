@@ -1,4 +1,5 @@
 from typing import Literal
+from pytz import timezone
 
 import discord
 from discord import app_commands
@@ -13,11 +14,7 @@ Define Bot Attributes
 
 class Bot(discord.Client):
     def __init__(self):
-        super().__init__(
-            intents=discord.Intents(
-                guilds=True, members=True, messages=True, reactions=True
-            )
-        )
+        super().__init__(intents=discord.Intents(guilds=True, members=True, messages=True, guild_scheduled_events=True))
         self.synced = False
 
     async def on_ready(self):
@@ -26,6 +23,15 @@ class Bot(discord.Client):
             await reg.sync(guild=g)
         self.synced = True
         print("bot online")
+
+    async def on_scheduled_event_create(self, event):
+        # voice channel events do not trigger this
+        points = 50
+        time = event.start_time.astimezone(timezone('US/Central'))
+
+        code = backend.create_event(event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id)
+        embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
+        await self.get_channel(1014740464601153536).send(f"The code is `{code}`", embed=embed)
 
 
 client = Bot()
