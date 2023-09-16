@@ -16,11 +16,14 @@ class Bot(discord.Client):
     def __init__(self):
         super().__init__(intents=discord.Intents(guilds=True, members=True, messages=True, guild_scheduled_events=True))
         self.synced = False
+        #self.mutable_message = app_commands.ContextMenu(name = "Edit Message", callback = self.edit_message)
+        #self.tree.add_command(self.mutable_message)
 
     async def on_ready(self):
         await self.wait_until_ready()
         for g in guild_id:
             await reg.sync(guild=g)
+            print("howdy ", g.id)
         self.synced = True
         print("bot online")
 
@@ -35,6 +38,7 @@ class Bot(discord.Client):
 
 
 client = Bot()
+
 backend.init_db()
 reg = app_commands.CommandTree(client)
 """
@@ -354,6 +358,12 @@ async def list_of_commands(interaction: discord.Interaction):
             if command.default_permissions is None:
                 output += f"{command.name}\n"
     await interaction.response.send_message(output)
+
+@reg.context_menu()
+async def edit_message(iteraction: discord.Interaction, message: discord.Message) -> None:
+    print("howdy")
+
+
 
 
 client.run(discord_token)
