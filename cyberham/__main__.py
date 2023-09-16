@@ -359,9 +359,37 @@ async def list_of_commands(interaction: discord.Interaction):
                 output += f"{command.name}\n"
     await interaction.response.send_message(output)
 
-@reg.context_menu()
-async def edit_message(iteraction: discord.Interaction, message: discord.Message) -> None:
-    print("howdy")
+class EditModal(discord.ui.Modal, title='Edit a Message'):
+    #name = discord.ui.TextInput(label='Name')
+    answer = discord.ui.TextInput(label='Answer', style=discord.TextStyle.paragraph)
+
+    def __init__(self, message):
+        super().__init__()
+        #self.channel_id = channel_id
+        self.message = message
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.send_message(f'Howdy! The message has been updated.', ephemeral=True)
+        #ephemeral=True argument makes the message visible only to the user who triggered the interaction
+
+        #user = interaction.user
+        #channel = interaction.channel
+       # channel = client.get_channel(self.channel_id)
+        #message = await channel.fetch_message(self.message) #make variable
+        #message = interaction.message
+        #messageid =  1138606997172912238
+        await self.message.edit(content=f'{self.answer}')
+
+
+@reg.context_menu(
+    name = "Edit message",
+    guilds = guild_id
+)
+async def edit_message(interaction: discord.Interaction, message: discord.Message) -> None:
+
+
+    modal = EditModal(message)
+    await interaction.response.send_modal(modal)
 
 
 
