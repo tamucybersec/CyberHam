@@ -21,6 +21,7 @@ class Bot(discord.Client):
         await self.wait_until_ready()
         for g in guild_id:
             await reg.sync(guild=g)
+            print("synced server ", g.id)
         self.synced = True
         print("bot online")
 
@@ -35,6 +36,7 @@ class Bot(discord.Client):
 
 
 client = Bot()
+
 backend.init_db()
 reg = app_commands.CommandTree(client)
 """
@@ -258,6 +260,7 @@ async def profile(interaction: discord.Interaction):
         embed.add_field(name="TAMU Email", value=email, inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+
 @reg.command(
     name="profile_member",
     description="get the attendance info for a specific member!",
@@ -265,7 +268,7 @@ async def profile(interaction: discord.Interaction):
 )
 @app_commands.default_permissions(manage_events=True)
 @app_commands.describe(member="The profile for which member")
-async def profile(interaction: discord.Interaction, member: discord.Member):
+async def profile_member(interaction: discord.Interaction, member: discord.Member):
     msg, data = backend.profile(member.id)
     if data is None:
         await interaction.response.send_message(msg, ephemeral=True)
@@ -354,6 +357,43 @@ async def list_of_commands(interaction: discord.Interaction):
             if command.default_permissions is None:
                 output += f"{command.name}\n"
     await interaction.response.send_message(output)
+
+
+class EditModal(discord.ui.Modal, title='Edit a Message'):
+    answer = discord.ui.TextInput(label='Message content', style=discord.TextStyle.paragraph, max_length=2000)
+
+    def __init__(self, message: discord.Message = None):
+        super().__init__()
+        self.message = message
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if self.message is None:
+            await interaction.response.send_message(f'Howdy! The message has been sent.', ephemeral=True)
+            await interaction.channel.send(f'{self.answer}')
+        else:
+            await interaction.response.send_message(f'Howdy! The message has been updated.', ephemeral=True)
+            await self.message.edit(content=f'{self.answer}')
+
+
+@app_commands.default_permissions(manage_events=True)
+@reg.context_menu(
+    name="Edit message",
+    guilds=guild_id
+)
+async def edit_message(interaction: discord.Interaction, message: discord.Message) -> None:
+    modal = EditModal(message)
+    await interaction.response.send_modal(modal)
+
+
+@app_commands.default_permissions(manage_events=True)
+@reg.command(
+    name="send_editable_message",
+    description="send a message that will be editable by user with permission configured in integrations",
+    guilds=guild_id
+)
+async def send_editable_message(interaction: discord.Interaction) -> None:
+    modal = EditModal()
+    await interaction.response.send_modal(modal)
 
 
 client.run(discord_token)
