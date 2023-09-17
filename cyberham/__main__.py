@@ -48,14 +48,31 @@ class PageDisplay(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.response = None
+        self.page = 0
 
     @discord.ui.button(
-        style=discord.ButtonStyle.primary, custom_id="el_next", label="1", emoji="▶"
+        style=discord.ButtonStyle.primary, custom_id="el_left", emoji="◀"
+    )
+    async def left(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+        else:
+            await interaction.response.defer()
+            return
+
+        embed = event_list_embed(self.page)
+        if embed is None:
+            await interaction.response.defer()
+            return
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(
+        style=discord.ButtonStyle.primary, custom_id="el_next", emoji="▶"
     )
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        page = int(button.label)
-        button.label = page + 1
-        embed = event_list_embed(page)
+        if self.page < len(backend.event_list()) // 5:
+            self.page += 1
+        embed = event_list_embed(self.page)
         if embed is None:
             await interaction.response.defer()
             return
