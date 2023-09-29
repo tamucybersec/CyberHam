@@ -109,6 +109,29 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10):
     return c.fetchall()
 
 
+def leaderboard_search(activity: str):
+    c.execute("SELECT name, attended_users FROM events;")
+    counts = {}
+    for name, attended_users in c.fetchall():
+        if activity.lower() not in name.lower():
+            continue
+        for attended_user_id in attended_users.split(' '):
+            key = int(attended_user_id)
+            if key in counts:
+                counts[key] += 1
+            else:
+                counts[key] = 1
+
+    list_with_names = []
+    for attended_user_id, count in counts.items():
+        c.execute(
+            "SELECT name FROM users WHERE user_id = ?", (attended_user_id, )
+        )
+        list_with_names.append((c.fetchone()[0], count))
+
+    return list_with_names
+
+
 def register(name: str, grad_year: int, email: str, user_id: int, user_name: str, guild_id: int):
     # if c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,)) is not None:
     #     return "You have already registered"
@@ -168,7 +191,8 @@ def register_email(user_id, email, guild_id):
         user_id, email, random.randint(1000, 10000), datetime.now()
     )
     pending_emails[user_id] = verification
-    out_mail.send_email(email, str(verification.code), 'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
+    out_mail.send_email(email, str(verification.code),
+                        'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
     return "Please use /verify with the code you received in your email."
 
 
@@ -244,4 +268,3 @@ def award(user_id: int, user_name: str, points: int):
     )
     conn.commit()
     return f"Successfully added {points} points to {user_name} - {name}"
-

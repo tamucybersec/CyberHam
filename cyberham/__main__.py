@@ -209,6 +209,41 @@ async def leaderboard(
 
 
 @reg.command(
+    name="leaderboard_search",
+    description="find the top students with the highest points in all the events that include the search term",
+    guilds=guild_id
+)
+@app_commands.describe(
+    activity='what activity group to search for'
+)
+async def leaderboard_search(
+        interaction: discord.Interaction, activity: str
+):
+    lb = backend.leaderboard_search(activity)
+    if not lb:
+        await interaction.response.send_message("There are no registered users yet")
+        return
+    prev, curr = 0, 0
+    lb = sorted(lb, key=lambda kv: (kv[1], kv[0]), reverse=True)
+    while curr < len(lb):
+        names_column = ""
+        point_column = ""
+        for name, point in lb[prev:]:
+            if len(names_column) + len(name) + 1 > 1024:
+                break
+            names_column += name + "\n"
+            point_column += f"{point}\n"
+            curr += 1
+
+        prev = curr
+        embed = discord.Embed(title=f"Leaderboard for {activity}", color=0xFFFFFF)
+        embed.add_field(name="Name", value=names_column, inline=True)
+        embed.add_field(name=f"Attended", value=point_column, inline=True)
+
+        await interaction.channel.send(embed=embed)
+    await interaction.response.send_message(f"The leaderboard for {activity}")
+
+@reg.command(
     name="register",
     description="register your information here",
     guilds=guild_id
