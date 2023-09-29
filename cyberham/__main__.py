@@ -225,6 +225,7 @@ async def leaderboard_search(
         return
     prev, curr = 0, 0
     lb = sorted(lb, key=lambda kv: (kv[1], kv[0]), reverse=True)
+    embeds = []
     while curr < len(lb):
         names_column = ""
         point_column = ""
@@ -239,9 +240,11 @@ async def leaderboard_search(
         embed = discord.Embed(title=f"Leaderboard for {activity}", color=0xFFFFFF)
         embed.add_field(name="Name", value=names_column, inline=True)
         embed.add_field(name=f"Attended", value=point_column, inline=True)
+        embeds.append(embed)
 
-        await interaction.channel.send(embed=embed)
-    await interaction.response.send_message(f"The leaderboard for {activity}")
+    await interaction.response.send_message(embeds=embeds)
+    # await interaction.response.send_message(f"The leaderboard for {activity}")
+
 
 @reg.command(
     name="register",
