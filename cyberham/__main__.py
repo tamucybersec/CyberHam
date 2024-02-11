@@ -2,7 +2,7 @@ from typing import Literal
 from pytz import timezone
 
 import discord
-from discord import app_commands
+from discord import app_commands,ui
 
 import cyberham.backend as backend
 from cyberham import guild_id, discord_token
@@ -178,6 +178,28 @@ async def attend(interaction: discord.Interaction, code: str):
     name, points, date, resources = data
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
+
+
+class AttendModal(ui.Modal, title="Attend"):
+    code = ui.TextInput(label="code")
+    async def on_submit(self, interaction: discord.Interaction):
+        code = self.code.value
+        msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
+        if data is None:
+            await interaction.response.send_message(msg, ephemeral=True)
+            return
+
+        name, points, date, resources = data
+        embed = event_info(name, points, date, code, resources)
+        await interaction.response.send_message(msg, embed=embed, ephemeral=True)
+@reg.command(
+    name="attendmodal",
+    description="register at the event you are attending for rewards and resources",
+    guilds=guild_id
+)
+async def attendmodal(interaction: discord.Interaction):
+    await interaction.response.send_modal(AttendModal())
+
 
 
 @reg.command(
