@@ -9,9 +9,11 @@ pip install -r requirements.txt
 ```
 ### Configuration
 in config.toml, set the following values:
-- google_client: the file name of the client_secret.json file you downloaded from google cloud API and is placed in cyberham/secrets/
-- discord_token: the discord token for the bot
-- test_guild_ids: a list of guild ids for the bot to sync commands to
+```toml
+google_client: "client_secret_2_hash.apps.googleusercontent.com.json" # the file name of the client_secret.json file you downloaded from google cloud API and is placed in cyberham/secrets/
+discord_token: "" # the discord token for the bot as a str
+test_guild_ids: [] # [631254092332662805] is the cyber club server
+```
 
 ### Execution
 ```bash
