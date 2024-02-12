@@ -8,11 +8,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 ### Configuration
-in config.toml, set the following values:
+Create a config.toml file in the root of the repo and set the following values:
 ```toml
-google_client: "client_secret_2_hash.apps.googleusercontent.com.json" # the file name of the client_secret.json file you downloaded from google cloud API and is placed in cyberham/secrets/
-discord_token: "" # the discord token for the bot as a str
-test_guild_ids: [] # [631254092332662805] is the cyber club server
+google_client = "client_secret_2_{FILL IN -> client_id}.apps.googleusercontent.com.json" # the file name of the client_secret.json file you downloaded from google cloud API and is placed in cyberham/secrets/
+discord_token = "" # the discord token for the bot as a str
+test_guild_ids = [] # [631254092332662805] is the cyber club server, the id of discord guilds in a comma seperated int array
 ```
 
 ### Execution
