@@ -26,6 +26,8 @@ This is the discord bot invite link,(giving it only read/write message perms). Y
 ### Getting the guild id
 The guild/server id can be located in the widget tab in the server settings.
 <img alt="Acquire a test guild ID" src="https://file.garden/ZcqcCFK3bnacTMc-/Guild_Id.png" width="70%"/>
+
+
 This is the guild id you include into the `test_guild_ids` parameter in the config.toml
 
 ## Running the bot
