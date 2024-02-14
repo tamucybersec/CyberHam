@@ -3,20 +3,21 @@
 ## Setting up the bot
 ### Creating the bot
 Go to the [discord developer portal](https://discord.com/developers/applications/) and create a new application. Using the button on the top right.
-![Create a bot profile](https://file.garden/ZcqcCFK3bnacTMc-/Application_Creation.png)
+<img alt="Create a bot profile" src="https://file.garden/ZcqcCFK3bnacTMc-/Application_Creation.png" width="100%"/>
 Go to the bot tab and reset the token. This is what you will put in the `discord_token` parameter in the config.toml file.
-![Acquire the token to run the bot](https://file.garden/ZcqcCFK3bnacTMc-/Token_Reset.png)
+<img alt="Reset the bot token" src="https://file.garden/ZcqcCFK3bnacTMc-/Token_Reset.png" width="100%"/>
 On the same page, turn off public bot and set the Priviledge Gateway Intents as shown below.
-![Declaring the intents of the bot](https://file.garden/ZcqcCFK3bnacTMc-/Bot_Intents.png)
+<img alt="Declare bot intents" src="https://file.garden/ZcqcCFK3bnacTMc-/Bot_Intents.png" width="100%"/>
+
 ### Inviting the bot
 Copy your application id on the General Information tab, and put this into this url
-![Acquiring application/bot ID](https://file.garden/ZcqcCFK3bnacTMc-/Application_Id.png)
+<img alt="Aquire the client ID of your bot" src="https://file.garden/ZcqcCFK3bnacTMc-/Application_Id.png" width="100%"/>
 Then insert the application id into this url, replacing "{APPLICATIONID}" with your number.
 `https://discord.com/api/oauth2/authorize?client_id={APPLICATIONID}&permissions=3072&scope=bot%20applications.commands`
 This is the discord bot invite link,(giving it only read/write message perms). You use to add the bot to your testing server.
 ### Getting the guild id
 The guild/server id can be located in the widget tab in the server settings.
-![Acquiring Guild ID](https://file.garden/ZcqcCFK3bnacTMc-/Guild_Id.png)
+<img alt="Acquire a test guild ID" src="https://file.garden/ZcqcCFK3bnacTMc-/Guild_Id.png" width="100%"/>
 This is the guild id you include into the `test_guild_ids` parameter in the config.toml
 
 ## Running the bot
