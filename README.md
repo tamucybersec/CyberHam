@@ -3,20 +3,20 @@
 ## Setting up the bot
 ### Creating the bot
 Go to the [discord developer portal](https://discord.com/developers/applications/) and create a new application. Using the button on the top right.
-![](https://file.garden/ZcqcCFK3bnacTMc-/Application_Creation.png)
+![Create a bot profile](https://file.garden/ZcqcCFK3bnacTMc-/Application_Creation.png)
 Go to the bot tab and reset the token. This is what you will put in the `discord_token` parameter in the config.toml file.
-![](https://file.garden/ZcqcCFK3bnacTMc-/Token_Reset.png)
+![Acquire the token to run the bot](https://file.garden/ZcqcCFK3bnacTMc-/Token_Reset.png)
 On the same page, turn off public bot and set the Priviledge Gateway Intents as shown below.
-![](https://file.garden/ZcqcCFK3bnacTMc-/Bot_Intents.png)
+![Declaring the intents of the bot](https://file.garden/ZcqcCFK3bnacTMc-/Bot_Intents.png)
 ### Inviting the bot
 Copy your application id on the General Information tab, and put this into this url
-![](https://file.garden/ZcqcCFK3bnacTMc-/Application_Id.png)
+![Acquiring application/bot ID](https://file.garden/ZcqcCFK3bnacTMc-/Application_Id.png)
 Then insert the application id into this url, replacing "{APPLICATIONID}" with your number.
 `https://discord.com/api/oauth2/authorize?client_id={APPLICATIONID}&permissions=3072&scope=bot%20applications.commands`
 This is the discord bot invite link,(giving it only read/write message perms). You use to add the bot to your testing server.
 ### Getting the guild id
 The guild/server id can be located in the widget tab in the server settings.
-![](https://file.garden/ZcqcCFK3bnacTMc-/Guild_Id.png)
+![Acquiring Guild ID](https://file.garden/ZcqcCFK3bnacTMc-/Guild_Id.png)
 This is the guild id you include into the `test_guild_ids` parameter in the config.toml
 
 ## Running the bot
