@@ -3,18 +3,26 @@
 ## Setting up the bot
 ### Creating the bot
 Go to the [discord developer portal](https://discord.com/developers/applications/) and create a new application. Using the button on the top right.
+
+
 <img alt="Create a bot profile" src="https://file.garden/ZcqcCFK3bnacTMc-/Application_Creation.png" width="50%"/>
 
 
 Go to the bot tab and reset the token. This is what you will put in the `discord_token` parameter in the config.toml file.
+
+
 <img alt="Reset the bot token" src="https://file.garden/ZcqcCFK3bnacTMc-/Token_Reset.png" width="70%"/>
 
 
 On the same page, turn off public bot and set the Priviledge Gateway Intents as shown below.
+
+
 <img alt="Declare bot intents" src="https://file.garden/ZcqcCFK3bnacTMc-/Bot_Intents.png" width="70%"/>
 
 ### Inviting the bot
 Copy your application id on the General Information tab, and put this into this url
+
+
 <img alt="Aquire the client ID of your bot" src="https://file.garden/ZcqcCFK3bnacTMc-/Application_Id.png" width="70%"/>
 
 
@@ -25,6 +33,8 @@ This is the discord bot invite link,(giving it only read/write message perms). Y
 
 ### Getting the guild id
 The guild/server id can be located in the widget tab in the server settings.
+
+
 <img alt="Acquire a test guild ID" src="https://file.garden/ZcqcCFK3bnacTMc-/Guild_Id.png" width="70%"/>
 
 
