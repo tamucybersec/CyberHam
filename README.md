@@ -41,9 +41,14 @@ The guild/server id can be located in the widget tab in the server settings.
 This is the guild id you include into the `test_guild_ids` parameter in the config.toml
 
 ## Running the bot
+### Prerequisite
+```bash
+git clone https://github.com/tamucybersec/CyberHam.git #the SSH link can used if that works
+cd CyberHam
+```
 ### Installation
 ```bash
-python -m venv venv
+python3.11 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -57,7 +62,7 @@ test_guild_ids = [] # [631254092332662805] is the cyber club server, the id of d
 
 ### Execution
 ```bash
-python -m cyberham
+python3.11 -m cyberham
 ```
 
 ## Contributing
