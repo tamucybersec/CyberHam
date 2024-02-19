@@ -62,7 +62,7 @@ test_guild_ids = [] # [631254092332662805] is the cyber club server, the id of d
 
 ### Execution
 ```bash
-python3.11 -m cyberham
+python -m cyberham
 ```
 
 ## Contributing
