@@ -161,25 +161,6 @@ async def create(
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
-
-@app_commands.checks.cooldown(5, 30 * 60)
-@reg.command(
-    name="attend",
-    description="register at the event you are attending for rewards and resources",
-    guilds=guild_id
-)
-@app_commands.describe(code='The code of the event given by the presenter')
-async def attend(interaction: discord.Interaction, code: str):
-    msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
-    if data is None:
-        await interaction.response.send_message(msg, ephemeral=True)
-        return
-
-    name, points, date, resources = data
-    embed = event_info(name, points, date, code, resources)
-    await interaction.response.send_message(msg, embed=embed, ephemeral=True)
-
-
 class AttendModal(ui.Modal, title="Attend"):
     code = ui.TextInput(label="code")
     async def on_submit(self, interaction: discord.Interaction):
@@ -192,15 +173,26 @@ class AttendModal(ui.Modal, title="Attend"):
         name, points, date, resources = data
         embed = event_info(name, points, date, code, resources)
         await interaction.response.send_message(msg, embed=embed, ephemeral=True)
+        
+@app_commands.checks.cooldown(5, 30 * 60)
 @reg.command(
-    name="attendmodal",
+    name="attend",
     description="register at the event you are attending for rewards and resources",
     guilds=guild_id
 )
-async def attendmodal(interaction: discord.Interaction):
-    await interaction.response.send_modal(AttendModal())
+@app_commands.describe(code='(optional) The code of the event given by the presenter')
+async def attend(interaction: discord.Interaction, code: str = ""):
+    if code == "":
+        await interaction.response.send_modal(AttendModal())
+        return
+    msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
+    if data is None:
+        await interaction.response.send_message(msg, ephemeral=True)
+        return
 
-
+    name, points, date, resources = data
+    embed = event_info(name, points, date, code, resources)
+    await interaction.response.send_message(msg, embed=embed, ephemeral=True)
 
 @reg.command(
     name="leaderboard",
