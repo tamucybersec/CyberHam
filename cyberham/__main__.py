@@ -2,7 +2,7 @@ from typing import Literal
 from pytz import timezone
 
 import discord
-from discord import app_commands
+from discord import app_commands,ui
 
 import cyberham.backend as backend
 from cyberham import guild_id, discord_token
@@ -161,15 +161,30 @@ async def create(
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
+class AttendModal(ui.Modal, title="Attend"):
+    code = ui.TextInput(label="code")
+    async def on_submit(self, interaction: discord.Interaction):
+        code = self.code.value
+        msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
+        if data is None:
+            await interaction.response.send_message(msg, ephemeral=True)
+            return
 
+        name, points, date, resources = data
+        embed = event_info(name, points, date, code, resources)
+        await interaction.response.send_message(msg, embed=embed, ephemeral=True)
+        
 @app_commands.checks.cooldown(5, 30 * 60)
 @reg.command(
     name="attend",
     description="register at the event you are attending for rewards and resources",
     guilds=guild_id
 )
-@app_commands.describe(code='The code of the event given by the presenter')
-async def attend(interaction: discord.Interaction, code: str):
+@app_commands.describe(code='(optional) The code of the event given by the presenter')
+async def attend(interaction: discord.Interaction, code: str = ""):
+    if code == "":
+        await interaction.response.send_modal(AttendModal())
+        return
     msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
     if data is None:
         await interaction.response.send_message(msg, ephemeral=True)
@@ -178,7 +193,6 @@ async def attend(interaction: discord.Interaction, code: str):
     name, points, date, resources = data
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
-
 
 @reg.command(
     name="leaderboard",
