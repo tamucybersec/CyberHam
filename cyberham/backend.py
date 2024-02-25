@@ -6,10 +6,11 @@ from datetime import datetime
 
 from cyberham import conn, c
 from cyberham.cyberclub_email import CyberClub, EmailPending
+from cyberham.events import EventCalendar
 
 pending_emails = {}
 out_mail = CyberClub()
-
+event_calendar = EventCalendar()
 
 def init_db():
     # users: user_id, name, points, attended_dates, grad_year, tamu_email
@@ -268,3 +269,6 @@ def award(user_id: int, user_name: str, points: int):
     )
     conn.commit()
     return f"Successfully added {points} points to {user_name} - {name}"
+
+def calendar_events():
+    return event_calendar.get_events()
