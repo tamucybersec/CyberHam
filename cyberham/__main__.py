@@ -260,29 +260,34 @@ async def leaderboard_search(
     # await interaction.response.send_message(f"The leaderboard for {activity}")
 
 
+class RegisterModal(ui.Modal, title="Register"):
+    name = ui.TextInput(label='name',placeholder="please enter your full name/names you go by")
+    grad_year=ui.TextInput(label='grad_year',placeholder='your graduation year (yyyy), e.g. 2024')
+    email=ui.TextInput(label='email',placeholder='TAMU email')
+    async def on_submit(self, interaction: discord.Interaction):
+        name = self.name.value
+        grad_year = self.grad_year.value
+        email = self.email.value
+        try:
+            msg = backend.register(
+                name, grad_year, email, interaction.user.id, interaction.user.name, interaction.guild_id
+            )
+        except:
+            await client.get_channel(1014740464601153536) \
+                .send(f"{interaction.user.mention} registration attempt, update token")
+            print(name, grad_year, email, interaction.user.name)
+            msg = "The verification code failed to send, an officer has been notified and will contact you soon"
+        await interaction.response.send_message(msg, ephemeral=True)
+
 @reg.command(
     name="register",
     description="register your information here",
     guilds=guild_id
 )
-@app_commands.describe(
-    name='please enter your full name/names you go by',
-    grad_year='your graduation year (yyyy)',
-    email='TAMU email'
-)
 async def register(
-        interaction: discord.Interaction, name: str, grad_year: int, email: str
+        interaction: discord.Interaction
 ):
-    try:
-        msg = backend.register(
-            name, grad_year, email, interaction.user.id, interaction.user.name, interaction.guild_id
-        )
-    except:
-        await client.get_channel(1014740464601153536) \
-            .send(f"{interaction.user.mention} registration attempt, update token")
-        print(name, grad_year, email, interaction.user.name)
-        msg = "The verification code failed to send, an officer has been notified and will contact you soon"
-    await interaction.response.send_message(msg, ephemeral=True)
+    await interaction.response.send_modal(RegisterModal())
 
 
 @app_commands.checks.cooldown(3, 5 * 60)

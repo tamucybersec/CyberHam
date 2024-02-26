@@ -143,6 +143,10 @@ def register(name: str, grad_year: int, email: str, user_id: int, user_name: str
     conn.commit()
 
     # assuming our users are standard mortals of the non-time-travelling variety
+    try:
+        grad_year = int(grad_year)
+    except:
+        return "Please set your graduation year in the format YYYY (e.g. 2022)"
     if not datetime.now().year - 100 < grad_year < datetime.now().year + 5:
         return "Please set your graduation year in the format YYYY (e.g. 2022)"
 
