@@ -12,10 +12,9 @@ with open(project_path.parent.joinpath("config.toml"), "rb") as f:
 conn = sqlite3.connect(project_path.joinpath("db").joinpath("attendance.db"))
 c = conn.cursor()
 
-gmail_token = project_path.joinpath("secrets").joinpath("token.json")
+google_token = project_path.joinpath("secrets").joinpath("token.json")
 client_secret = project_path.joinpath("secrets").joinpath(data["google_client"])
 discord_token = data["discord_token"]
-
 
 @dataclass
 class Guild:

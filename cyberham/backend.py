@@ -5,12 +5,10 @@ from typing import Literal
 from datetime import datetime
 
 from cyberham import conn, c
-from cyberham.cyberclub_email import CyberClub, EmailPending
-from cyberham.events import EventCalendar
+from cyberham.google_apis import GoogleClient
 
 pending_emails = {}
-out_mail = CyberClub()
-event_calendar = EventCalendar()
+google_client = GoogleClient()
 
 def init_db():
     # users: user_id, name, points, attended_dates, grad_year, tamu_email
@@ -192,7 +190,7 @@ def register_email(user_id, email, guild_id):
         user_id, email, random.randint(1000, 10000), datetime.now()
     )
     pending_emails[user_id] = verification
-    out_mail.send_email(email, str(verification.code),
+    google_client.send_email(email, str(verification.code),
                         'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
     return "Please use /verify with the code you received in your email."
 
@@ -271,4 +269,4 @@ def award(user_id: int, user_name: str, points: int):
     return f"Successfully added {points} points to {user_name} - {name}"
 
 def calendar_events():
-    return event_calendar.get_events()
+    return google_client.get_events()
