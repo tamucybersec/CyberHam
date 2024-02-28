@@ -34,7 +34,8 @@ class Bot(discord.Client):
 
         code = backend.create_event(event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id)
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
-        await self.get_channel(1014740464601153536).send(f"The code is `{code}`", embed=embed)
+        await self.get_channel(1211233440746438656).send(f"The code is `{code}`", embed=embed)
+        # await self.get_channel(1014740464601153536).send(f"The code is `{code}`", embed=embed)
 
 
 client = Bot()
@@ -474,14 +475,24 @@ async def send_editable_message(interaction: discord.Interaction) -> None:
 )
 async def update_calendar_events(interaction: discord.Interaction):
     events = backend.calendar_events()
+    discord_events = [{'name':event.name,'start':event.start_time,'end':event.end_time} for event in interaction.guild.scheduled_events]
     if events is None:
         await interaction.response.send_message("No events found", ephemeral=True)
         return
     msg = f"Imported {len(events)} events from calendar."
     await interaction.response.send_message(msg)
+    count = 0
     for event in events:
-        await interaction.guild.create_scheduled_event(name=event['name'],start_time=event['start'],end_time=event['end'],privacy_level=PrivacyLevel.guild_only,entity_type=EntityType.external,location=event['location'])
-
+        event_data = {'name':event['name'],'start':event['start'],'end':event['end']}
+        if event_data not in discord_events:
+            count += 1
+            await interaction.guild.create_scheduled_event(name=event['name'],start_time=event['start'],end_time=event['end'],privacy_level=PrivacyLevel.guild_only,entity_type=EntityType.external,location=event['location'])
+    if count != 0
+        newmsg = f"Added {count} server events to the server."
+    else:
+        newmsg = "All calendar events already in the discord."
+    await interaction.followup.send(newmsg)
+    
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="delete_all_events",
@@ -493,6 +504,6 @@ async def delete_all_events(interaction: discord.Interaction):
     msg = f"Deleting {num_events} events from server."
     await interaction.response.send_message(msg)
     for event in interaction.guild.scheduled_events:
-        await event.delete()        
+        await event.delete()
 
 client.run(discord_token)
