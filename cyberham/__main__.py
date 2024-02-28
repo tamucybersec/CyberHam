@@ -5,7 +5,7 @@ import discord
 from discord import app_commands,ui
 
 import cyberham.backend as backend
-from cyberham import guild_id, discord_token
+from cyberham import guild_id, discord_token, admin_channel_id
 
 """
 Define Bot Attributes
@@ -32,7 +32,7 @@ class Bot(discord.Client):
 
         code = backend.create_event(event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id)
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
-        await self.get_channel(1014740464601153536).send(f"The code is `{code}`", embed=embed)
+        await self.get_channel(admin_channel_id).send(f"The code is `{code}`", embed=embed)
 
 
 client = Bot()
@@ -273,7 +273,7 @@ class RegisterModal(ui.Modal, title="Register"):
                 name, grad_year, email, interaction.user.id, interaction.user.name, interaction.guild_id
             )
         except:
-            await client.get_channel(1014740464601153536) \
+            await client.get_channel(admin_channel_id) \
                 .send(f"{interaction.user.mention} registration attempt, update token")
             print(name, grad_year, email, interaction.user.name)
             msg = "The verification code failed to send, an officer has been notified and will contact you soon"
