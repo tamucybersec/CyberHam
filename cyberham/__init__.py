@@ -23,3 +23,4 @@ class Guild:
 
 
 guild_id = [Guild(x) for x in data["test_guild_ids"]]
+admin_channel_id = data["admin_channel_id"]
