@@ -79,10 +79,10 @@ def attend_event(code: str, user_id: int, user_name: str):
     if f'{user_id}' in attended_users.split():
         return f"You have already redeemed {code}!", None
 
-    cst_tz = timezone('US/Central')
+    cst_tz = timezone('America/Chicago')
 
-    event_day = datetime.strptime(date, "%m/%d/%y").astimezone(cst_tz).date()
-    current_day = datetime.now().astimezone(cst_tz).date()
+    event_day = datetime.strptime(date, "%m/%d/%Y").astimezone(cst_tz).date()
+    current_day = datetime.now(cst_tz).date()
     
     if event_day != current_day:
         return "You must redeem an event on the day it occurs!", None
