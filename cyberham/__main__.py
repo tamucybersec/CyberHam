@@ -34,8 +34,7 @@ class Bot(discord.Client):
 
         code = backend.create_event(event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id)
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
-        await self.get_channel(1211233440746438656).send(f"The code is `{code}`", embed=embed)
-        # await self.get_channel(1014740464601153536).send(f"The code is `{code}`", embed=embed)
+        await self.get_channel(1014740464601153536).send(f"The code is `{code}`", embed=embed)
 
 
 client = Bot()
