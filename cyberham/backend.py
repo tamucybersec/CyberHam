@@ -81,7 +81,7 @@ def attend_event(code: str, user_id: int, user_name: str):
 
     cst_tz = timezone('America/Chicago')
 
-    event_day = datetime.strptime(date, "%m/%d/%Y").astimezone(cst_tz).date()
+    event_day = datetime.strptime(date, "%m/%d/%Y").date()
     current_day = datetime.now(cst_tz).date()
     
     if event_day != current_day:
