@@ -3,6 +3,8 @@ from pytz import timezone
 
 import discord
 from discord import app_commands,ui
+from discord import EntityType
+from discord import PrivacyLevel
 
 import cyberham.backend as backend
 from cyberham import guild_id, discord_token, admin_channel_id
@@ -469,5 +471,43 @@ async def send_editable_message(interaction: discord.Interaction) -> None:
     modal = EditModal()
     await interaction.response.send_modal(modal)
 
+@app_commands.default_permissions(manage_events=True)
+@reg.command(
+    name="update_calendar_events",
+    description="create discord events for google calendar events",
+    guilds=guild_id
+)
+async def update_calendar_events(interaction: discord.Interaction):
+    events = backend.calendar_events()
+    discord_events = [{'name':event.name,'start':event.start_time,'end':event.end_time} for event in interaction.guild.scheduled_events]
+    if events is None:
+        await interaction.response.send_message("No events found", ephemeral=True)
+        return
+    msg = f"Imported {len(events)} events from calendar."
+    await interaction.response.send_message(msg)
+    count = 0
+    for event in events:
+        event_data = {'name':event['name'],'start':event['start'],'end':event['end']}
+        if event_data not in discord_events:
+            count += 1
+            await interaction.guild.create_scheduled_event(name=event['name'],start_time=event['start'],end_time=event['end'],privacy_level=PrivacyLevel.guild_only,entity_type=EntityType.external,location=event['location'])
+    if count != 0
+        newmsg = f"Added {count} server events to the server."
+    else:
+        newmsg = "All calendar events already in the discord."
+    await interaction.followup.send(newmsg)
+    
+@app_commands.default_permissions(manage_events=True)
+@reg.command(
+    name="delete_all_events",
+    description="delete all current discord events",
+    guilds=guild_id
+)
+async def delete_all_events(interaction: discord.Interaction):
+    num_events = len(interaction.guild.scheduled_events)
+    msg = f"Deleting {num_events} events from server."
+    await interaction.response.send_message(msg)
+    for event in interaction.guild.scheduled_events:
+        await event.delete()
 
 client.run(discord_token)
