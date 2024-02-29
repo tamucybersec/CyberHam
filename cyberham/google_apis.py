@@ -4,6 +4,7 @@ import mimetypes
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, time
+from pytz import timezone
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -55,7 +56,7 @@ class GoogleClient:
             # Save the credentials for the next run
             google_token.write_text(self.creds.to_json())
 
-    def send_email(self, address: str, code: str, org: str, ):
+    def send_email(self, address: str, code: str, org: str):
         try:
             # create gmail api client
             service = build("gmail", "v1", credentials=self.creds)
@@ -101,12 +102,11 @@ class GoogleClient:
             service = build("calendar", "v3", credentials=self.creds)
 
             # Call the Calendar API
-            now = datetime.utcnow()
-            tz_hours = round((now - datetime.now()).seconds / 3600)
-            timezone_diff = time(hour=tz_hours)
+            cst_tz = timezone('America/Chicago')
+            now = datetime.now(cst_tz)
             days_to_monday = timedelta(days=8 - (now.weekday() + 1) % 7)
-            now = now.isoformat() + "Z"  # 'Z' indicates UTC time
-            later = datetime.combine(datetime.utcnow().date() + days_to_monday, timezone_diff)
+            later = now.date() + days_to_monday
+            later = datetime.combine(later, time()).astimezone(cst_tz)
             later = later.isoformat() + "Z"
             events_result = (
                 service.events()

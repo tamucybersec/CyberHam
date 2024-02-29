@@ -6,10 +6,11 @@ from datetime import datetime
 from pytz import timezone
 
 from cyberham import conn, c
-from cyberham.google_apis import GoogleClient
+from cyberham.google_apis import GoogleClient, EmailPending
 
 pending_emails = {}
 google_client = GoogleClient()
+
 
 def init_db():
     # users: user_id, name, points, attended_dates, grad_year, tamu_email
@@ -82,7 +83,7 @@ def attend_event(code: str, user_id: int, user_name: str):
 
     event_day = datetime.strptime(date, "%m/%d/%Y").date()
     current_day = datetime.now(cst_tz).date()
-    
+
     if event_day != current_day:
         return "You must redeem an event on the day it occurs!", None
 
@@ -133,7 +134,7 @@ def leaderboard_search(activity: str):
     list_with_names = []
     for attended_user_id, count in counts.items():
         c.execute(
-            "SELECT name FROM users WHERE user_id = ?", (attended_user_id, )
+            "SELECT name FROM users WHERE user_id = ?", (attended_user_id,)
         )
         list_with_names.append((c.fetchone()[0], count))
 
@@ -153,7 +154,7 @@ def register(name: str, grad_year: int, email: str, user_id: int, user_name: str
     # assuming our users are standard mortals of the non-time-travelling variety
     try:
         grad_year = int(grad_year)
-    except:
+    except ValueError:
         return "Please set your graduation year in the format YYYY (e.g. 2022)"
     if not datetime.now().year - 100 < grad_year < datetime.now().year + 5:
         return "Please set your graduation year in the format YYYY (e.g. 2022)"
@@ -204,7 +205,7 @@ def register_email(user_id, email, guild_id):
     )
     pending_emails[user_id] = verification
     google_client.send_email(email, str(verification.code),
-                        'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
+                             'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
     return "Please use /verify with the code you received in your email."
 
 
@@ -280,6 +281,7 @@ def award(user_id: int, user_name: str, points: int):
     )
     conn.commit()
     return f"Successfully added {points} points to {user_name} - {name}"
+
 
 def calendar_events():
     return google_client.get_events()
