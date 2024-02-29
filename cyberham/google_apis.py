@@ -3,7 +3,7 @@ import base64
 import mimetypes
 
 from dataclasses import dataclass
-from datetime import datetime,timedelta,time
+from datetime import datetime, timedelta, time
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -20,7 +20,7 @@ from email.mime.text import MIMEText
 from cyberham import google_token, client_secret
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://mail.google.com/","https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = ["https://mail.google.com/", "https://www.googleapis.com/auth/calendar.readonly"]
 
 
 @dataclass
@@ -55,7 +55,7 @@ class GoogleClient:
             # Save the credentials for the next run
             google_token.write_text(self.creds.to_json())
 
-    def send_email(self, address: str, code: str, org: str,):
+    def send_email(self, address: str, code: str, org: str, ):
         try:
             # create gmail api client
             service = build("gmail", "v1", credentials=self.creds)
@@ -64,11 +64,11 @@ class GoogleClient:
 
             message.set_content(
                 f"Welcome to {org}!\n\n"
-                
+
                 "-----------------------------------------------------------\n"
                 f"CODE: [{code}]\n"
                 "-----------------------------------------------------------"
-                
+
                 "\n\nContact:\n"
                 "discord: bit.py"
             )
@@ -95,18 +95,18 @@ class GoogleClient:
             print(f"An error occurred: {error}")
             send_message = None
         return send_message
-    
+
     def get_events(self):
         try:
             service = build("calendar", "v3", credentials=self.creds)
-        
+
             # Call the Calendar API
             now = datetime.utcnow()
-            tz_hours = round((now-datetime.now()).seconds/3600)
+            tz_hours = round((now - datetime.now()).seconds / 3600)
             timezone_diff = time(hour=tz_hours)
-            days_to_monday = timedelta(days=8-(now.weekday()+1)%7)
+            days_to_monday = timedelta(days=8 - (now.weekday() + 1) % 7)
             now = now.isoformat() + "Z"  # 'Z' indicates UTC time
-            later = datetime.combine(datetime.utcnow().date()+days_to_monday,timezone_diff)
+            later = datetime.combine(datetime.utcnow().date() + days_to_monday, timezone_diff)
             later = later.isoformat() + "Z"
             events_result = (
                 service.events()
@@ -120,26 +120,26 @@ class GoogleClient:
                 .execute()
             )
             events = events_result.get("items", [])
-        
+
             if not events:
                 print("No upcoming events found.")
                 return
-        
+
             # Moves result of the start, end, and name of the events in the next week
             result = []
             for event in events:
-                id = event["id"]
+                event_id = event["id"]
                 start = event["start"].get("dateTime", event["start"].get("date"))
-                start = datetime.strptime(start,"%Y-%m-%dT%H:%M:%S%z")
+                start = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S%z")
                 end = event["end"].get("dateTime", event["end"].get("date"))
-                end = datetime.strptime(end,"%Y-%m-%dT%H:%M:%S%z")
+                end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
                 summary = event["summary"]
                 if "location" in event:
                     location = event["location"]
                 else:
                     location = "TBD"
-                result.append({"id":id,"name":summary,"start":start,"end":end,"location":location})
-                
+                result.append({"id": event_id, "name": summary, "start": start, "end": end, "location": location})
+
         except HttpError as error:
             print(f"An error occurred: {error}")
             result = None
