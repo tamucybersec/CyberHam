@@ -2,7 +2,7 @@ from typing import Literal
 from pytz import timezone
 
 import discord
-from discord import app_commands,ui
+from discord import app_commands, ui
 from discord import EntityType
 from discord import PrivacyLevel
 
@@ -163,8 +163,10 @@ async def create(
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
+
 class AttendModal(ui.Modal, title="Attend"):
     code = ui.TextInput(label="code")
+
     async def on_submit(self, interaction: discord.Interaction):
         code = self.code.value
         msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
@@ -175,7 +177,8 @@ class AttendModal(ui.Modal, title="Attend"):
         name, points, date, resources = data
         embed = event_info(name, points, date, code, resources)
         await interaction.response.send_message(msg, embed=embed, ephemeral=True)
-        
+
+
 @app_commands.checks.cooldown(5, 30 * 60)
 @reg.command(
     name="attend",
@@ -195,6 +198,7 @@ async def attend(interaction: discord.Interaction, code: str = ""):
     name, points, date, resources = data
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
+
 
 @reg.command(
     name="leaderboard",
@@ -263,9 +267,10 @@ async def leaderboard_search(
 
 
 class RegisterModal(ui.Modal, title="Register"):
-    name = ui.TextInput(label='name',placeholder="please enter your full name/names you go by")
-    grad_year=ui.TextInput(label='grad_year',placeholder='your graduation year (yyyy), e.g. 2024')
-    email=ui.TextInput(label='email',placeholder='TAMU email')
+    name = ui.TextInput(label='name', placeholder="please enter your full name/names you go by")
+    grad_year = ui.TextInput(label='grad_year', placeholder='your graduation year (yyyy), e.g. 2024')
+    email = ui.TextInput(label='email', placeholder='TAMU email')
+
     async def on_submit(self, interaction: discord.Interaction):
         name = self.name.value
         grad_year = self.grad_year.value
@@ -280,6 +285,7 @@ class RegisterModal(ui.Modal, title="Register"):
             print(name, grad_year, email, interaction.user.name)
             msg = "The verification code failed to send, an officer has been notified and will contact you soon"
         await interaction.response.send_message(msg, ephemeral=True)
+
 
 @reg.command(
     name="register",
@@ -471,6 +477,7 @@ async def send_editable_message(interaction: discord.Interaction) -> None:
     modal = EditModal()
     await interaction.response.send_modal(modal)
 
+
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="update_calendar_events",
@@ -479,7 +486,8 @@ async def send_editable_message(interaction: discord.Interaction) -> None:
 )
 async def update_calendar_events(interaction: discord.Interaction):
     events = backend.calendar_events()
-    discord_events = [{'name':event.name,'start':event.start_time,'end':event.end_time} for event in interaction.guild.scheduled_events]
+    discord_events = [{'name': event.name, 'start': event.start_time, 'end': event.end_time} for event in
+                      interaction.guild.scheduled_events]
     if events is None:
         await interaction.response.send_message("No events found", ephemeral=True)
         return
@@ -487,16 +495,19 @@ async def update_calendar_events(interaction: discord.Interaction):
     await interaction.response.send_message(msg)
     count = 0
     for event in events:
-        event_data = {'name':event['name'],'start':event['start'],'end':event['end']}
+        event_data = {'name': event['name'], 'start': event['start'], 'end': event['end']}
         if event_data not in discord_events:
             count += 1
-            await interaction.guild.create_scheduled_event(name=event['name'],start_time=event['start'],end_time=event['end'],privacy_level=PrivacyLevel.guild_only,entity_type=EntityType.external,location=event['location'])
-    if count != 0
+            await interaction.guild.create_scheduled_event(name=event['name'], start_time=event['start'],
+                                                           end_time=event['end'], privacy_level=PrivacyLevel.guild_only,
+                                                           entity_type=EntityType.external, location=event['location'])
+    if count != 0:
         newmsg = f"Added {count} server events to the server."
     else:
         newmsg = "All calendar events already in the discord."
     await interaction.followup.send(newmsg)
-    
+
+
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="delete_all_events",
@@ -509,5 +520,6 @@ async def delete_all_events(interaction: discord.Interaction):
     await interaction.response.send_message(msg)
     for event in interaction.guild.scheduled_events:
         await event.delete()
+
 
 client.run(discord_token)
