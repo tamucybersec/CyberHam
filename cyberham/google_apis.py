@@ -105,9 +105,14 @@ class GoogleClient:
             cst_tz = timezone('America/Chicago')
             now = datetime.now(cst_tz)
             days_to_monday = timedelta(days=8 - (now.weekday() + 1) % 7)
-            later = now.date() + days_to_monday
-            later = datetime.combine(later, time()).astimezone(cst_tz)
-
+            later = now + days_to_monday
+            midnight = time(23, 59, 59)
+            print(later)
+            later = datetime.combine(later, midnight)
+            print(later)
+            # Adjust the timezone
+            later = cst_tz.localize(later)
+            print(later)
             now = now.isoformat()
             later = later.isoformat()
             events_result = (
