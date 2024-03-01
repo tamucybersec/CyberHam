@@ -104,8 +104,8 @@ class GoogleClient:
             # Call the Calendar API
             cst_tz = timezone('America/Chicago')
             now = datetime.now(cst_tz)
-            days_to_monday = timedelta(days=8 - (now.weekday() + 1) % 7)
-            later = now + days_to_monday
+            days_until_sunday = 6 - now.weekday() if now.weekday() < 6 else 7
+            later = now + timedelta(days=days_until_sunday)
             midnight = time(23, 59, 59)
             print(later)
             later = datetime.combine(later, midnight)
