@@ -107,7 +107,9 @@ class GoogleClient:
             days_to_monday = timedelta(days=8 - (now.weekday() + 1) % 7)
             later = now.date() + days_to_monday
             later = datetime.combine(later, time()).astimezone(cst_tz)
-            later = later.isoformat() + "Z"
+
+            now = now.isoformat()
+            later = later.isoformat()
             events_result = (
                 service.events()
                 .list(
