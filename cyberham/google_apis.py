@@ -107,14 +107,13 @@ class GoogleClient:
             days_until_sunday = 6 - now.weekday() if now.weekday() < 6 else 7
             later = now + timedelta(days=days_until_sunday)
             midnight = time(23, 59, 59)
-            print(later)
             later = datetime.combine(later, midnight)
-            print(later)
             # Adjust the timezone
             later = cst_tz.localize(later)
-            print(later)
             now = now.isoformat()
             later = later.isoformat()
+            print(f'{now=}')
+            print(f'{later=}')
             events_result = (
                 service.events()
                 .list(
