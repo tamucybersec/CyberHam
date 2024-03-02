@@ -104,10 +104,16 @@ class GoogleClient:
             # Call the Calendar API
             cst_tz = timezone('America/Chicago')
             now = datetime.now(cst_tz)
-            days_to_monday = timedelta(days=8 - (now.weekday() + 1) % 7)
-            later = now.date() + days_to_monday
-            later = datetime.combine(later, time()).astimezone(cst_tz)
-            later = later.isoformat() + "Z"
+            days_until_sunday = 6 - now.weekday() if now.weekday() < 6 else 7
+            later = now + timedelta(days=days_until_sunday)
+            midnight = time(23, 59, 59)
+            later = datetime.combine(later, midnight)
+            # Adjust the timezone
+            later = cst_tz.localize(later)
+            now = now.isoformat()
+            later = later.isoformat()
+            print(f'{now=}')
+            print(f'{later=}')
             events_result = (
                 service.events()
                 .list(
