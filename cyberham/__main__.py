@@ -504,9 +504,13 @@ async def update_calendar_events(interaction: discord.Interaction):
     if count != 0:
         newmsg = f"Added {count} server events to the server."
     else:
+
         newmsg = "All calendar events already in the discord."
     await interaction.followup.send(newmsg)
-
+    
+    # Generate boilerplate
+    boiler_plate = await generate_boiler_plate(events)
+    await interaction.followup.send(boiler_plate)
 
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
@@ -515,11 +519,22 @@ async def update_calendar_events(interaction: discord.Interaction):
     guilds=guild_id
 )
 async def delete_all_events(interaction: discord.Interaction):
-    num_events = len(interaction.guild.scheduled_events)
+    num_events = len(interaction.guild.scheduled_events)    
     msg = f"Deleting {num_events} events from server."
     await interaction.response.send_message(msg)
     for event in interaction.guild.scheduled_events:
         await event.delete()
 
+async def generate_boiler_plate(events):
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    event_block = "```\n"
+    for day in days_of_week:
+        if day in events:
+            event_block += f"### {day}:\n"
+            for event in events[day]:
+                event_block += f"**{event['location']}**\n"
+                event_block += f"[{event['name']}]({event['link']}) | {event['start_time']} - {event['end_time']}\n\n"
+    event_block += "```"
+    return event_block
 
 client.run(discord_token)
