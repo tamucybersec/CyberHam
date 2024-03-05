@@ -5,7 +5,7 @@ from typing import Literal
 from datetime import datetime
 from pytz import timezone
 
-from cyberham import conn, c
+from cyberham import conn, c, es_id, es_api_key, es_endpoints
 from cyberham.google_apis import GoogleClient, EmailPending
 
 # from elasticsearch import es
@@ -15,7 +15,7 @@ from elasticsearch import Elasticsearch
 pending_emails = {}
 google_client = GoogleClient()
 
-client = Elasticsearch(cloud_id="YOUR_CLOUD_ID", api_key="YOUR_API_KEY")
+client = Elasticsearch(es_endpoints, api_key=(es_id, es_api_key), verify_certs=False)
 
 def init_db():
     # users: user_id, name, points, attended_dates, grad_year, tamu_email
