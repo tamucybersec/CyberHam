@@ -24,7 +24,6 @@ def init_db():
     # basically the structure of the documents that are going to be indexed in that index.
     
     # if we do not have users table
-    index_name = "users"
     # this is the structure of the document 
     c.execute(
         "CREATE TABLE IF NOT EXISTS "
@@ -98,17 +97,17 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
     #     "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
     #     (name, code, points, date, resources, f"{user_id}"),
     # )
-    # client.index(
-    #     index = "events",
-    #     id = code,
-    #     document = {
-    #         "name" : name,
-    #         "code" : code,
-    #         "points" : points,
-    #         "date" : date,
-    #         "resources" : resources
-    #     }
-    # )
+    client.index(
+        index = f"events-{es_index_postfix}",
+        id = code,
+        document = {
+            "name" : name,
+            "code" : code,
+            "points" : points,
+            "date" : date,
+            "resources" : resources
+        }
+    )
 
     # c.execute(
     #     "UPDATE users SET points = points + ? WHERE user_id = ?",
