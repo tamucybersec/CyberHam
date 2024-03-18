@@ -93,10 +93,10 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
         #code_list = client.get(index = "events", id = code)
 
     
-    # c.execute(
-    #     "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
-    #     (name, code, points, date, resources, f"{user_id}"),
-    # )
+    c.execute(
+        "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
+        (name, code, points, date, resources, f"{user_id}"),
+    )
     client.index(
         index = f"events-{es_index_postfix}",
         id = code,
@@ -113,7 +113,7 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
     #     "UPDATE users SET points = points + ? WHERE user_id = ?",
     #     (points, user_id),
     # )
-    id2 = client.search(index = "events",
+    id2 = client.search(index = f"events-{es_index_postfix}",
                       query = {"match": 
                                 {"user_id" : user_id}})
     client.update (
@@ -128,7 +128,7 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
     #     "UPDATE users SET attended = attended + 1 WHERE user_id = ?",
     #     (user_id,),
     # )
-    id3 = client.search(index = "events",
+    id3 = client.search(index = f"events-{es_index_postfix}",
                       query = {"match": 
                                 {"user_id" : user_id}})
     client.update (
