@@ -34,12 +34,12 @@ def init_db():
     if not client.indices.exists(index = index_name): 
         mappings = {
             "properties": {
-                "user_id": {"type": "INTEGER PRIMARY KEY"},
-                    "name": {"type": "TEXT"},
-                    "points": {"type": "INTEGER"},
-                    "attended": {"type": "INTEGER"},
-                    "grad_year": {"type": "INTEGER"},
-                    "email": {"type": "TEXT"}
+                "user_id": {"type": "integer"},
+                    "name": {"type": "text"},
+                    "points": {"type": "integer"},
+                    "attended": {"type": "integer"},
+                    "grad_year": {"type": "integer"},
+                    "email": {"type": "text"}
             }
         }
         client.indices.create(index = index_name, mappings=mappings)
