@@ -48,17 +48,17 @@ def init_db():
     # "CREATE TABLE IF NOT EXISTS "
         # "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT"
         # )
-    index_name = f"events-{es_index_postfix}"
-    if not client.indices.exists(index=index_name):
-        mappings={
-                "properties":{
-                    "name": {"type": "text"},
-                    "code": {"type": "text"},
-                    "points": {"type": "integer"},
-                    "date": {"type": "datetime"}
-                    }
-            }
-        client.indices.create(index = index_name, mappings = mappings)
+    # index_name = f"events-{es_index_postfix}"
+    # if not client.indices.exists(index=index_name):
+    #     mappings={
+    #             "properties":{
+    #                 "name": {"type": "text"},
+    #                 "code": {"type": "text"},
+    #                 "points": {"type": "integer"},
+    #                 "date": {"type": "datetime"}
+    #                 }
+    #         }
+    #     client.indices.create(index = index_name, mappings = mappings)
         # es.
         
     # flagged: user_id, offences
