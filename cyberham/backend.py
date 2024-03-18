@@ -26,10 +26,11 @@ def init_db():
     # if we do not have users table
     index_name = "users"
     # this is the structure of the document 
-    # c.execute(
-    #     "CREATE TABLE IF NOT EXISTS "
-    #     "users(user_id INTEGER PRIMARY KEY, name TEXT, points INTEGER, attended INTEGER, grad_year INTEGER, email TEXT)"
-    # )
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS "
+        "users(user_id INTEGER PRIMARY KEY, name TEXT, points INTEGER, attended INTEGER, grad_year INTEGER, email TEXT)"
+    )
+    index_name = "users"
     if not client.indices.exists(index = "users"): 
         mappings = {
             "properties": {
@@ -41,8 +42,7 @@ def init_db():
                     "email": {"type": "TEXT"}
             }
         }
-        client.indices.create(index="users", mappings=mappings)
-    
+        client.indices.create(index = index_name, mappings=mappings)
     # if we do not have events
     # events: name, code, points, date (mm/dd/yy), resources, attended_users
     # "CREATE TABLE IF NOT EXISTS "
@@ -63,10 +63,10 @@ def init_db():
         
     # flagged: user_id, offences
     # if we do not have flags
-    # c.execute(
-        # "CREATE TABLE IF NOT EXISTS "
-        # "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
-    # 
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS "
+        "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
+    )
     index_name="flagged"
     if not client.indices.exists(index=index_name):
         mappings = {
