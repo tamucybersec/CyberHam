@@ -48,17 +48,17 @@ def init_db():
     # "CREATE TABLE IF NOT EXISTS "
         # "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT"
         # )
-    index_name = "events"
-    if not client.indices.exists(index=index_name):
-        mappings={
-                "properties":{
-                    "name": {"type": "TEXT"},
-                    "code": {"type": "TEXT PRIMARY KEY"},
-                    "points": {"type": "INTEGER"},
-                    "date": {"type": "DATETIME"}
-                    }
-            }
-        client.indices.create(index = index_name, mappings = mappings)
+    # index_name = "events"
+    # if not client.indices.exists(index=index_name):
+    #     mappings={
+    #             "properties":{
+    #                 "name": {"type": "TEXT"},
+    #                 "code": {"type": "TEXT PRIMARY KEY"},
+    #                 "points": {"type": "INTEGER"},
+    #                 "date": {"type": "DATETIME"}
+    #                 }
+    #         }
+    #     client.indices.create(index = index_name, mappings = mappings)
         # es.
         
     # flagged: user_id, offences
@@ -67,17 +67,17 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS "
         "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
     )
-    index_name="flagged"
-    if not client.indices.exists(index=index_name):
-        mappings = {
-            "properties": {
-                "user_id": {"type": "INTEGER PRIMARY KEY"},
-                "offences": {"type": "INTEGER"}
-            }
-        }
-        client.indices.create(index = index_name, mappings = mappings)
+    # index_name="flagged"
+    # if not client.indices.exists(index=index_name):
+    #     mappings = {
+    #         "properties": {
+    #             "user_id": {"type": "INTEGER PRIMARY KEY"},
+    #             "offences": {"type": "INTEGER"}
+    #         }
+    #     }
+    #     client.indices.create(index = index_name, mappings = mappings)
     
-    conn.commit()
+    # conn.commit()
 
 
 def create_event(name: str, points: int, date: str, resources: str, user_id: int):
@@ -101,24 +101,24 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
         
        # code_list = c.fetchone()  # returns tuple of one if exists otherwise none
         # Fetchone() method is used when you want to select only the first row from the table. This method only returns the first row from the MySQL table.
-        code_list = client.get(index = "events", id = code)
+        #code_list = client.get(index = "events", id = code)
 
     
     # c.execute(
     #     "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
     #     (name, code, points, date, resources, f"{user_id}"),
     # )
-    client.index(
-        index = "events",
-        id = code,
-        document = {
-            "name" : name,
-            "code" : code,
-            "points" : points,
-            "date" : date,
-            "resources" : resources
-        }
-    )
+    # client.index(
+    #     index = "events",
+    #     id = code,
+    #     document = {
+    #         "name" : name,
+    #         "code" : code,
+    #         "points" : points,
+    #         "date" : date,
+    #         "resources" : resources
+    #     }
+    # )
 
     # c.execute(
     #     "UPDATE users SET points = points + ? WHERE user_id = ?",
