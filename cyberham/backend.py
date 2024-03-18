@@ -30,8 +30,8 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS "
         "users(user_id INTEGER PRIMARY KEY, name TEXT, points INTEGER, attended INTEGER, grad_year INTEGER, email TEXT)"
     )
-    index_name = "users"
-    if not client.indices.exists(index = "users"): 
+    index_name = "users-2024"
+    if not client.indices.exists(index = index_name): 
         mappings = {
             "properties": {
                 "user_id": {"type": "INTEGER PRIMARY KEY"},
