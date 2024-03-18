@@ -5,7 +5,7 @@ from typing import Literal
 from datetime import datetime
 from pytz import timezone
 
-from cyberham import conn, c, es_id, es_api_key, es_endpoints
+from cyberham import conn, c, es_id, es_api_key, es_endpoints, es_index_postfix
 from cyberham.google_apis import GoogleClient, EmailPending
 
 # from elasticsearch import es
@@ -30,7 +30,7 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS "
         "users(user_id INTEGER PRIMARY KEY, name TEXT, points INTEGER, attended INTEGER, grad_year INTEGER, email TEXT)"
     )
-    index_name = "users-2024"
+    index_name = f"users-{es_index_postfix}"
     if not client.indices.exists(index = index_name): 
         mappings = {
             "properties": {
@@ -48,17 +48,17 @@ def init_db():
     # "CREATE TABLE IF NOT EXISTS "
         # "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT"
         # )
-    # index_name = "events"
-    # if not client.indices.exists(index=index_name):
-    #     mappings={
-    #             "properties":{
-    #                 "name": {"type": "TEXT"},
-    #                 "code": {"type": "TEXT PRIMARY KEY"},
-    #                 "points": {"type": "INTEGER"},
-    #                 "date": {"type": "DATETIME"}
-    #                 }
-    #         }
-    #     client.indices.create(index = index_name, mappings = mappings)
+    index_name = f"events-{es_index_postfix}"
+    if not client.indices.exists(index=index_name):
+        mappings={
+                "properties":{
+                    "name": {"type": "text"},
+                    "code": {"type": "text"},
+                    "points": {"type": "integer"},
+                    "date": {"type": "datetime"}
+                    }
+            }
+        client.indices.create(index = index_name, mappings = mappings)
         # es.
         
     # flagged: user_id, offences
@@ -67,17 +67,7 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS "
         "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
     )
-    # index_name="flagged"
-    # if not client.indices.exists(index=index_name):
-    #     mappings = {
-    #         "properties": {
-    #             "user_id": {"type": "INTEGER PRIMARY KEY"},
-    #             "offences": {"type": "INTEGER"}
-    #         }
-    #     }
-    #     client.indices.create(index = index_name, mappings = mappings)
-    
-    # conn.commit()
+    conn.commit()
 
 
 def create_event(name: str, points: int, date: str, resources: str, user_id: int):

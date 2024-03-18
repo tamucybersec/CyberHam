@@ -21,6 +21,7 @@ discord_token = data["discord"]["token"]
 class Guild:
     id: int
 
+es_index_postfix = 'test-2024'
 
 guild_id = [Guild(x) for x in data["discord"]["test_guild_ids"]]
 admin_channel_id = data["discord"]["admin_channel_id"]
