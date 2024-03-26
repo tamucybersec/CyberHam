@@ -136,7 +136,9 @@ def leaderboard_search(activity: str):
         c.execute(
             "SELECT name FROM users WHERE user_id = ?", (attended_user_id,)
         )
-        list_with_names.append((c.fetchone()[0], count))
+        _tup = c.fetchone()
+        if _tup:
+            list_with_names.append((_tup[0], count))
 
     return list_with_names
 
