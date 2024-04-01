@@ -494,17 +494,25 @@ async def update_calendar_events(interaction: discord.Interaction):
     msg = f"Imported {len(events)} events from calendar."
     await interaction.response.send_message(msg)
     count = 0
+    newmsg = ""
     for event in events:
         event_data = {'name': event['name'], 'start': event['start'], 'end': event['end']}
         if event_data not in discord_events:
-            count += 1
-            await interaction.guild.create_scheduled_event(name=event['name'], start_time=event['start'],
-                                                           end_time=event['end'], privacy_level=PrivacyLevel.guild_only,
-                                                           entity_type=EntityType.external, location=event['location'])
+            try:
+                await interaction.guild.create_scheduled_event(name=event['name'], start_time=event['start'],
+                                                               end_time=event['end'], privacy_level=PrivacyLevel.guild_only,
+                                                               entity_type=EntityType.external, location=event['location'])
+                count += 1
+            except discord.Forbidden:
+                await interaction.followup.send("I don't have permission to create events in this server.")
+                return
+            except discord.HTTPException:
+                newmsg += "There was an error creating an event. Has the event already started?\n"
+
     if count != 0:
-        newmsg = f"Added {count} server events to the server."
+        newmsg += f"Added {count} server events to the server."
     else:
-        newmsg = "All calendar events already in the discord."
+        newmsg += "All calendar events already in the discord."
     await interaction.followup.send(newmsg)
 
 
