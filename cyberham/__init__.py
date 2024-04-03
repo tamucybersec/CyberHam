@@ -1,4 +1,5 @@
 import tomllib
+import logging
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -23,3 +24,18 @@ class Guild:
 
 guild_id = [Guild(x) for x in data["test_guild_ids"]]
 admin_channel_id = data["admin_channel_id"]
+
+# config discord logging
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setLevel(logging.DEBUG)
+logger = logging.getLogger('discord')
+logger.addHandler(handler)
+
+# config current module logging
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler(filename=f'{__name__}.log', encoding='utf-8', mode='w')
+handler.setLevel(logging.INFO)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+logger.addHandler(console_handler)

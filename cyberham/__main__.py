@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 from pytz import timezone
 
@@ -8,11 +9,11 @@ from discord import PrivacyLevel
 
 import cyberham.backend as backend
 from cyberham import guild_id, discord_token, admin_channel_id
-
 """
 Define Bot Attributes
 """
 
+logger = logging.getLogger(__name__)
 
 class Bot(discord.Client):
     def __init__(self):
@@ -23,9 +24,9 @@ class Bot(discord.Client):
         await self.wait_until_ready()
         for g in guild_id:
             await reg.sync(guild=g)
-            print("synced server ", g.id)
+            logger.info("synced server ", g.id)
         self.synced = True
-        print("bot online")
+        logger.info("bot online")
 
     async def on_scheduled_event_create(self, event):
         # voice channel events do not trigger this
@@ -282,7 +283,7 @@ class RegisterModal(ui.Modal, title="Register"):
         except:
             await client.get_channel(admin_channel_id) \
                 .send(f"{interaction.user.mention} registration attempt, update token")
-            print(name, grad_year, email, interaction.user.name)
+            logger.debug(name, grad_year, email, interaction.user.name)
             msg = "The verification code failed to send, an officer has been notified and will contact you soon"
         await interaction.response.send_message(msg, ephemeral=True)
 

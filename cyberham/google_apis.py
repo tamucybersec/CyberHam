@@ -1,6 +1,8 @@
+import logging
 import os.path
 import base64
 import mimetypes
+
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, time
@@ -22,7 +24,7 @@ from cyberham import google_token, client_secret
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://mail.google.com/", "https://www.googleapis.com/auth/calendar.readonly"]
-
+logger = logging.getLogger(__name__)
 
 @dataclass
 class EmailPending:
@@ -90,10 +92,10 @@ class GoogleClient:
                 .execute()
             )
 
-            print(f'Message Id: {send_message["id"]}')
-            print(f'[{code}] -> {address}')
+            logger.info(f'Message Id: {send_message["id"]}')
+            logger.info(f'[{code}] -> {address}')
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            logger.error(f"An error occurred: {error}")
             send_message = None
         return send_message
 
@@ -112,8 +114,8 @@ class GoogleClient:
             later = cst_tz.localize(later)
             now = now.isoformat()
             later = later.isoformat()
-            print(f'{now=}')
-            print(f'{later=}')
+            logger.info(f'{now=}')
+            logger.info(f'{later=}')
             events_result = (
                 service.events()
                 .list(
@@ -128,7 +130,7 @@ class GoogleClient:
             events = events_result.get("items", [])
 
             if not events:
-                print("No upcoming events found.")
+                logger.info("No upcoming events found.")
                 return
 
             # Moves result of the start, end, and name of the events in the next week
@@ -147,6 +149,6 @@ class GoogleClient:
                 result.append({"id": event_id, "name": summary, "start": start, "end": end, "location": location})
 
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            logger.error(f"An error occurred: {error}")
             result = None
         return result
