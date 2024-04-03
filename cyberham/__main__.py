@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 from pytz import timezone
 
@@ -12,6 +13,7 @@ from cyberham import guild_id, discord_token, admin_channel_id
 Define Bot Attributes
 """
 
+logger = logging.getLogger(__name__)
 
 class Bot(discord.Client):
     def __init__(self):
