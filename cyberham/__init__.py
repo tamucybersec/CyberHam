@@ -26,4 +26,11 @@ guild_id = [Guild(x) for x in data["test_guild_ids"]]
 admin_channel_id = data["admin_channel_id"]
 
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setLevel(data["log_level"] if "log_level" in data else logging.INFO)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
 logger = logging.getLogger(__name__)
+logger.addHandler(handler)
+logger.addHandler(console_handler)
