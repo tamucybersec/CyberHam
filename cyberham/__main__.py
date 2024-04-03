@@ -7,7 +7,7 @@ from discord import EntityType
 from discord import PrivacyLevel
 
 import cyberham.backend as backend
-from cyberham import guild_id, discord_token, admin_channel_id, handler, logger
+from cyberham import guild_id, discord_token, admin_channel_id
 """
 Define Bot Attributes
 """
@@ -529,4 +529,4 @@ async def delete_all_events(interaction: discord.Interaction):
         await event.delete()
 
 
-client.run(discord_token, log_handler=handler)
+client.run(discord_token)

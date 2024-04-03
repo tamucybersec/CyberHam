@@ -1,3 +1,4 @@
+import logging
 import os.path
 import base64
 import mimetypes
@@ -19,11 +20,11 @@ from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email.mime.text import MIMEText
 
-from cyberham import google_token, client_secret, logger
+from cyberham import google_token, client_secret
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://mail.google.com/", "https://www.googleapis.com/auth/calendar.readonly"]
-
+logger = logging.getLogger(__name__)
 
 @dataclass
 class EmailPending:
