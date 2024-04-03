@@ -529,4 +529,4 @@ async def delete_all_events(interaction: discord.Interaction):
         await event.delete()
 
 
-client.run(discord_token, log_handler=log)
+client.run(discord_token, log_handler=handler)
