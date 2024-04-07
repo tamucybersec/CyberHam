@@ -114,13 +114,17 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
     #     (points, user_id),
     # )
     id2 = client.search(index = f"events-{es_index_postfix}",
-                      query = {"match": 
+                      query = {"match":
                                 {"user_id" : user_id}})
+    curr_user_doc = id2["hits"]["hits"][0]
+    new_points = curr_user_doc["_source"]["points"] + points
+    new_attendance = curr_user_doc["_source"]["attendace"]+ 1
+    # the event creator automatically gets the points from the event
     client.update (
         index = "users",
-        id = id2,
+        id = curr_user_doc["_source"]["user_id"],
         doc = {
-            "points" : points
+            "points" : new_points
         }
     )
 
@@ -128,14 +132,11 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
     #     "UPDATE users SET attended = attended + 1 WHERE user_id = ?",
     #     (user_id,),
     # )
-    id3 = client.search(index = f"events-{es_index_postfix}",
-                      query = {"match": 
-                                {"user_id" : user_id}})
-    client.update (
+    client.update(
         index = "users",
-        id = id3,
+        id = curr_user_doc["_source"]["user_id"],
         doc = {
-            "points" : points + 1
+            "attended": new_attendance
         }
     )
     conn.commit()
@@ -312,6 +313,29 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
 #     else:
 #         return "Please use /register to submit your email"
 
+def verify_email(code: int, user_id: int):
+    if user_id in pending_emails:
+        pend_email = pending_emails[user_id]
+        if pend_email.code == code:
+            my_id = client.search(index = f"users-{es_index_postfix}",
+                client = {
+                    "user_id": user_id
+                })
+
+            client.update(index = f"users-{es_index_postfix}",
+                id  = my_id["hits"]["hits"][0]["_source"]["user_id"],
+                doc = {
+                    "email": pend_email.email,
+                })
+
+            conn.commit()
+            pending_emails.pop(user_id)
+            return "Email verified! It is now visible on your /profile"
+        else:
+            return "This code is not correct!"
+    else:
+        return "Please use /register to submit your email"
+
 
 # def remove_pending(user_id: int = 0):
 #     del pending_emails[user_id]
@@ -327,6 +351,16 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
 #         return "Your profile does not exist", None
 #     return "", query
 
+
+def profile(user_id: int):
+    document = client.search(index = f"users-{es_index_postfix}",
+        query = {
+            "user_id":user_id
+        })
+    numDocs = document['hits']['total']['value']
+    if numDocs == 0:
+        return "Your profile does not exist", None
+    return "", document["hits"]["hits"][0]["_source"]
 
 # def find_event(code: str = "", name: str = ""):
 #     if name == "" and code == "":
@@ -350,11 +384,35 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
 #     else:
 #         return "", data
 
+def find_event(code: str = "", name: str = ""):
+    data={}
+    if name == "" and code == "":
+        return "Please include an event name or code.", None
+
+    elif code == "":
+        data = client.search(index = f"events-{es_index_postfix}",
+            query = {"name": name})
+    elif name == "":
+        data = client.search(index=f"events-{es_index_postfix}",
+            query = {"code": code})
+    else:
+        data = client.search(index="events-{es_index_postfix}",
+            query = {"name": name, "code": code})
+
+    docs_found = data['hits']['total']['value']
+    if docs_found ==0:
+        return "This event does not exist", None
+    else:
+        return "", data['hits']['hits'][0]['_source']
 
 # def event_list():
 #     c.execute("SELECT name, date, code FROM events")
 #     return c.fetchall()[::-1]
 
+def event_list():
+    documents  = client.search(index = f"events-{es_index_postfix}",
+        qeury = {"match": {}})
+    return documents["hits"]["hits"][::-1]
 
 # def award(user_id: int, user_name: str, points: int):
 #     c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,))
@@ -369,6 +427,26 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
 #     conn.commit()
 #     return f"Successfully added {points} points to {user_name} - {name}"
 
+def award(user_id: int, user_name: str, points: int):
+    id  = client.search(index = f"users-{es_index_postfix}",
+        query = {"match": {"user_id": user_id}})
+    results = id["hits"]["total"]["value"]
+    name = ""
+    new_points = 0
+    if results == 0:
+        return "This user has not registered yet!"
+    else:
+        name = id['hits']["hits"][0]["_source"]["name"]
+        new_points = id['hits']["hits"][0]["_source"]["points"] + points
+    client.update(
+        index = f"users-{es_index_postfix}",
+        id = id["hits"]["hits"][0]["_source"]["user_id"],
+        doc = {
+            "points": new_points
+        }
+    )
+    conn.commit()
+    return f"Successfully added {points} points to {user_name} - {name}"
 
 # def calendar_events():
 #     return google_client.get_events()
