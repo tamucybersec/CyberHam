@@ -5,209 +5,260 @@ from typing import Literal
 from datetime import datetime
 from pytz import timezone
 
-from cyberham import conn, c
+from cyberham import es_conf
 from cyberham.google_apis import GoogleClient, EmailPending
+from elasticsearch import Elasticsearch
 
 pending_emails = {}
 google_client = GoogleClient()
-
+client = Elasticsearch(es_conf.endpoints, api_key=(es_conf.id, es_conf.api_key), verify_certs=False)
 
 def init_db():
-    # users: user_id, name, points, attended_dates, grad_year, tamu_email
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS "
-        "users(user_id INTEGER PRIMARY KEY, name TEXT, points INTEGER, attended INTEGER, grad_year INTEGER, email TEXT)"
-    )
-    # events: name, code, points, date (mm/dd/yy), resources, attended_users
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS "
-        "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT)"
-    )
-    # flagged: user_id, offences
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS "
-        "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
-    )
-    conn.commit()
+    # Create tables if they do not exist
+    if not client.indices.exists(index=f"events_{es_conf.index_postfix}"):
+        mappings = {
+            "properties": {
+                "name": {"type": "integer"},
+                "points": {"type": "text"},
+                "attended": {"type": "integer"},
+                "grad_year": {"type": "integer"},
+                "email": {"type": "text"},
+            }
+        }
+        client.indices.create(index = f"events_{es_conf.index_postfix}", mappings = mappings)
+
+    # Create tables if they do not exist
+    if not client.indices.exists(index = f"events-{es_conf.index_postfix}"):
+        mappings = {
+            "properties": {
+                "name": {"type": "text"},
+                "code": {"type": "text"},
+                "points": {"type": "integer"},
+                "date": {"type": "date"},
+            }
+        }
+        client.indices.create(index = f"events-{es_conf.index_postfix}", mappings = mappings)
+    
 
 
 def create_event(name: str, points: int, date: str, resources: str, user_id: int):
     code = ""
     code_list = [0]
+    # Check if code already exists, if not generate a new one
     while code_list is not None:
         code = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        c.execute("SELECT name FROM events WHERE code = ?", (code,))
-        code_list = c.fetchone()  # returns tuple of one if exists otherwise none
+    
+    # Insert event into database
+    client.index(
+        index = f"events-{es_conf.index_postfix}",
+        id = code,
+        document = {
+            "name": name,
+            "code": code,
+            "points": points,
+            "date": date,
+            "resources": resources,
+        }
+    )
 
-    c.execute(
-        "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
-        (name, code, points, date, resources, f"{user_id}"),
+    # Update user's points and attended events
+    new_id = client.search(index = f"events_{es_conf.index_postfix}",
+            query = {"match" :
+                     {"user_id" : user_id}})
+    curr_user_doc = new_id["hits"]["hits"][0]
+    new_points = curr_user_doc["_source"]["points"] + points
+    new_attended = curr_user_doc["_source"]["attended"] + 1
+    client.update(
+        index = f"users_{es_conf.index_postfix}",
+        id = curr_user_doc["_source"]["user_id"],
+        doc = {
+            "points": new_points,
+            "attended": new_attended,
+        }
     )
-    c.execute(
-        "UPDATE users SET points = points + ? WHERE user_id = ?",
-        (points, user_id),
-    )
-    c.execute(
-        "UPDATE users SET attended = attended + 1 WHERE user_id = ?",
-        (user_id,),
-    )
-    conn.commit()
     return code
 
+def unwrapping (data):
+    return (data["hits"]["hits"][0]["_source"]["name"],
+            data["hits"]["hits"][0]["_source"]["points"],
+            data["hits"]["hits"][0]["_source"]["date"],
+            data["hits"]["hits"][0]["_source"]["resources"])
 
 def attend_event(code: str, user_id: int, user_name: str):
     code = code.upper()
-    c.execute("SELECT grad_year FROM users WHERE user_id = ?", (user_id,))
-
-    grad_year = c.fetchone()
-    if grad_year is None or grad_year[0] == 0:
-        prompt = "Please use /register to make a profile!"
-        c.execute(
-            "INSERT OR IGNORE INTO users VALUES (?, ?, 0, 0, 0, '')",
-            (user_id, user_name),
+    query = {
+        "query": {
+            "match": {
+                "user_id": user_id,
+            }
+        }
+    }
+    user = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+    if user["hits"]["total"]["value"] == 0:
+        return "Please use /register to make a profile!"
+    code_query = {
+        "query": {
+            "match": {
+                "code": code,
+            }
+        }
+    }
+    if client.search(index = f"events-{es_conf.index_postfix}", body = code_query)["hits"]["total"]["value"] == 0:
+        return "This event does not exist or has passed!"
+    elif client.search(index = f"events-{es_conf.index_postfix}", body = code_query)["hits"]["total"]["value"] == 1:
+        return "You have already attended this event!"
+    
+    cst_tz = timezone('US/Central')
+    current_day = datetime.now(cst_tz).date() 
+    event_day = datetime.strptime(client.search(index = f"events-{es_conf.index_postfix}", body = code_query)["hits"]["hits"][0]["_source"]["date"], "%m/%d/%Y").date()
+    if current_day > event_day:
+        return "This event has passed!"
+    elif current_day < event_day:
+        return "This event has not occurred yet!"
+    elif current_day == event_day:
+        client.update(
+            index = f"events-{es_conf.index_postfix}",
+            id = code,
+            doc = {
+                "attended": user["hits"]["hits"][0]["_source"]["attended"] + 1,
+                "points": user["hits"]["hits"][0]["_source"]["points"] + client.search(index = f"events-{es_conf.index_postfix}", body = code_query)["hits"]["hits"][0]["_source"]["points"],
+            }
         )
-        conn.commit()
-    else:
-        prompt = ""
-
-    c.execute("SELECT * FROM events WHERE code = ?", (code,))
-    temp = c.fetchone()
-    if temp is None:
-        return f"{code} does not exist!", None
-
-    name, _, points, date, resources, attended_users = temp
-    if f'{user_id}' in attended_users.split():
-        return f"You have already redeemed {code}!", None
-
-    cst_tz = timezone('America/Chicago')
-
-    event_day = datetime.strptime(date, "%m/%d/%Y").date()
-    current_day = datetime.now(cst_tz).date()
-
-    if event_day != current_day:
-        return "You must redeem an event on the day it occurs!", None
-
-    c.execute(
-        "UPDATE users SET points = points + ? WHERE user_id = ?",
-        (points, user_id),
-    )
-    c.execute(
-        "UPDATE users SET attended = attended + 1 WHERE user_id = ?",
-        (user_id,),
-    )
-    c.execute(
-        "UPDATE events SET attended_users = attended_users || ? WHERE code = ?",
-        (f" {user_id}", code),
-    )
-    conn.commit()
-    return f"Successfully registered for {code}! {prompt}", (
-        name,
-        points,
-        date,
-        resources,
-    )
+        return f"Successfully registered for {code} {client.search(index = f"events-{es_conf.index_postfix}", body = code_query)}!", (
+            unwrapping(user),
+        )
 
 
 def leaderboard(axis: Literal["points", "attended"], lim: int = 10):
     if axis == "points":
-        c.execute("SELECT name, points FROM users ORDER BY points DESC LIMIT ?", (lim,))
-    else:
-        c.execute(
-            "SELECT name, attended FROM users ORDER BY attended DESC LIMIT ?", (lim,)
-        )
-    return c.fetchall()
+        leaderboard_point_query = {
+            "query": {
+                "match_all": {}
+            },
+            "sort": [
+                {
+                    "points": {
+                        "order": "desc"
+                    }
+                }
+            ],
+            "size": lim
+        }
+    elif axis == "attended":
+        leaderboard_attended_query = {
+            "query": {
+                "match_all": {}
+            },
+            "sort": [
+                {
+                    "attended": {
+                        "order": "desc"
+                    }
+                }
+            ],
+            "size": lim
+        }
+    return leaderboard_point_query, leaderboard_attended_query
 
-
+# needs reviewing
 def leaderboard_search(activity: str):
-    c.execute("SELECT name, attended_users FROM events;")
     counts = {}
-    for name, attended_users in c.fetchall():
-        if activity.lower() not in name.lower():
-            continue
-        for attended_user_id in attended_users.split(' '):
-            key = int(attended_user_id)
-            if key in counts:
-                counts[key] += 1
-            else:
-                counts[key] = 1
-
-    list_with_names = []
-    for attended_user_id, count in counts.items():
-        c.execute(
-            "SELECT name FROM users WHERE user_id = ?", (attended_user_id,)
-        )
-        _tup = c.fetchone()
-        if _tup:
-            list_with_names.append((_tup[0], count))
-
-    return list_with_names
+    if activity == "points":
+        query = {
+            "query": {
+                "match_all": {}
+            }
+        }
+        data = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+        for user in data["hits"]["hits"]:
+            counts[user["_source"]["name"]] = user["_source"]["points"]
+    elif activity == "attended":
+        query = {
+            "query": {
+                "match_all": {}
+            }
+        }
+        data = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+        for user in data["hits"]["hits"]:
+            counts[user["_source"]["name"]] = user["_source"]["attended"]
+    return counts
 
 
 def register(name: str, grad_year: int, email: str, user_id: int, user_name: str, guild_id: int):
-    # if c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,)) is not None:
-    #     return "You have already registered"
-
-    c.execute(
-        "INSERT OR IGNORE INTO users VALUES (?, ?, 0, 0, 0, '')",
-        (user_id, user_name),
-    )
-    conn.commit()
-
-    # assuming our users are standard mortals of the non-time-travelling variety
+    user = client.search(index = f"users_{es_conf.index_postfix}",
+            query = {"match" :
+                     {"user_id" : user_id}})
     try:
         grad_year = int(grad_year)
     except ValueError:
         return "Please set your graduation year in the format YYYY (e.g. 2022)"
     if not datetime.now().year - 100 < grad_year < datetime.now().year + 5:
         return "Please set your graduation year in the format YYYY (e.g. 2022)"
-
     email = email.lower()
     if (
-            "," in email
-            or ";" in email
-            or email.count("@") != 1
-            or not email.endswith("tamu.edu")
+        "," in email
+        or ";" in email
+        or email.count("@") != 1
+        or not email.endswith("tamu.edu")
     ):
         return "Please set a proper TAMU email address"
-
     ask_to_verify = register_email(user_id, email, guild_id)
-
-    c.execute(
-        "UPDATE users SET name = ?, grad_year = ? WHERE user_id = ?",
-        (name, grad_year, user_id),
+    client.update(
+        index = f"users_{es_conf.index_postfix}",
+        id = user["hits"]["hits"][0]["_id"],
+        doc = {
+            "name": name,
+            "grad_year": grad_year,
+            "user_id": user_id,
+        }
     )
-    conn.commit()
     return f"You have successfully updated your profile! {ask_to_verify}"
 
-
 def register_email(user_id, email, guild_id):
-    c.execute("SELECT email FROM users WHERE user_id = ?", (user_id,))
-    temp = c.fetchone()
-    if temp is not None and temp[0] == email:
+    query = {
+        "query": {
+            "match": {
+                "user_id": user_id
+            }
+        },
+        "_source": ["email"]
+    }
+    temp = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+    if temp["hits"]["total"]["value"] == 0 and user_id not in pending_emails:
         return ""
-
-    if user_id in pending_emails:
-        c.execute("INSERT OR IGNORE INTO flagged VALUES (?, 0)", (user_id,))
-        c.execute("UPDATE flagged SET offences = offences + 1 WHERE user_id = ?", (user_id,))
-        conn.commit()
-        c.execute("SELECT offences FROM flagged WHERE user_id = ?", (user_id,))
-        flagged = c.fetchone()[0]
-        if flagged >= 3:
-            return "Too many failed attempts to email verification, please contact an officer"
-
-    c.execute("SELECT user_id FROM users WHERE email = ?", (email,))
-    temp = c.fetchone()
-    if temp is not None:
-        c.execute("UPDATE flagged SET offences = offences + 1 WHERE user_id = ?", (user_id,))
-        conn.commit()
+    elif user_id in pending_emails:
+        flagged = client.search(index = f"flagged_{es_conf.index_postfix}", query = {"match": {"user_id": user_id}})
+        if flagged["hits"]["total"]["value"] == 0:
+            client.index(index = f"flagged_{es_conf.index_postfix}", body = {"user_id": user_id, "offences": 1})
+        else:
+            client.update(index = f"flagged_{es_conf.index_postfix}", id = flagged["hits"]["hits"][0]["_id"], body = {"script": {"source": "ctx._source.offences += 1"}})
+            flagged = client.search(index = f"flagged_{es_conf.index_postfix}", query = {"match": {"user_id": user_id}})
+            if flagged["hits"]["hits"][0]["_source"]["offences"] >= 3:
+                return "Too many failed attempts to email verification, please contact an officer"
+    query2 = {
+        "query": {
+            "match": {
+                "email": email
+            }
+        },
+        "_source": ["user_id"]
+    }
+    temp2 = client.search(index = f"users_{es_conf.index_postfix}", body = query2)  
+    if temp2["hits"]["total"]["value"] != 0:
+        client.update(
+            index = f"flagged_{es_conf.index_postfix}", 
+            id = flagged["hits"]["hits"][0]["_id"], 
+            body = {"script": {"source": "ctx._source.offences += 1"}})
         return "This email has already been registered"
-
     verification = EmailPending(
-        user_id, email, random.randint(1000, 10000), datetime.now()
+        user_id = user_id,
+        email = email,
+        code = random.randint(1000, 10000),
+        date = datetime.now()
     )
     pending_emails[user_id] = verification
     google_client.send_email(email, str(verification.code),
-                             'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
+                              'Texas A&M Cybersecurity Club' if guild_id == 631254092332662805 else 'TAMUctf')
     return "Please use /verify with the code you received in your email."
 
 
@@ -215,11 +266,16 @@ def verify_email(code: int, user_id: int):
     if user_id in pending_emails:
         pend_email = pending_emails[user_id]
         if pend_email.code == code:
-            c.execute(
-                "UPDATE users SET email = ? WHERE user_id = ?",
-                (pend_email.email, user_id),
-            )
-            conn.commit()
+            my_id = client.search(index = f"users_{es_conf.index_postfix}",
+                client = {
+                    "user_id": user_id
+                })
+
+            client.update(index = f"users_{es_conf.index_postfix}",
+                id  = my_id["hits"]["hits"][0]["_source"]["user_id"],
+                doc = {
+                    "email": pend_email.email,
+                })
             pending_emails.pop(user_id)
             return "Email verified! It is now visible on your /profile"
         else:
@@ -233,55 +289,63 @@ def remove_pending(user_id: int = 0):
 
 
 def profile(user_id: int):
-    c.execute(
-        "SELECT name, points, attended, grad_year, email FROM users WHERE user_id = ?",
-        (user_id,),
-    )
-    query = c.fetchone()
-    if query is None:
+    document = client.search(index = f"users_{es_conf.index_postfix}",
+        query = {
+            "user_id":user_id
+        })
+    numDocs = document['hits']['total']['value']
+    if numDocs == 0:
         return "Your profile does not exist", None
-    return "", query
+    return "", document["hits"]["hits"][0]["_source"]
+
 
 
 def find_event(code: str = "", name: str = ""):
+    data={}
     if name == "" and code == "":
         return "Please include an event name or code.", None
+
     elif code == "":
-        c.execute(
-            "SELECT name, points, date, code, resources, attended_users FROM events WHERE name = ?", (name,)
-        )
+        data = client.search(index = f"events_{es_conf.index_postfix}",
+            query = {"name": name})
     elif name == "":
-        c.execute(
-            "SELECT name, points, date, code, resources, attended_users FROM events WHERE code = ?", (code,)
-        )
+        data = client.search(index=f"events_{es_conf.index_postfix}",
+            query = {"code": code})
     else:
-        c.execute(
-            "SELECT name, points, date, code, resources, attended_users FROM events where name = ? AND code = ?",
-            (name, code),
-        )
-    data = c.fetchone()
-    if data is None:
+        data = client.search(index=f"events_{es_conf.index_postfix}",
+            query = {"name": name, "code": code})
+
+    docs_found = data['hits']['total']['value']
+    if docs_found ==0:
         return "This event does not exist", None
     else:
-        return "", data
-
+        return "", data['hits']['hits'][0]['_source']
+    
 
 def event_list():
-    c.execute("SELECT name, date, code FROM events")
-    return c.fetchall()[::-1]
+    data = client.search(index=f"events_{es_conf.index_postfix}",
+        query={"match_all": {}})
+    return data['hits']['hits']
 
 
 def award(user_id: int, user_name: str, points: int):
-    c.execute("SELECT name FROM users WHERE user_id = ?", (user_id,))
-    name = c.fetchone()
-    if name is None:
+    id  = client.search(index = f"users_{es_conf.index_postfix}",
+        query = {"match": {"user_id": user_id}})
+    results = id["hits"]["total"]["value"]
+    name = ""
+    new_points = 0
+    if results == 0:
         return "This user has not registered yet!"
     else:
-        name = name[0]
-    c.execute(
-        "UPDATE users SET points = points + ? WHERE user_id = ?", (points, user_id)
+        name = id['hits']["hits"][0]["_source"]["name"]
+        new_points = id['hits']["hits"][0]["_source"]["points"] + points
+    client.update(
+        index = f"users-{es_conf.index_postfix}",
+        id = id["hits"]["hits"][0]["_source"]["user_id"],
+        doc = {
+            "points": new_points
+        }
     )
-    conn.commit()
     return f"Successfully added {points} points to {user_name} - {name}"
 
 
