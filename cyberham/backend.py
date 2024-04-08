@@ -45,7 +45,7 @@ def init_db():
         }
         client.indices.create(index = f"events-{es_conf.index_postfix}", mappings = mappings)
 
-    if not client.indecies.exists(index = f"events-attendance-{es_conf.index_postfix}"):
+    if not client.indices.exists(index = f"events-attendance-{es_conf.index_postfix}"):
         mappings = {
             "properties": {
                 "event_code": {"type": "keyword"},
