@@ -150,9 +150,9 @@ def attend_event(code: str, user_id: int, user_name: str):
                 "points": user["hits"]["hits"][0]["_source"]["points"] + client.search(index = f"events-{es_conf.index_postfix}", body = code_query)["hits"]["hits"][0]["_source"]["points"],
             }
         )
-        # return f"Successfully registered for {code} {client.search(index = f"events-{es_conf.index_postfix}", body = code_query)}!", (
-        #     unwrapping(user),
-        # )
+        return f"Successfully registered for {code} {client.search(index = f"events-{es_conf.index_postfix}", body = code_query)}!", (
+            unwrapping(user),
+        )
 
 
 def leaderboard(axis: Literal["points", "attended"], lim: int = 10):
