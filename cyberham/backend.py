@@ -15,14 +15,17 @@ client = Elasticsearch(es_conf.endpoints, api_key=(es_conf.id, es_conf.api_key),
 
 def init_db():
     # Create tables if they do not exist
-    if not client.indices.exists(index=f"events_{es_conf.index_postfix}"):
+    if not client.indices.exists(index=f"users-{es_conf.index_postfix}"):
         mappings = {
             "properties": {
-                "name": {"type": "integer"},
-                "points": {"type": "text"},
+                "name": {"type": "text"},
+                "points": {"type": "integer"},
                 "attended": {"type": "integer"},
                 "grad_year": {"type": "integer"},
                 "email": {"type": "text"},
+                "discord_id": {"type": "text"},
+                ## how do we do an embedded field?
+                # "dietary_restrictions": {"type": "text"},
             }
         }
         client.indices.create(index = f"events_{es_conf.index_postfix}", mappings = mappings)
