@@ -96,7 +96,7 @@ def attend_event(code: str, user_id: int, user_name: str):
             }
         }
     }
-    user = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+    user = client.search(index = f"users-{es_conf.index_postfix}", body = query)
     if user["hits"]["total"]["value"] == 0:
         return "Please use /register to make a profile!"
     code_query = {
@@ -172,7 +172,7 @@ def leaderboard_search(activity: str):
                 "match_all": {}
             }
         }
-        data = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+        data = client.search(index = f"users-{es_conf.index_postfix}", body = query)
         for user in data["hits"]["hits"]:
             counts[user["_source"]["name"]] = user["_source"]["points"]
     elif activity == "attended":
@@ -181,14 +181,14 @@ def leaderboard_search(activity: str):
                 "match_all": {}
             }
         }
-        data = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+        data = client.search(index = f"users-{es_conf.index_postfix}", body = query)
         for user in data["hits"]["hits"]:
             counts[user["_source"]["name"]] = user["_source"]["attended"]
     return counts
 
 
 def register(name: str, grad_year: int, email: str, user_id: int, user_name: str, guild_id: int):
-    user = client.search(index = f"users_{es_conf.index_postfix}",
+    user = client.search(index = f"users-{es_conf.index_postfix}",
             query = {"match" :
                      {"user_id" : user_id}})
     try:
@@ -226,16 +226,16 @@ def register_email(user_id, email, guild_id):
         },
         "_source": ["email"]
     }
-    temp = client.search(index = f"users_{es_conf.index_postfix}", body = query)
+    temp = client.search(index = f"users-{es_conf.index_postfix}", body = query)
     if temp["hits"]["total"]["value"] == 0 and user_id not in pending_emails:
         return ""
     elif user_id in pending_emails:
-        flagged = client.search(index = f"flagged_{es_conf.index_postfix}", query = {"match": {"user_id": user_id}})
+        flagged = client.search(index = f"flagged-{es_conf.index_postfix}", query = {"match": {"user_id": user_id}})
         if flagged["hits"]["total"]["value"] == 0:
-            client.index(index = f"flagged_{es_conf.index_postfix}", body = {"user_id": user_id, "offences": 1})
+            client.index(index = f"flagged-{es_conf.index_postfix}", body = {"user_id": user_id, "offences": 1})
         else:
-            client.update(index = f"flagged_{es_conf.index_postfix}", id = flagged["hits"]["hits"][0]["_id"], body = {"script": {"source": "ctx._source.offences += 1"}})
-            flagged = client.search(index = f"flagged_{es_conf.index_postfix}", query = {"match": {"user_id": user_id}})
+            client.update(index = f"flagged-{es_conf.index_postfix}", id = flagged["hits"]["hits"][0]["_id"], body = {"script": {"source": "ctx._source.offences += 1"}})
+            flagged = client.search(index = f"flagged-{es_conf.index_postfix}", query = {"match": {"user_id": user_id}})
             if flagged["hits"]["hits"][0]["_source"]["offences"] >= 3:
                 return "Too many failed attempts to email verification, please contact an officer"
     query2 = {
@@ -246,10 +246,10 @@ def register_email(user_id, email, guild_id):
         },
         "_source": ["user_id"]
     }
-    temp2 = client.search(index = f"users_{es_conf.index_postfix}", body = query2)  
+    temp2 = client.search(index = f"users-{es_conf.index_postfix}", body = query2)  
     if temp2["hits"]["total"]["value"] != 0:
         client.update(
-            index = f"flagged_{es_conf.index_postfix}", 
+            index = f"flagged-{es_conf.index_postfix}", 
             id = flagged["hits"]["hits"][0]["_id"], 
             body = {"script": {"source": "ctx._source.offences += 1"}})
         return "This email has already been registered"
@@ -269,12 +269,12 @@ def verify_email(code: int, user_id: int):
     if user_id in pending_emails:
         pend_email = pending_emails[user_id]
         if pend_email.code == code:
-            my_id = client.search(index = f"users_{es_conf.index_postfix}",
+            my_id = client.search(index = f"users-{es_conf.index_postfix}",
                 client = {
                     "user_id": user_id
                 })
 
-            client.update(index = f"users_{es_conf.index_postfix}",
+            client.update(index = f"users-{es_conf.index_postfix}",
                 id  = my_id["hits"]["hits"][0]["_source"]["user_id"],
                 doc = {
                     "email": pend_email.email,
@@ -292,7 +292,7 @@ def remove_pending(user_id: int = 0):
 
 
 def profile(user_id: int):
-    document = client.search(index = f"users_{es_conf.index_postfix}",
+    document = client.search(index = f"users-{es_conf.index_postfix}",
         query = {
             "user_id":user_id
         })
@@ -309,13 +309,13 @@ def find_event(code: str = "", name: str = ""):
         return "Please include an event name or code.", None
 
     elif code == "":
-        data = client.search(index = f"events_{es_conf.index_postfix}",
+        data = client.search(index = f"events-{es_conf.index_postfix}",
             query = {"name": name})
     elif name == "":
-        data = client.search(index=f"events_{es_conf.index_postfix}",
+        data = client.search(index=f"events-{es_conf.index_postfix}",
             query = {"code": code})
     else:
-        data = client.search(index=f"events_{es_conf.index_postfix}",
+        data = client.search(index=f"events-{es_conf.index_postfix}",
             query = {"name": name, "code": code})
 
     docs_found = data['hits']['total']['value']
@@ -326,13 +326,13 @@ def find_event(code: str = "", name: str = ""):
     
 
 def event_list():
-    data = client.search(index=f"events_{es_conf.index_postfix}",
+    data = client.search(index=f"events-{es_conf.index_postfix}",
         query={"match_all": {}})
     return data['hits']['hits']
 
 
 def award(user_id: int, user_name: str, points: int):
-    id  = client.search(index = f"users_{es_conf.index_postfix}",
+    id  = client.search(index = f"users-{es_conf.index_postfix}",
         query = {"match": {"user_id": user_id}})
     results = id["hits"]["total"]["value"]
     name = ""
