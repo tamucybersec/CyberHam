@@ -28,7 +28,7 @@ def init_db():
                 "dietary_restriction.allergy": {"type": "text"},
             }
         }
-        client.indices.create(index = f"events-{es_conf.index_postfix}", mappings = mappings)
+        client.indices.create(index = f"users-{es_conf.index_postfix}", mappings = mappings)
 
     # Create tables if they do not exist
     if not client.indices.exists(index = f"events-{es_conf.index_postfix}"):
