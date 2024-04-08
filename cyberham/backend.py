@@ -24,23 +24,46 @@ def init_db():
                 "grad_year": {"type": "integer"},
                 "email": {"type": "text"},
                 "discord_id": {"type": "text"},
-                ## how do we do an embedded field?
-                # "dietary_restrictions": {"type": "text"},
+                "dietary_restriction.vegetarian": {"type": "boolean"},
+                "dietary_restriction.allergy": {"type": "text"},
             }
         }
-        client.indices.create(index = f"events_{es_conf.index_postfix}", mappings = mappings)
+        client.indices.create(index = f"events-{es_conf.index_postfix}", mappings = mappings)
 
     # Create tables if they do not exist
     if not client.indices.exists(index = f"events-{es_conf.index_postfix}"):
         mappings = {
             "properties": {
-                "name": {"type": "text"},
-                "code": {"type": "text"},
+                "code": {"type": "keyword"},
                 "points": {"type": "integer"},
-                "date": {"type": "date"},
+                "type": {"type": "keyword"},
+                "time.start": {"type": "date"}, 
+                "time.end": {"type": "date"},
+                "description": {"type": "text"},
+                "location": {"type": "keyword"},
             }
         }
         client.indices.create(index = f"events-{es_conf.index_postfix}", mappings = mappings)
+
+    if not client.indecies.exists(index = f"events-attendance-{es_conf.index_postfix}"):
+        mappings = {
+            "properties": {
+                "event_code": {"type": "keyword"},
+                "user_id": {"type": "keyword"},
+            }
+        }
+        client.indices.create(index = f"events-attendance-{es_conf.index_postfix}", mappings = mappings)
+
+    if not client.indices.exists(index = f"rsvp-{es_conf.index_postfix}"):
+        mappings = {
+            "properties": {
+                "event_code": {"type": "keyword"},
+                "user_id": {"type": "keyword"},
+                "attending": {"type": "boolean"},
+            }
+        }
+        client.indices.create(index = f"rsvp-{es_conf.index_postfix}", mappings = mappings)
+        
     
 
 
