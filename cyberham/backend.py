@@ -5,7 +5,7 @@ from typing import Literal
 from datetime import datetime
 from pytz import timezone
 
-from cyberham import es_conf
+from cyberham import es_conf, conn, c
 from cyberham.google_apis import GoogleClient, EmailPending
 from elasticsearch import Elasticsearch
 
@@ -74,14 +74,37 @@ def init_db():
         }
         client.indices.create(index=f"flagged-{es_conf.index_postfix}", mappings=mappings)
 
+    # users: user_id, name, points, attended_dates, grad_year, tamu_email
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS "
+        "users(user_id INTEGER PRIMARY KEY, name TEXT, points INTEGER, attended INTEGER, grad_year INTEGER, email TEXT)"
+    )
+    # events: name, code, points, date (mm/dd/yy), resources, attended_users
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS "
+        "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT)"
+    )
+    # flagged: user_id, offences
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS "
+        "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
+    )
+    conn.commit()
+
 
 def create_event(name: str, points: int, date: str, resources: str, user_id: int):
     code = ""
-    code_list = [0]
+    keep_generating = True
     # Check if code already exists, if not generate a new one
-    while code_list is not None:
+    while keep_generating:
         code = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-
+        c.execute("SELECT name FROM events WHERE code = ?", (code,))
+        if c.fetchone():  # returns tuple of one if exists otherwise none
+            keep_generating = True
+        elif client.search(index=f"events-{es_conf.index_postfix}", query={"match": {"code": code}})["hits"]["total"]["value"] == 1:
+            keep_generating = True
+        else:
+            keep_generating = False
     # Insert event into database
     client.index(
         index=f"events-{es_conf.index_postfix}",
