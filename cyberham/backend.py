@@ -73,7 +73,7 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
     # Check if code already exists, if not generate a new one
     while code_list is not None:
         code = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-    
+
     # Insert event into database
     client.index(
         index = f"events-{es_conf.index_postfix}",
