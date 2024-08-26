@@ -18,7 +18,7 @@ c = conn.cursor()
 
 # loading tokens
 google_token = project_path.joinpath("secrets").joinpath("token.json")
-client_secret = project_path.joinpath("secrets").joinpath(data["google"]["client_file_name"])
+client_secret = project_path.joinpath("secrets").joinpath(data["google"]["google_client"])
 discord_token = data["discord"]["token"]
 
 
@@ -54,7 +54,7 @@ else:
 es_conf = ElasticsearchConfig(
     api_key=es_data["api_key"],
     id=es_data["id"],
-    endpoints=es_data["endpoints"],
+    endpoints=es_data["ips"],
     index_postfix=es_index_postfix
 )
 

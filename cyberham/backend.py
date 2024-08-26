@@ -15,6 +15,7 @@ client = Elasticsearch(es_conf.endpoints, api_key=(es_conf.id, es_conf.api_key),
 
 
 def init_db():
+
     # Create tables if they do not exist
     if not client.indices.exists(index=f"users-{es_conf.index_postfix}"):
         mappings = {
