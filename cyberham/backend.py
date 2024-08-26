@@ -120,7 +120,7 @@ def create_event(name: str, points: int, date: str, resources: str, user_id: int
     )
 
     # Update user's points and attended events
-    new_id = client.search(index=f"events_{es_conf.index_postfix}",
+    new_id = client.search(index=f"events-{es_conf.index_postfix}",
                            query={"match":
                                       {"user_id": user_id}})
     curr_user_doc = new_id["hits"]["hits"][0]
