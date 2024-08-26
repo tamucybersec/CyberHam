@@ -7,6 +7,9 @@ from discord import app_commands, ui
 from discord import EntityType
 from discord import PrivacyLevel
 
+from datetime import datetime as dt, timedelta
+from calendar import day_name
+
 import cyberham.backend as backend
 from cyberham import guild_id, discord_token, admin_channel_id
 """
@@ -529,6 +532,69 @@ async def delete_all_events(interaction: discord.Interaction):
     await interaction.response.send_message(msg)
     for event in interaction.guild.scheduled_events:
         await event.delete()
+
+@app_commands.default_permissions(manage_events=True)
+@reg.command(
+    name="generate_announcements",
+    description="generates announcements boilerplate based on events",
+    guilds=guild_id
+)
+async def generate_announcements(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True)
+
+    # Current datetime
+    dt_now = dt.now()
+
+    # Weekday
+    weekday_now = dt_now.weekday()
+
+    # First day of the week (Monday) (https://stackoverflow.com/questions/39441639/getting-the-date-of-the-first-day-of-the-week/61743379#61743379)
+    monday = (dt.today() - timedelta(days=dt.today().weekday() % 7)).date()
+    friday = monday + timedelta(days=4)
+
+    # Create dictionary of events to sort
+    events = dict([(key, {}) for key in [x for x in range(5)]]) # cursed list comprehension
+    events_announced = 0
+
+    boilerplate = """@everyone
+# Howdy everyone! <:cowboysunglasses:1277767237037723751>
+Here's what we have for this week
+"""
+
+    for event in await interaction.guild.fetch_scheduled_events():
+        start_time = event.start_time.astimezone(timezone('US/Central'))
+        end_time = event.end_time.astimezone(timezone('US/Central'))
+
+        if weekday_now >= 0 and weekday_now <= 4:
+            if monday <= start_time.date() <= friday:
+                events_announced += 1
+
+                if not event.location in events[start_time.weekday()]:
+                    events[start_time.weekday()][event.location] = [event]
+                else:
+                    events[start_time.weekday()][event.location].append(event)
+    
+    for weekday, locations in events.items():
+        if len(locations) > 0:
+            boilerplate += f"\n## __{day_name[weekday]}__:\n"
+
+            for location, events in locations.items():
+                if len(events) > 0:
+                    boilerplate += f"**{location}** ([Map](<https://aggiemap.tamu.edu/map/d?bldg={location.split(' ')[0]}>))\n"
+                    
+                    for event in events:
+                        start_time = event.start_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
+                        end_time = event.end_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
+
+                        boilerplate += f"- **[{event.name}](<{event.url}>)** | {start_time} - {end_time}\n"
+
+
+
+    if events_announced == 0:
+        await interaction.followup.send("No events for this week.")
+    else:
+        await interaction.followup.send(boilerplate)
+
 
 
 client.run(discord_token)
