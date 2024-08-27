@@ -15,7 +15,6 @@ client = Elasticsearch(es_conf.endpoints, api_key=(es_conf.id, es_conf.api_key),
 
 
 def init_db():
-
     # Create tables if they do not exist
     if not client.indices.exists(index=f"users-{es_conf.index_postfix}"):
         mappings = {
@@ -36,13 +35,13 @@ def init_db():
     if not client.indices.exists(index=f"events-{es_conf.index_postfix}"):
         mappings = {
             "properties": {
-                "code": {"type": "keyword"},
+                # id is code FIVE LETTER ALL CAPS CODE
                 "points": {"type": "integer"},
                 "type": {"type": "keyword"},
-                "time.start": {"type": "date"},
-                "time.end": {"type": "date"},
                 "description": {"type": "text"},
                 "location": {"type": "keyword"},
+                "time.start": {"type": "date"},
+                "time.end": {"type": "date"},
             }
         }
         client.indices.create(index=f"events-{es_conf.index_postfix}", mappings=mappings)
@@ -61,19 +60,10 @@ def init_db():
             "properties": {
                 "event_code": {"type": "keyword"},
                 "user_id": {"type": "keyword"},
-                "attending": {"type": "boolean"},
+                "attending": {"type": "keyword"},
             }
         }
         client.indices.create(index=f"rsvp-{es_conf.index_postfix}", mappings=mappings)
-
-    if not client.indices.exists(index=f"flagged-{es_conf.index_postfix}"):
-        mappings = {
-            "properties": {
-                "user_id": {"type": "keyword"},
-                "offences": {"type": "integer"},
-            }
-        }
-        client.indices.create(index=f"flagged-{es_conf.index_postfix}", mappings=mappings)
 
     # users: user_id, name, points, attended_dates, grad_year, tamu_email
     c.execute(
