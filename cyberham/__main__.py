@@ -595,12 +595,10 @@ Here's what we have for this week
                         boilerplate += f"- **[{event.name}](<{event.url}>)** | {start_time} - {end_time}\n"
 
 
-
     if events_announced == 0:
         await interaction.followup.send("No events for this week.")
     else:
         await interaction.followup.send(boilerplate)
-
 
 
 client.run(discord_token)
