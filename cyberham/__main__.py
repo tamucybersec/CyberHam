@@ -580,8 +580,14 @@ Here's what we have for this week
 
             for location, events in locations.items():
                 if len(events) > 0:
-                    boilerplate += f"**{location}** ([Map](<https://aggiemap.tamu.edu/map/d?bldg={location.split(' ')[0]}>))\n"
-                    
+                    bldg = location.split(" ")[0]
+
+                    # hacky method
+                    if len(bldg) == 3 or len(bldg) == 4:
+                        boilerplate += f"**{location}** ([Map](<https://aggiemap.tamu.edu/map/d?bldg={location.split(' ')[0]}>))\n"
+                    else:
+                        boilerplate += f"**{location}**\n"
+                        
                     for event in events:
                         start_time = event.start_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
                         end_time = event.end_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
@@ -589,12 +595,10 @@ Here's what we have for this week
                         boilerplate += f"- **[{event.name}](<{event.url}>)** | {start_time} - {end_time}\n"
 
 
-
     if events_announced == 0:
         await interaction.followup.send("No events for this week.")
     else:
         await interaction.followup.send(boilerplate)
-
 
 
 client.run(discord_token)
