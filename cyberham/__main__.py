@@ -557,7 +557,7 @@ async def generate_announcements(interaction: discord.Interaction):
     events_announced = 0
 
     boilerplate = """@everyone
-# Howdy everyone! <:cowboysunglasses:1277767237037723751>
+# Howdy everyone! <:sunglasses_cowboy:916376081576116354>
 Here's what we have for this week
 """
 
