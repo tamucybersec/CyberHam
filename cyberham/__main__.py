@@ -556,7 +556,7 @@ async def generate_announcements(interaction: discord.Interaction):
     events = dict([(key, {}) for key in [x for x in range(5)]]) # cursed list comprehension
     events_announced = 0
 
-    boilerplate = """@everyone
+    boilerplate = """
 # Howdy everyone! <:sunglasses_cowboy:916376081576116354>
 Here's what we have for this week
 """
