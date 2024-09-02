@@ -32,31 +32,31 @@ guild_id = [Guild(x) for x in data["discord"]["test_guild_ids"]]
 admin_channel_id = data["discord"]["admin_channel_id"]
 
 
-# elasticsearch configs
-@dataclass
-class ElasticsearchConfig:
-    api_key: str
-    id: str
-    endpoints: str
-    index_postfix: str
+# # elasticsearch configs
+# @dataclass
+# class ElasticsearchConfig:
+#     api_key: str
+#     id: str
+#     endpoints: str
+#     index_postfix: str
 
 
-es_data = data["elasticsearch"]
+# es_data = data["elasticsearch"]
 
-# Check if 'index_postfix' exists in Elasticsearch data
-if "index_postfix" in es_data:
-    es_index_postfix = es_data["index_postfix"]
-else:
-    # If 'index_postfix' does not exist, use the current year
-    es_index_postfix = str(datetime.now().year)
+# # Check if 'index_postfix' exists in Elasticsearch data
+# if "index_postfix" in es_data:
+#     es_index_postfix = es_data["index_postfix"]
+# else:
+#     # If 'index_postfix' does not exist, use the current year
+#     es_index_postfix = str(datetime.now().year)
 
-# Create Elasticsearch configuration
-es_conf = ElasticsearchConfig(
-    api_key=es_data["api_key"],
-    id=es_data["id"],
-    endpoints=es_data["endpoints"],
-    index_postfix=es_index_postfix
-)
+# # Create Elasticsearch configuration
+# es_conf = ElasticsearchConfig(
+#     api_key=es_data["api_key"],
+#     id=es_data["id"],
+#     endpoints=es_data["endpoints"],
+#     index_postfix=es_index_postfix
+# )
 
 
 # config discord logging
