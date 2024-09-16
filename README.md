@@ -42,21 +42,24 @@ This is the guild id you include into the `test_guild_ids` parameter in the conf
 
 ## Running the bot
 ### Prerequisite
+
 ```bash
-git clone https://github.com/tamucybersec/CyberHam.git #the SSH link can used if that works
+git clone https://github.com/tamucybersec/CyberHam.git # the SSH link can used if that works
 cd CyberHam
 ```
 ### Installation
 ```bash
-python3.11 -m venv venv
+python3.11 -m venv venv 
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 ### Configuration
 Create a config.toml file in the root of the repo and set the following values:
 ```toml
-google_client = "client_secret_2_{FILL IN -> client_id}.apps.googleusercontent.com.json" # the file name of the client_secret.json file you downloaded from google cloud API and is placed in cyberham/secrets/
-discord_token = "" # the discord token for the bot as a str
+[google]
+client_file_name = "client_secret_2_{FILL IN -> client_id}.apps.googleusercontent.com.json" # the file name of the client_secret.json file you downloaded from google cloud API and is placed in cyberham/secrets/
+[discord]
+token = "" # the discord token for the bot as a str
 test_guild_ids = [] # [631254092332662805] is the cyber club server, the id of discord guilds in a comma seperated int array
 admin_channel_id = 1014740464601153536 # channel to send bot information to, currently is the channel used in the cyber club discord
 ```
