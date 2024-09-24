@@ -537,6 +537,14 @@ async def delete_all_events(interaction: discord.Interaction):
     for event in interaction.guild.scheduled_events:
         await event.delete()
 
+activity_group_channels = {
+    "cyber op": 1278359289160929332,
+    "hardware": 1146555338464694424,
+    "aws": 1280195306733961236,
+    "palo": 986388231052460092,
+    "cisco": 946612171360579627,
+}
+
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="generate_announcements",
@@ -569,7 +577,7 @@ async def generate_announcements(interaction: discord.Interaction):
         start_time = event.start_time.astimezone(timezone('US/Central'))
         end_time = event.end_time.astimezone(timezone('US/Central'))
 
-        if weekday_now >= 0 and weekday_now <= 4:
+        if 0 <= weekday_now <= 4:
             if monday <= start_time.date() <= friday:
                 events_announced += 1
 
@@ -586,18 +594,26 @@ async def generate_announcements(interaction: discord.Interaction):
                 if len(events) > 0:
                     bldg = location.split(" ")[0]
 
-                    # hacky method
+                    # hacky method - concatenate location to url to get the map
                     if len(bldg) == 3 or len(bldg) == 4:
                         boilerplate += f"**{location}** ([Map](<https://aggiemap.tamu.edu/map/d?bldg={location.split(' ')[0]}>))\n"
                     else:
                         boilerplate += f"**{location}**\n"
-                        
+
                     for event in events:
-                        start_time = event.start_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
-                        end_time = event.end_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
+                        start_time = event.start_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip(
+                            "0").replace(" 0", " ")
+                        end_time = event.end_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip(
+                            "0").replace(" 0", " ")
 
-                        boilerplate += f"- **[{event.name}](<{event.url}>)** | {start_time} - {end_time}\n"
-
+                        channel_mention = ""
+                        for key, value in activity_group_channels.items():
+                            print(key, value, event.name)
+                            if key in event.name.lower():
+                                channel_mention = f"<#{value}> "
+                                break
+                        print(channel_mention)
+                        boilerplate += f"- **[{event.name}](<{event.url}>)** | {channel_mention}{start_time} - {end_time}\n"
 
     if events_announced == 0:
         await interaction.followup.send("No events for this week.")
