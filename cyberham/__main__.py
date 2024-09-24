@@ -12,11 +12,13 @@ from calendar import day_name
 
 import cyberham.backend as backend
 from cyberham import guild_id, discord_token, admin_channel_id
+
 """
 Define Bot Attributes
 """
 
 logger = logging.getLogger(__name__)
+
 
 class Bot(discord.Client):
     def __init__(self):
@@ -504,8 +506,10 @@ async def update_calendar_events(interaction: discord.Interaction):
         if event_data not in discord_events:
             try:
                 await interaction.guild.create_scheduled_event(name=event['name'], start_time=event['start'],
-                                                               end_time=event['end'], privacy_level=PrivacyLevel.guild_only,
-                                                               entity_type=EntityType.external, location=event['location'])
+                                                               end_time=event['end'],
+                                                               privacy_level=PrivacyLevel.guild_only,
+                                                               entity_type=EntityType.external,
+                                                               location=event['location'])
                 count += 1
             except discord.Forbidden:
                 await interaction.followup.send("I don't have permission to create events in this server.")
@@ -533,6 +537,14 @@ async def delete_all_events(interaction: discord.Interaction):
     for event in interaction.guild.scheduled_events:
         await event.delete()
 
+activity_group_channels = {
+    "cyber op": 1278359289160929332,
+    "hardware": 1146555338464694424,
+    "aws": 1280195306733961236,
+    "palo": 986388231052460092,
+    "cisco": 946612171360579627,
+}
+
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="generate_announcements",
@@ -553,19 +565,19 @@ async def generate_announcements(interaction: discord.Interaction):
     friday = monday + timedelta(days=4)
 
     # Create dictionary of events to sort
-    events = dict([(key, {}) for key in [x for x in range(5)]]) # cursed list comprehension
+    events = dict([(key, {}) for key in [x for x in range(5)]])  # cursed list comprehension
     events_announced = 0
 
     boilerplate = """
-# Howdy everyone! <:sunglasses_cowboy:916376081576116354>
-Here's what we have for this week
-"""
+        # Howdy everyone! <:sunglasses_cowboy:916376081576116354>
+        Here's what we have for this week
+    """
 
     for event in await interaction.guild.fetch_scheduled_events():
         start_time = event.start_time.astimezone(timezone('US/Central'))
         end_time = event.end_time.astimezone(timezone('US/Central'))
 
-        if weekday_now >= 0 and weekday_now <= 4:
+        if 0 <= weekday_now <= 4:
             if monday <= start_time.date() <= friday:
                 events_announced += 1
 
@@ -573,7 +585,7 @@ Here's what we have for this week
                     events[start_time.weekday()][event.location] = [event]
                 else:
                     events[start_time.weekday()][event.location].append(event)
-    
+
     for weekday, locations in events.items():
         if len(locations) > 0:
             boilerplate += f"\n## __{day_name[weekday]}__:\n"
@@ -582,18 +594,26 @@ Here's what we have for this week
                 if len(events) > 0:
                     bldg = location.split(" ")[0]
 
-                    # hacky method
+                    # hacky method - concatenate location to url to get the map
                     if len(bldg) == 3 or len(bldg) == 4:
                         boilerplate += f"**{location}** ([Map](<https://aggiemap.tamu.edu/map/d?bldg={location.split(' ')[0]}>))\n"
                     else:
                         boilerplate += f"**{location}**\n"
-                        
+
                     for event in events:
-                        start_time = event.start_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
-                        end_time = event.end_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip("0").replace(" 0", " ")
+                        start_time = event.start_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip(
+                            "0").replace(" 0", " ")
+                        end_time = event.end_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip(
+                            "0").replace(" 0", " ")
 
-                        boilerplate += f"- **[{event.name}](<{event.url}>)** | {start_time} - {end_time}\n"
-
+                        channel_mention = ""
+                        for key, value in activity_group_channels.items():
+                            print(key, value, event.name)
+                            if key in event.name.lower():
+                                channel_mention = f"<#{value}> "
+                                break
+                        print(channel_mention)
+                        boilerplate += f"- **[{event.name}](<{event.url}>)** | {channel_mention}{start_time} - {end_time}\n"
 
     if events_announced == 0:
         await interaction.followup.send("No events for this week.")
