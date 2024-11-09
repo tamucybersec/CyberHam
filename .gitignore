@@ -1,8 +1,12 @@
+# Secrets
 config.toml
 cyberham/db/*.db
-cyberham/secrets/*.json
+cyberham/secrets/*
 
-cyberham/__pycache__/
+# Settings and Caches
 venv/
 .idea/
+.vscode
+.pytest_cache
+*__pycache__/
 *.log
