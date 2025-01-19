@@ -1,4 +1,4 @@
-from types import User, Event
+from cyberham.dynamodb.types import User, Event
 
 def get_user() -> User:
 	# TODO

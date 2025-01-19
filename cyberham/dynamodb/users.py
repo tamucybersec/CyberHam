@@ -5,8 +5,8 @@ profile
 award
 '''
 
-from cyberham.dynamodb.helper import get_user
-from cyberham.dynamodb.types import Axis, Leaderboard, User
+# from cyberham.dynamodb.helper import get_user
+from cyberham.dynamodb.types import Axis, Leaderboard
 
 def leaderboard(axis: Axis, limit: int = 10) -> Leaderboard:
 	"""

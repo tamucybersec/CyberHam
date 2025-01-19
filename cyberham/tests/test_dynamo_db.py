@@ -1,6 +1,6 @@
 from cyberham.dynamodb.dynamo import DynamoDB
 from cyberham.dynamodb.types import MaybeItem
-from models import (
+from cyberham.tests.models import (
     table,
     partition_key,
     sort_key,
@@ -11,7 +11,6 @@ from models import (
 )
 
 
-# figure out how to set up credentials
 class TestDynamoCrud:
     dynamo: DynamoDB
 

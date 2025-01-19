@@ -1,4 +1,5 @@
 import boto3
+from cyberham import dynamo_keys
 from mypy_boto3_dynamodb import DynamoDBClient
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from cyberham.dynamodb.types import (
@@ -21,14 +22,12 @@ class DynamoDB:
 
     def __init__(
         self,
-        access_key_id: str,
-        secret_access_key: str,
         region: str = DEFAULT_REGION,
     ) -> None:
         self.dynamodb = boto3.client(  # type: ignore
             "dynamodb",
-            aws_access_key_id=access_key_id,
-            aws_secret_access_key=secret_access_key,
+            aws_access_key_id=dynamo_keys["access_key_id"],
+            aws_secret_access_key=dynamo_keys["secret_access_key"],
             region_name=region,
         )
 
@@ -71,6 +70,8 @@ class DynamoDB:
 
     def update_item(self, table: TableName, key: Key, update: UpdateItem) -> MaybeItem:
         """
+        Access an item, change its contents, and the upload the change.
+        The accessed item can be None (the item is new) and you can return None (delete the existing item).
         Returns the new item following the update.
         """
 

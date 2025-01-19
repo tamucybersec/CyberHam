@@ -1,7 +1,7 @@
 import logging
 import os.path
 import base64
-import mimetypes
+# import mimetypes
 
 
 from dataclasses import dataclass
@@ -15,10 +15,10 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from email.message import EmailMessage
-from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
-from email.mime.image import MIMEImage
-from email.mime.text import MIMEText
+# from email.mime.audio import MIMEAudio
+# from email.mime.base import MIMEBase
+# from email.mime.image import MIMEImage
+# from email.mime.text import MIMEText
 
 from cyberham import google_token, client_secret
 

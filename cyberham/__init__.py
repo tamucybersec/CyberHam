@@ -1,6 +1,7 @@
 import tomllib
 import logging
-from datetime import datetime
+
+# from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -18,8 +19,11 @@ c = conn.cursor()
 
 # loading tokens
 google_token = project_path.joinpath("secrets").joinpath("token.json")
-client_secret = project_path.joinpath("secrets").joinpath(data["google"]["client_file_name"])
+client_secret = project_path.joinpath("secrets").joinpath(
+    data["google"]["google_client"]
+)
 discord_token = data["discord"]["token"]
+dynamo_keys = data["dynamo"]
 
 
 # discord outputs configs
@@ -60,14 +64,14 @@ admin_channel_id = data["discord"]["admin_channel_id"]
 
 
 # config discord logging
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
 handler.setLevel(logging.DEBUG)
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 logger.addHandler(handler)
 
 # config current module logging
 logger = logging.getLogger(__name__)
-handler = logging.FileHandler(filename=f'{__name__}.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename=f"{__name__}.log", encoding="utf-8", mode="w")
 handler.setLevel(logging.INFO)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)

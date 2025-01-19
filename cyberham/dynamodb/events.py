@@ -7,8 +7,8 @@ event list
 
 from datetime import datetime, date
 from typing import Any
-from helper import get_user, get_event
-from types import Attendance, AttendanceData, User, Event
+from cyberham.dynamodb.helper import get_user, get_event
+from cyberham.dynamodb.types import Attendance, AttendanceData, User, Event
 
 def attend_event(code: str, user_id: int, user_name: str) -> Attendance:
 	"""

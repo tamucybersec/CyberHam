@@ -2,6 +2,7 @@
 config.toml
 cyberham/db/*.db
 cyberham/secrets/*
+*.pem
 
 # Settings and Caches
 venv/
@@ -10,3 +11,4 @@ venv/
 .pytest_cache
 *__pycache__/
 *.log
+notes/

@@ -1,6 +1,6 @@
 from datetime import datetime
-from types import Response, User, RegistrationStatus
-from usersdb import usersdb
+from cyberham.dynamodb.types import Response, User, RegistrationStatus
+from cyberham.dynamodb.usersdb import usersdb
 
 
 # register
@@ -10,7 +10,7 @@ def register(
     """
     Register for the club.
     """
-    user: User = usersdb.get_user(user_id)
+    _: User = usersdb.get_user(user_id)
 
     if not valid_grad_year(grad_year):
         return registration_response_fail(
@@ -87,7 +87,9 @@ def send_verification_email() -> None:
 
 # verify_email
 def verify_email(code: int, user_id: int) -> Response:
-    if not user_in_pending():
+    user: User = usersdb.get_user(user_id) # TODO: temp value
+
+    if not user_in_pending(user):
         return registration_response_fail("Please use /register to submit your email")
 
     if not verification_code_matches():

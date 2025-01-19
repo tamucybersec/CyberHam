@@ -1,20 +1,22 @@
 from cyberham.dynamodb.dynamo import DynamoDB
-from cyberham.dynamodb.types import Tables, User, UserData, Item
+from cyberham.dynamodb.types import TableName, User, UserData, MaybeItem
 
 
 class UsersDB:
     db: DynamoDB
-    table: Tables = "users"
+    table: TableName = "users"
 
     def __init__(self) -> None:
         self.db = DynamoDB()
 
     def get_user(self, user_id: int) -> User:
-        item = self.db.get_item(self.table, str(user_id))
+        key = self.db.create_key("users", str(user_id)) # TODO: temp values
+        item = self.db.get_item(self.table, key)
         return self._item_to_user(item)
 
     def create_user(self, user: User) -> None:
-        self.db.put_item(self.table, user)
+        data = {"temp": "temp"} # TODO: temp values (turn user into a dict)
+        self.db.put_item(self.table, data)
 
     def get_or_create_user(self, user_id: int) -> User:
         try:
@@ -22,7 +24,7 @@ class UsersDB:
         except:
             return None
 
-    def _item_to_user(self, item: Item) -> User:
+    def _item_to_user(self, item: MaybeItem) -> User:
         if item == None:
             return None
 
