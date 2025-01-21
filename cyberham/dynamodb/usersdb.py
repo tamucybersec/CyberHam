@@ -1,5 +1,11 @@
 from cyberham.dynamodb.dynamo import DynamoDB
-from cyberham.dynamodb.types import TableName, User, UserData, MaybeItem
+from cyberham.dynamodb.types import (
+    TableName,
+    MaybeUser,
+    User,
+    data_to_item,
+    item_to_data,
+)
 
 
 class UsersDB:
@@ -9,33 +15,35 @@ class UsersDB:
     def __init__(self) -> None:
         self.db = DynamoDB()
 
-    def get_user(self, user_id: int) -> User:
-        key = self.db.create_key("users", str(user_id)) # TODO: temp values
-        item = self.db.get_item(self.table, key)
-        return self._item_to_user(item)
-
     def create_user(self, user: User) -> None:
-        data = {"temp": "temp"} # TODO: temp values (turn user into a dict)
-        self.db.put_item(self.table, data)
+        item = data_to_item(user)
+
+        if item is None:
+            raise TypeError(
+                "This code is impossible to reach but the compiler demands I write it."
+            )
+
+        self.db.put_item(self.table, item)
+
+    def get_user(self, user_id: int) -> MaybeUser:
+        key = self.db.create_key("users", str(user_id))
+        item = self.db.get_item(self.table, key)
+        return item_to_data(item, User)
+    
+    # def 
 
     def get_or_create_user(self, user_id: int) -> User:
-        try:
-            return self.get_user(user_id)
-        except:
-            return None
+        """
+        Gets the user if they exist, otherwise creates one with the given id.
+        """
 
-    def _item_to_user(self, item: MaybeItem) -> User:
-        if item == None:
-            return None
+        raise Exception("Unimplemented")
 
-        return UserData(
-            user_id=int(str(item.get("user_id", "0"))),
-            name=str(item.get("name", "")),
-            points=int(str(item.get("points", "0"))),
-            attended=int(str(item.get("attended", "0"))),
-            grad_year=int(str(item.get("grad_year", "0"))),
-            email=str(item.get("email", "")),
-        )
+        # user = self.get_user(user_id)
+        # if user is not None:
+        #     return user
+
+        # return self.create_user(user_id)
 
 
 usersdb = UsersDB()

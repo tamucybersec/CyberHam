@@ -1,5 +1,5 @@
 from datetime import datetime
-from cyberham.dynamodb.types import Response, User, RegistrationStatus
+from cyberham.dynamodb.types import Response, MaybeUser, RegistrationStatus
 from cyberham.dynamodb.usersdb import usersdb
 
 
@@ -10,7 +10,7 @@ def register(
     """
     Register for the club.
     """
-    _: User = usersdb.get_user(user_id)
+    _: MaybeUser = usersdb.get_user(user_id)
 
     if not valid_grad_year(grad_year):
         return registration_response_fail(
@@ -42,7 +42,7 @@ def valid_email(email: str) -> bool:
 
 # register_email
 def register_email(email: str, user_id: int, guild_id: int) -> RegistrationStatus:
-    user: User = usersdb.get_user(user_id)
+    user: MaybeUser = usersdb.get_user(user_id)
 
     if user_with_email_exists(user, email):
         return registration_status("")
@@ -65,14 +65,14 @@ def register_email(email: str, user_id: int, guild_id: int) -> RegistrationStatu
 
 
 def registration_status_fail(message: str) -> RegistrationStatus:
-    return RegistrationStatus(message, "warning")
+    return RegistrationStatus(message=message, status="warning")
 
 
 def registration_status(message: str) -> RegistrationStatus:
-    return RegistrationStatus(message, "successful")
+    return RegistrationStatus(message=message, status="successful")
 
 
-def user_with_email_exists(user: User, email: str) -> bool:
+def user_with_email_exists(user: MaybeUser, email: str) -> bool:
     return user is not None and user.email == email
 
 
@@ -87,7 +87,7 @@ def send_verification_email() -> None:
 
 # verify_email
 def verify_email(code: int, user_id: int) -> Response:
-    user: User = usersdb.get_user(user_id) # TODO: temp value
+    user: MaybeUser = usersdb.get_user(user_id)  # TODO: temp value
 
     if not user_in_pending(user):
         return registration_response_fail("Please use /register to submit your email")
@@ -105,10 +105,10 @@ def registration_response_fail(message: str) -> Response:
 
 
 def registration_response(message: str) -> Response:
-    return Response(message)
+    return Response(message=message)
 
 
-def user_in_pending(user: User) -> bool:
+def user_in_pending(user: MaybeUser) -> bool:
     # TODO
     return False
 

@@ -1,9 +1,11 @@
-from cyberham.dynamodb.types import User, Event
+from cyberham.dynamodb.types import MaybeUser, MaybeEvent
 
-def get_user() -> User:
-	# TODO
-	return None
 
-def get_event() -> Event:
-	# TODO
-	return None
+def get_user() -> MaybeUser:
+    # TODO
+    return None
+
+
+def get_event() -> MaybeEvent:
+    # TODO
+    return None

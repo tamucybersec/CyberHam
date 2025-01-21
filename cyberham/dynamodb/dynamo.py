@@ -16,23 +16,23 @@ DEFAULT_REGION = "us-east-1"
 
 
 class DynamoDB:
-    dynamodb: DynamoDBClient
-    serializer: TypeSerializer
-    deserializer: TypeDeserializer
+    _dynamodb: DynamoDBClient
+    _serializer: TypeSerializer
+    _deserializer: TypeDeserializer
 
     def __init__(
         self,
         region: str = DEFAULT_REGION,
     ) -> None:
-        self.dynamodb = boto3.client(  # type: ignore
+        self._dynamodb = boto3.client(  # type: ignore
             "dynamodb",
             aws_access_key_id=dynamo_keys["access_key_id"],
             aws_secret_access_key=dynamo_keys["secret_access_key"],
             region_name=region,
         )
 
-        self.serializer = TypeSerializer()
-        self.deserializer = TypeDeserializer()
+        self._serializer = TypeSerializer()
+        self._deserializer = TypeDeserializer()
 
     def put_item(self, table: TableName, item: Item) -> MaybeItem:
         """
@@ -40,7 +40,7 @@ class DynamoDB:
         """
 
         serialized = self._serialize(item)
-        response = self.dynamodb.put_item(
+        response = self._dynamodb.put_item(
             TableName=table, Item=serialized, ReturnValues="ALL_OLD"
         )
         old_item: SerializedItem | None = response.get("Attributes")
@@ -60,7 +60,7 @@ class DynamoDB:
         """
 
         serialized = self._serialize(key)
-        response = self.dynamodb.get_item(TableName=table, Key=serialized)
+        response = self._dynamodb.get_item(TableName=table, Key=serialized)
         item: SerializedItem | None = response.get("Item")
 
         if item:
@@ -91,7 +91,7 @@ class DynamoDB:
         """
 
         serialized = self._serialize(key)
-        response = self.dynamodb.delete_item(
+        response = self._dynamodb.delete_item(
             TableName=table, Key=serialized, ReturnValues="ALL_OLD"
         )
         old_item: SerializedItem | None = response.get("Attributes")
@@ -101,8 +101,8 @@ class DynamoDB:
 
         return None
 
+    @staticmethod
     def create_key(
-        self,
         partition_key_name: str,
         partition_key: str,
         sort_key_name: str = "",
@@ -117,7 +117,7 @@ class DynamoDB:
             return {partition_key_name: partition_key}
 
     def _serialize(self, key: Key) -> SerializedDict:
-        return {k: self.serializer.serialize(v) for k, v in key.items()}
+        return {k: self._serializer.serialize(v) for k, v in key.items()}
 
     def _deserialize(self, item: SerializedItem) -> Item:
-        return {k: self.deserializer.deserialize(v) for k, v in item.items()}  # type: ignore
+        return {k: self._deserializer.deserialize(v) for k, v in item.items()}  # type: ignore

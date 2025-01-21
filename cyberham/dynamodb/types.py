@@ -1,5 +1,7 @@
+from dataclass_dict_convert import dataclass_dict_convert  # type: ignore
+from stringcase import camelcase  # type: ignore
 from dataclasses import dataclass
-from datetime import date
+from datetime import datetime
 from typing import (
     Any,
     Callable,
@@ -10,6 +12,7 @@ from typing import (
     Generic,
     Mapping,
     Dict,
+    Type,
 )
 from mypy_boto3_dynamodb.type_defs import (
     UniversalAttributeValueTypeDef,
@@ -25,18 +28,19 @@ T = TypeVar("T")
 # region General Types
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Response:
     message: str
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ResponseWithData(Response, Generic[T]):
     data: Optional[T]
 
 
-@dataclass
-class UserData:
+@dataclass_dict_convert(dict_letter_case=camelcase)  # type: ignore
+@dataclass(kw_only=True)
+class User:
     user_id: int
     name: str
     points: int
@@ -45,11 +49,12 @@ class UserData:
     email: str
 
 
-User: TypeAlias = Optional[UserData]
+MaybeUser: TypeAlias = Optional[User]
 
 
-@dataclass
-class EventData:
+@dataclass_dict_convert(dict_letter_case=camelcase)  # type: ignore
+@dataclass(kw_only=True)
+class Event:
     name: str
     code: str
     points: int
@@ -58,18 +63,19 @@ class EventData:
     attended_users: list[str]
 
 
-Event: TypeAlias = Optional[EventData]
+MaybeEvent: TypeAlias = Optional[Event]
 
 # endregion
 
 # region Events Types
 
 
-@dataclass
+@dataclass_dict_convert(dict_letter_case=camelcase)  # type: ignore
+@dataclass(kw_only=True)
 class AttendanceData:
     name: str
     points: int
-    date: date
+    date: datetime
     resources: Any
 
 
@@ -80,12 +86,12 @@ Attendance: TypeAlias = ResponseWithData[AttendanceData]
 # region Users Types
 
 
-@dataclass
+@dataclass(kw_only=True)
 class RegistrationStatus(Response):
     status: Literal["successful", "warning"]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Leaderboard:
     x_title: str
     x: list[str]
@@ -104,10 +110,27 @@ type TableName = Literal["users", "events", "tests"]
 Item: TypeAlias = Dict[str, Any]
 MaybeItem: TypeAlias = Optional[Item]
 SerializedItem: TypeAlias = Dict[str, AttributeValueTypeDef]
+UpdateItem: TypeAlias = Callable[[MaybeItem], MaybeItem]
 
 Key: TypeAlias = Item
 SerializedDict: TypeAlias = Mapping[str, UniversalAttributeValueTypeDef]
 
-UpdateItem: TypeAlias = Callable[[MaybeItem], MaybeItem]
+MaybeData: TypeAlias = Optional[T]
+UpdateData: TypeAlias = Callable[[MaybeData[T]], MaybeData[T]]
+
+
+def data_to_item(data: MaybeData[T]) -> MaybeItem:
+    if data is None:
+        return None
+
+    return data.to_dict()  # type: ignore
+
+
+def item_to_data(item: MaybeItem, cls: Type[T]) -> MaybeData[T]:
+    if item is None:
+        return None
+    else:
+        return cls.from_dict(item)  # type: ignore
+
 
 # endregion
