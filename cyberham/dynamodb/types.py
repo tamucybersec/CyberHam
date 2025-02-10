@@ -11,9 +11,6 @@ from typing import (
 from mypy_boto3_dynamodb.type_defs import (
     UniversalAttributeValueTypeDef,
     AttributeValueTypeDef,
-    # QueryOutputTableTypeDef,
-    # ScanOutputTableTypeDef,
-    # UpdateItemOutputTableTypeDef,
 )
 
 

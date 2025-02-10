@@ -14,7 +14,6 @@ from cyberham.dynamodb.types import (
     Event,
     MaybeEvent,
     Flagged,
-    MaybeFlagged,
     DummyEvent,
 )
 from cyberham.dynamodb.typeddb import usersdb, eventsdb, flaggeddb
