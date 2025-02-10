@@ -8,8 +8,16 @@ from typing import Any
 
 from cyberham import conn, c
 from cyberham.google_apis import GoogleClient, EmailPending
-from cyberham.dynamodb.types import Event, MaybeUser, MaybeEvent, DummyEvent, User
-from cyberham.dynamodb.typeddb import usersdb, eventsdb
+from cyberham.dynamodb.types import (
+    User,
+    MaybeUser,
+    Event,
+    MaybeEvent,
+    Flagged,
+    MaybeFlagged,
+    DummyEvent,
+)
+from cyberham.dynamodb.typeddb import usersdb, eventsdb, flaggeddb
 
 # dict[user_id, EmailPending]
 pending_emails: dict[str, EmailPending] = {}
@@ -201,18 +209,21 @@ def register_email(user_id: str, email: str, guild_id: int | None) -> str:
     if user is not None and user["email"] == email:
         return ""
 
-    # TODO Flagged table
+    # check offenses
     if user_id in pending_emails:
-        c.execute("INSERT OR IGNORE INTO flagged VALUES (?, 0)", (user_id,))
-        c.execute(
-            "UPDATE flagged SET offences = offences + 1 WHERE user_id = ?", (user_id,)
-        )
-        conn.commit()
-        c.execute("SELECT offences FROM flagged WHERE user_id = ?", (user_id,))
-        flagged = c.fetchone()[0]
-        if flagged >= 3:
+        flagged = flaggeddb.get(user_id)
+
+        if flagged is None:
+            flagged = Flagged(user_id=user_id, offenses=1)
+        else:
+            flagged["offenses"] += 1
+
+        flaggeddb.put(flagged)
+
+        if flagged["offenses"] >= 3:
             return "Too many failed attempts to email verification, please contact an officer"
 
+    # send email
     verification = EmailPending(
         int(user_id), email, random.randint(1000, 10000), datetime.now()
     )
@@ -224,6 +235,7 @@ def register_email(user_id: str, email: str, guild_id: int | None) -> str:
         str(verification.code),
         "Texas A&M Cybersecurity Club" if guild_id == 631254092332662805 else "TAMUctf",
     )
+
     return "Please use /verify with the code you received in your email."
 
 

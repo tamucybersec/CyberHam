@@ -4,6 +4,7 @@ from cyberham.dynamodb.types import (
     TestItem,
     User,
     Event,
+    Flagged,
     Key,
 )
 from typing import cast, TypeVar, Generic, TypeAlias, Optional, Callable, Mapping, Any
@@ -67,7 +68,7 @@ class _TypedDB(Generic[T]):
 
     def get_all(self) -> list[T]:
         return cast(list[T], self.db.get_all(self.table))
-    
+
     def get_count(self) -> int:
         return self.db.get_count(self.table)
 
@@ -88,3 +89,4 @@ _db = DynamoDB()
 testdb = _TypedDB[TestItem](_db, "tests", "partition", "sort")
 usersdb = _TypedDB[User](_db, "users", "user_id", None)
 eventsdb = _TypedDB[Event](_db, "events", "code", None)
+flaggeddb = _TypedDB[Flagged](_db, "flagged", "user_id", None)

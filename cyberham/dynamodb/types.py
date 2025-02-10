@@ -44,13 +44,21 @@ class Event(TypedDict):
 MaybeEvent: TypeAlias = Optional[Event]
 
 
+class Flagged(TypedDict):
+    user_id: str
+    offenses: int
+
+
+MaybeFlagged: TypeAlias = Optional[Flagged]
+
+
 class TestItem(TypedDict):
     partition: str
     sort: str
     name: str
 
 
-type TableName = Literal["users", "events", "tests"]
+type TableName = Literal["users", "events", "flagged", "tests"]
 
 Item: TypeAlias = Mapping[str, Any]
 MaybeItem: TypeAlias = Optional[Item]
