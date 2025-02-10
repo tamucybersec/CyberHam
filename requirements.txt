@@ -6,4 +6,3 @@ pytz~=2023.3.post1
 boto3~=1.35.56
 boto3-stubs[dynamodb]~=1.35.56
 pytest~=8.3.3
-dataclass-dict-convert~=1.7.4

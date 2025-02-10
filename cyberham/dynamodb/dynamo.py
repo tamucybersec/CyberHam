@@ -12,7 +12,6 @@ from cyberham.dynamodb.types import (
     SerializedDict,
     UpdateItem,
 )
-from typing import Any
 
 DEFAULT_REGION = "us-east-1"
 
@@ -113,9 +112,9 @@ class DynamoDB:
 
         return deserialized
 
-    def get_all_raw(self, table: TableName) -> list[Any]:
+    def get_count(self, table: TableName) -> int:
         result: ScanOutputTypeDef = self._dynamodb.scan(TableName=table)
-        return result.get("Items")
+        return result.get("Count")
 
     @staticmethod
     def create_key(

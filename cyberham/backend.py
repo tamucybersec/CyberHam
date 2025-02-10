@@ -9,11 +9,10 @@ from typing import Any
 from cyberham import conn, c
 from cyberham.google_apis import GoogleClient, EmailPending
 from cyberham.dynamodb.types import Event, MaybeUser, MaybeEvent, DummyEvent, User
-from cyberham.dynamodb.usersdb import usersdb
-from cyberham.dynamodb.eventsdb import eventsdb
+from cyberham.dynamodb.typeddb import usersdb, eventsdb
 
 # dict[user_id, EmailPending]
-pending_emails: dict[int, EmailPending] = {}
+pending_emails: dict[str, EmailPending] = {}
 google_client = GoogleClient()
 
 
@@ -38,23 +37,23 @@ def init_db():
 
 
 def create_event(
-    name: str, points: int, date: str, resources: str, user_id: int
+    name: str, points: int, date: str, resources: str, user_id: str
 ) -> str:
     # code generation
     event_code: str = ""
     existing_event = DummyEvent
     while existing_event is not None:
         event_code = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        existing_event = eventsdb.get_event(event_code)
+        existing_event = eventsdb.get(event_code)
 
     # user validation and update
-    user = usersdb.get_user(user_id)
+    user = usersdb.get(user_id)
     if user is None:
         return f'User with user_id "{user_id}" does not exist.'
     else:
-        user.attended += 1
-        user.points += points
-    usersdb.put_user(user)
+        user["attended"] += 1
+        user["points"] += points
+    usersdb.put(user)
 
     # event creation
     event = Event(
@@ -65,72 +64,70 @@ def create_event(
         resources=resources,
         attended_users=[str(user_id)],
     )
-    eventsdb.put_event(event)
+    eventsdb.put(event)
 
     return event_code
 
 
 # FIXME concurrency concerns
-def attend_event(code: str, user_id: int, user_name: str) -> tuple[str, MaybeEvent]:
+# use consistent read
+def attend_event(code: str, user_id: str, user_name: str) -> tuple[str, MaybeEvent]:
     code = code.upper()
 
     # user validation
-    user = usersdb.get_user(user_id)
-    if user is None or user.grad_year == 0:
+    user = usersdb.get(user_id)
+    if user is None or user["grad_year"] == 0:
         return "Please use /register to make a profile!", None
 
     # event validation
-    event = eventsdb.get_event(code)
+    event = eventsdb.get(code)
 
     if event is None:
         return f"{code} does not exist!", None
 
-    if str(user_id) in event.attended_users:
+    if str(user_id) in event["attended_users"]:
         return f"You have already redeemed {code}!", None
 
     cst_tz = timezone("America/Chicago")
-    event_day = datetime.strptime(event.date, "%m/%d/%Y").date()
+    event_day = datetime.strptime(event["date"], "%m/%d/%Y").date()
     current_day = datetime.now(cst_tz).date()
 
     if event_day != current_day:
         return "You must redeem an event on the day it occurs!", None
 
     # attend event
-    user.points += event.points
-    user.attended += 1
-    event.attended_users.append(str(user_id))
+    user["points"] += event["points"]
+    user["attended"] += 1
+    event["attended_users"].append(str(user_id))
 
-    usersdb.put_user(user)
-    eventsdb.put_event(event)
+    usersdb.put(user)
+    eventsdb.put(event)
 
     return f"Successfully registered for {code}!", event
 
 
-# FIXME absurdly inefficient
-# get_all is just slow
 def leaderboard(axis: Literal["points", "attended"], lim: int = 10) -> list[User]:
     users = usersdb.get_all()
 
     if axis == "points":
-        users.sort(key=lambda user: user.points, reverse=True)
+        users.sort(key=lambda user: user["points"], reverse=True)
     else:
-        users.sort(key=lambda user: user.attended, reverse=True)
+        users.sort(key=lambda user: user["attended"], reverse=True)
 
     return users[:lim]
 
 
-# FIXME also inefficient
+# FIXME inefficient
 # fetch all users at once or individually?
 def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     events = eventsdb.get_all()
-    counts: dict[int, int] = {}
+    counts: dict[str, int] = {}
 
     # sum frequencies
     for event in events:
-        if activity.lower() not in event.name.lower():
+        if activity.lower() not in event["name"].lower():
             continue
-        for attended_user_id in event.attended_users:
-            user_id = int(attended_user_id)
+        for user_id in event["attended_users"]:
             if user_id in counts:
                 counts[user_id] += 1
             else:
@@ -139,12 +136,12 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     # map ids to names
     leaderboard: list[tuple[str, int]] = []
     for user_id, count in counts.items():
-        user = usersdb.get_user(user_id)
+        user = usersdb.get(user_id)
 
         if user is None:
             raise Exception(f"User {user_id} is in events but not in users.")
 
-        leaderboard.append((user.name, count))
+        leaderboard.append((user["name"], count))
 
     return leaderboard
 
@@ -154,7 +151,7 @@ def register(
     name: str,
     grad_year_str: str,
     email: str,
-    user_id: int,
+    user_id: str,
     user_name: str,
     guild_id: int | None,
 ) -> str:
@@ -190,18 +187,18 @@ def register(
                 email=email,
             )
         else:
-            user.name = name
-            user.grad_year = grad_year
+            user["name"] = name
+            user["grad_year"] = grad_year
             return user
 
-    usersdb.update_user(user_id, update)
+    usersdb.update(update, user_id)
 
     return f"You have successfully updated your profile! {ask_to_verify}"
 
 
-def register_email(user_id: int, email: str, guild_id: int | None) -> str:
-    user = usersdb.get_user(user_id)
-    if user is not None and user.email == email:
+def register_email(user_id: str, email: str, guild_id: int | None) -> str:
+    user = usersdb.get(user_id)
+    if user is not None and user["email"] == email:
         return ""
 
     # TODO Flagged table
@@ -217,7 +214,7 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
             return "Too many failed attempts to email verification, please contact an officer"
 
     verification = EmailPending(
-        user_id, email, random.randint(1000, 10000), datetime.now()
+        int(user_id), email, random.randint(1000, 10000), datetime.now()
     )
     pending_emails[user_id] = verification
 
@@ -230,7 +227,7 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
     return "Please use /verify with the code you received in your email."
 
 
-def verify_email(code: int, user_id: int) -> str:
+def verify_email(code: int, user_id: str) -> str:
     if user_id not in pending_emails:
         return "Please use /register to submit your email"
 
@@ -241,20 +238,20 @@ def verify_email(code: int, user_id: int) -> str:
 
     def update(user: MaybeUser) -> MaybeUser:
         if user is not None:
-            user.email = pending.email
+            user["email"] = pending.email
         return user
 
-    usersdb.update_user(user_id, update)
+    usersdb.update(update, user_id)
     pending_emails.pop(user_id)
     return "Email verified! It is now visible on your /profile"
 
 
-def remove_pending(user_id: int = 0) -> None:
+def remove_pending(user_id: str = "0") -> None:
     del pending_emails[user_id]
 
 
-def profile(user_id: int) -> tuple[str, MaybeUser]:
-    user = usersdb.get_user(user_id)
+def profile(user_id: str) -> tuple[str, MaybeUser]:
+    user = usersdb.get(user_id)
 
     if user is None:
         return "Your profile does not exist", None
@@ -266,14 +263,13 @@ def find_event(code: str = "") -> tuple[str, MaybeEvent]:
     if code == "":
         return "Please include an event name or code.", None
 
-    event = eventsdb.get_event(code)
+    event = eventsdb.get(code)
     if event is None:
         return "This event does not exist", None
     else:
         return "", event
 
 
-# FIXME inefficient
 def event_list() -> list[Event]:
     return eventsdb.get_all()
 
@@ -282,17 +278,16 @@ def get_event_count() -> int:
     return eventsdb.get_count()
 
 
-def award(user_id: int, user_name: str, points: int) -> str:
-    user = usersdb.get_user(user_id)
+def award(user_id: str, user_name: str, points: int) -> str:
+    user = usersdb.get(user_id)
 
     if user is None:
         return "This user has not registered yet!"
 
-    user.points += points
+    user["points"] += points
 
-    return f"Successfully added {points} points to {user_name} ({user.name})."
+    return f"Successfully added {points} points to {user_name} ({user["name"]})."
 
 
-# TODO
 def calendar_events() -> list[Any] | None:
     return google_client.get_events()  # type: ignore
