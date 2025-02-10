@@ -22,7 +22,11 @@ logger = logging.getLogger(__name__)
 
 class Bot(discord.Client):
     def __init__(self):
-        super().__init__(intents=discord.Intents(guilds=True, members=True, messages=True, guild_scheduled_events=True))
+        super().__init__(
+            intents=discord.Intents(
+                guilds=True, members=True, messages=True, guild_scheduled_events=True
+            )
+        )
         self.synced = False
 
     async def on_ready(self):
@@ -36,11 +40,15 @@ class Bot(discord.Client):
     async def on_scheduled_event_create(self, event):
         # voice channel events do not trigger this
         points = 50
-        time = event.start_time.astimezone(timezone('US/Central'))
+        time = event.start_time.astimezone(timezone("US/Central"))
 
-        code = backend.create_event(event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id)
+        code = backend.create_event(
+            event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id
+        )
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
-        await self.get_channel(admin_channel_id).send(f"The code is `{code}`", embed=embed)
+        await self.get_channel(admin_channel_id).send(
+            f"The code is `{code}`", embed=embed
+        )
 
 
 client = Bot()
@@ -78,7 +86,7 @@ class PageDisplay(discord.ui.View):
         style=discord.ButtonStyle.primary, custom_id="el_next", emoji="▶"
     )
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.page < len(backend.event_list()) // 5:
+        if self.page < backend.get_event_count() // 5:
             self.page += 1
         embed = event_list_embed(self.page)
         if embed is None:
@@ -87,7 +95,14 @@ class PageDisplay(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-def event_info(name, points, date, code, resources, attendees=""):
+def event_info(
+    name: str,
+    points: int,
+    date: str,
+    code: str,
+    resources: str,
+    attendees: list[str] = [],
+):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
     embed.add_field(name="Points", value=points, inline=False)
@@ -95,23 +110,22 @@ def event_info(name, points, date, code, resources, attendees=""):
     embed.add_field(name="Date", value=date, inline=False)
     if resources:
         embed.add_field(name="Resources", value=resources, inline=False)
-    if attendees != "":
-        count = len(attendees.split(" "))
-        embed.add_field(name="Attendance count", value=count, inline=False)
+    if attendees:
+        embed.add_field(name="Attendance count", value=len(attendees), inline=False)
     return embed
 
 
-def event_list_embed(page):
+def event_list_embed(page: int):
     events = backend.event_list()
     max_pages = len(events) // 5 + 1
-    names = ""
-    dates = ""
-    codes = ""
-    selection = events[page * 5: (page + 1) * 5]
+    names: str = ""
+    dates: str = ""
+    codes: str = ""
+    selection = events[page * 5 : (page + 1) * 5]
     for event in selection:
-        names += event[0] + "\n"
-        dates += event[1] + "\n"
-        codes += event[2] + "\n"
+        names += event.name + "\n"
+        dates += event.date + "\n"
+        codes += event.code + "\n"
     if len(names) == 0:
         return None
 
@@ -134,36 +148,41 @@ Register Discord Bot Commands
 
 
 @reg.command(
-    name="size",
-    description="find the number of human members",
-    guilds=guild_id
+    name="size", description="find the number of human members", guilds=guild_id
 )
 async def size(interaction: discord.Interaction):
-    count = 0
-    for member in interaction.guild.members:
-        if not member.bot:
-            count += 1
-    await interaction.response.send_message(f"There are {count} humans in the server.")
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "The GuildID is not set and the number of human members could not be verified."
+        )
+    else:
+        count = 0
+        for member in interaction.guild.members:
+            if not member.bot:
+                count += 1
+        await interaction.response.send_message(
+            f"There are {count} humans in the server."
+        )
 
 
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="create",
     description="create an event and track its attendance",
-    guilds=guild_id
+    guilds=guild_id,
 )
 @app_commands.describe(
-    name='The name of the event',
-    points='The point value reward for attending',
-    date='The date of the event',
-    resources='Information to be shared with attendees'
+    name="The name of the event",
+    points="The point value reward for attending",
+    date="The date of the event",
+    resources="Information to be shared with attendees",
 )
 async def create(
-        interaction: discord.Interaction,
-        name: str,
-        points: int,
-        date: str,
-        resources: str = "",
+    interaction: discord.Interaction,
+    name: str,
+    points: int,
+    date: str,
+    resources: str = "",
 ):
     code = backend.create_event(name, points, date, resources, interaction.user.id)
     embed = event_info(name, points, date, code, resources)
@@ -174,14 +193,15 @@ class AttendModal(ui.Modal, title="Attend"):
     code = ui.TextInput(label="code")
 
     async def on_submit(self, interaction: discord.Interaction):
-        code = self.code.value
-        msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
-        if data is None:
+        code: str = self.code.value
+        msg, event = backend.attend_event(
+            code, interaction.user.id, interaction.user.name
+        )
+        if event is None:
             await interaction.response.send_message(msg, ephemeral=True)
             return
 
-        name, points, date, resources = data
-        embed = event_info(name, points, date, code, resources)
+        embed = event_info(event.name, event.points, event.date, code, event.resources)
         await interaction.response.send_message(msg, embed=embed, ephemeral=True)
 
 
@@ -189,45 +209,43 @@ class AttendModal(ui.Modal, title="Attend"):
 @reg.command(
     name="attend",
     description="register at the event you are attending for rewards and resources",
-    guilds=guild_id
+    guilds=guild_id,
 )
-@app_commands.describe(code='(optional) The code of the event given by the presenter')
+@app_commands.describe(code="(optional) The code of the event given by the presenter")
 async def attend(interaction: discord.Interaction, code: str = ""):
     if code == "":
         await interaction.response.send_modal(AttendModal())
         return
-    msg, data = backend.attend_event(code, interaction.user.id, interaction.user.name)
-    if data is None:
+    msg, event = backend.attend_event(code, interaction.user.id, interaction.user.name)
+    if event is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return
 
-    name, points, date, resources = data
-    embed = event_info(name, points, date, code, resources)
+    embed = event_info(event.name, event.points, event.date, code, event.resources)
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
 
 
 @reg.command(
     name="leaderboard",
     description="find the top students with the highest points",
-    guilds=guild_id
+    guilds=guild_id,
 )
 @app_commands.describe(
-    axis='what criteria to sort by',
-    lim='the number of results to display'
+    axis="what criteria to sort by", lim="the number of results to display"
 )
 async def leaderboard(
-        interaction: discord.Interaction, axis: Literal["points", "attended"], lim: int = 10
+    interaction: discord.Interaction, axis: Literal["points", "attended"], lim: int = 10
 ):
-    lb = backend.leaderboard(axis, lim)
-    if not lb:
+    users = backend.leaderboard(axis, lim)
+    if not users:
         await interaction.response.send_message("There are no registered users yet")
         return
 
     names_column = ""
     point_column = ""
-    for name, point in lb:
-        names_column += name + "\n"
-        point_column += f"{point}\n"
+    for user in users:
+        names_column += user.name + "\n"
+        point_column += f"{user.points}\n"
     embed = discord.Embed(title=f"{axis.capitalize()} Leaderboard", color=0xFFFFFF)
     embed.add_field(name="Name", value=names_column, inline=True)
     embed.add_field(name=f"{axis.capitalize()}", value=point_column, inline=True)
@@ -237,21 +255,17 @@ async def leaderboard(
 @reg.command(
     name="leaderboard_search",
     description="find the top students with the highest points in all the events that include the search term",
-    guilds=guild_id
+    guilds=guild_id,
 )
-@app_commands.describe(
-    activity='what activity group to search for'
-)
-async def leaderboard_search(
-        interaction: discord.Interaction, activity: str
-):
+@app_commands.describe(activity="what activity group to search for")
+async def leaderboard_search(interaction: discord.Interaction, activity: str):
     lb = backend.leaderboard_search(activity)
     if not lb:
         await interaction.response.send_message("There are no registered users yet")
         return
     prev, curr = 0, 0
     lb = sorted(lb, key=lambda kv: (kv[1], kv[0]), reverse=True)
-    embeds = []
+    embeds: list[discord.Embed] = []
     while curr < len(lb):
         names_column = ""
         point_column = ""
@@ -273,132 +287,135 @@ async def leaderboard_search(
 
 
 class RegisterModal(ui.Modal, title="Register"):
-    name = ui.TextInput(label='name', placeholder="please enter your full name/names you go by")
-    grad_year = ui.TextInput(label='grad_year', placeholder='your graduation year (yyyy), e.g. 2024')
-    email = ui.TextInput(label='email', placeholder='TAMU email')
+    name = ui.TextInput(
+        label="name", placeholder="please enter your full name/names you go by"
+    )
+    grad_year = ui.TextInput(
+        label="grad_year", placeholder="your graduation year (yyyy), e.g. 2024"
+    )
+    email = ui.TextInput(label="email", placeholder="TAMU email")
 
     async def on_submit(self, interaction: discord.Interaction):
         name = self.name.value
         grad_year = self.grad_year.value
         email = self.email.value
         try:
-            msg = backend.register(
-                name, grad_year, email, interaction.user.id, interaction.user.name, interaction.guild_id
+            msg: str = backend.register(
+                name,
+                grad_year,
+                email,
+                interaction.user.id,
+                interaction.user.name,
+                interaction.guild_id,
             )
         except:
-            await client.get_channel(admin_channel_id) \
-                .send(f"{interaction.user.mention} registration attempt, update token")
+            await client.get_channel(admin_channel_id).send(
+                f"{interaction.user.mention} registration attempt, update token"
+            )
             logger.debug(name, grad_year, email, interaction.user.name)
             msg = "The verification code failed to send, an officer has been notified and will contact you soon"
         await interaction.response.send_message(msg, ephemeral=True)
 
 
 @reg.command(
-    name="register",
-    description="register your information here",
-    guilds=guild_id
+    name="register", description="register your information here", guilds=guild_id
 )
-async def register(
-        interaction: discord.Interaction
-):
+async def register(interaction: discord.Interaction):
     await interaction.response.send_modal(RegisterModal())
 
 
 @app_commands.checks.cooldown(3, 5 * 60)
-@reg.command(
-    name="verify",
-    description="verify your TAMU email",
-    guilds=guild_id
-)
-@app_commands.describe(code='Please enter the code sent to your TAMU email')
+@reg.command(name="verify", description="verify your TAMU email", guilds=guild_id)
+@app_commands.describe(code="Please enter the code sent to your TAMU email")
 async def verify(interaction: discord.Interaction, code: int):
-    msg = backend.verify_email(code, interaction.user.id)
-    if 'verified!' in msg and interaction.guild_id == 631254092332662805:
-        await interaction.user.add_roles(discord.Object(id=1015024081432743996), reason='TAMU email verified')
+    msg: str = backend.verify_email(code, interaction.user.id)
+    if "verified!" in msg and interaction.guild_id == 631254092332662805:
+        await interaction.user.add_roles(
+            discord.Object(id=1015024081432743996), reason="TAMU email verified"
+        )
     await interaction.response.send_message(msg, ephemeral=True)
 
 
 @verify.error
-async def on_verify_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+async def on_verify_error(
+    interaction: discord.Interaction, error: app_commands.AppCommandError
+):
     if isinstance(error, app_commands.CommandOnCooldown):
         backend.remove_pending(interaction.user.id)
-        await interaction.response.send_message("You have verified too many times! Please contact an officer",
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "You have verified too many times! Please contact an officer",
+            ephemeral=True,
+        )
 
 
 @reg.command(
-    name="profile",
-    description="get your current attendance info!",
-    guilds=guild_id
+    name="profile", description="get your current attendance info!", guilds=guild_id
 )
 async def profile(interaction: discord.Interaction):
-    msg, data = backend.profile(interaction.user.id)
-    if data is None:
+    msg, user = backend.profile(interaction.user.id)
+    if user is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return
 
-    name, points, attended, grad_year, email = data
     embed = discord.Embed(title="Profile", color=0xFFFFFF)
-    embed.add_field(name="Name", value=name, inline=False)
-    embed.add_field(name="Points", value=points, inline=False)
-    embed.add_field(name="Attended Events", value=attended, inline=False)
-    if grad_year > 0:
-        embed.add_field(name="Graduation Year", value=grad_year, inline=False)
-    if email:
-        embed.add_field(name="TAMU Email", value=email, inline=False)
+    embed.add_field(name="Name", value=user.name, inline=False)
+    embed.add_field(name="Points", value=user.points, inline=False)
+    embed.add_field(name="Attended Events", value=user.attended, inline=False)
+    if user.grad_year > 0:
+        embed.add_field(name="Graduation Year", value=user.grad_year, inline=False)
+    if user.email:
+        embed.add_field(name="TAMU Email", value=user.email, inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @reg.command(
     name="profile_member",
     description="get the attendance info for a specific member!",
-    guilds=guild_id
+    guilds=guild_id,
 )
 @app_commands.default_permissions(manage_events=True)
 @app_commands.describe(member="The profile for which member")
 async def profile_member(interaction: discord.Interaction, member: discord.Member):
-    msg, data = backend.profile(member.id)
-    if data is None:
+    msg, user = backend.profile(member.id)
+    if user is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return
 
-    name, points, attended, grad_year, email = data
     embed = discord.Embed(title="Profile", color=0xFFFFFF)
-    embed.add_field(name="Name", value=name, inline=False)
-    embed.add_field(name="Points", value=points, inline=False)
-    embed.add_field(name="Attended Events", value=attended, inline=False)
-    if grad_year > 0:
-        embed.add_field(name="Graduation Year", value=grad_year, inline=False)
-    if email:
-        embed.add_field(name="TAMU Email", value=email, inline=False)
+    embed.add_field(name="Name", value=user.name, inline=False)
+    embed.add_field(name="Points", value=user.points, inline=False)
+    embed.add_field(name="Attended Events", value=user.attended, inline=False)
+    if user.grad_year > 0:
+        embed.add_field(name="Graduation Year", value=user.grad_year, inline=False)
+    if user.email:
+        embed.add_field(name="TAMU Email", value=user.email, inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
-    name="find_event",
-    description="get information on an event",
-    guilds=guild_id
+    name="find_event", description="get information on an event", guilds=guild_id
 )
-@app_commands.describe(
-    code='Search by event code',
-    name='Search by the exact event name'
-)
-async def find_event(interaction: discord.Interaction, code: str = "", name: str = ""):
-    msg, data = backend.find_event(code, name)
-    if data is None:
+@app_commands.describe(code="Search by event code")
+async def find_event(interaction: discord.Interaction, code: str = ""):
+    msg, event = backend.find_event(code)
+    if event is None:
         await interaction.response.send_message(msg, ephemeral=True)
     else:
-        name, points, date, code, resources, attendees = data
-        embed = event_info(name, points, date, code, resources, attendees)
+        embed = event_info(
+            event.name,
+            event.points,
+            event.date,
+            code,
+            event.resources,
+            event.attended_users,
+        )
         await interaction.response.send_message(embed=embed)
 
 
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
-    name="event_list",
-    description="get a list of all events created",
-    guilds=guild_id
+    name="event_list", description="get a list of all events created", guilds=guild_id
 )
 async def event_list(interaction: discord.Interaction):
     my_view = PageDisplay()
@@ -411,29 +428,23 @@ async def event_list(interaction: discord.Interaction):
 
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
-    name="award",
-    description="manually award points to a user",
-    guilds=guild_id
+    name="award", description="manually award points to a user", guilds=guild_id
 )
 @app_commands.describe(
-    user='The user to award the points to',
-    points='The number of points'
+    user="The user to award the points to", points="The number of points"
 )
 async def award(interaction: discord.Interaction, user: discord.Member, points: int):
-    msg = backend.award(user.id, user.name, points)
+    msg: str = backend.award(user.id, user.name, points)
     await interaction.response.send_message(msg)
 
 
 # @app_commands.default_permissions(manage_events=True)
-@reg.command(
-    name="help",
-    description="get a list of all commands",
-    guilds=guild_id
-)
+@reg.command(name="help", description="get a list of all commands", guilds=guild_id)
 async def list_of_commands(interaction: discord.Interaction):
     commands = reg.get_commands()
-    perm = interaction.user.resolved_permissions.manage_events
-    output = ""
+    perm: bool = interaction.user.resolved_permissions.manage_events  # type: ignore
+    output: str = ""
+
     if perm:
         for command in commands:
             if command.default_permissions is None:
@@ -444,31 +455,37 @@ async def list_of_commands(interaction: discord.Interaction):
         for command in commands:
             if command.default_permissions is None:
                 output += f"{command.name}\n"
+
     await interaction.response.send_message(output)
 
 
-class EditModal(discord.ui.Modal, title='Edit a Message'):
-    answer = discord.ui.TextInput(label='Message content', style=discord.TextStyle.paragraph, max_length=2000)
+class EditModal(discord.ui.Modal, title="Edit a Message"):
+    answer = discord.ui.TextInput(
+        label="Message content", style=discord.TextStyle.paragraph, max_length=2000
+    )
 
-    def __init__(self, message: discord.Message = None):
+    def __init__(self, message: discord.Message):
         super().__init__()
         self.message = message
 
     async def on_submit(self, interaction: discord.Interaction):
         if self.message is None:
-            await interaction.response.send_message(f'Howdy! The message has been sent.', ephemeral=True)
-            await interaction.channel.send(f'{self.answer}')
+            await interaction.response.send_message(
+                f"Howdy! The message has been sent.", ephemeral=True
+            )
+            await interaction.channel.send(f"{self.answer}")
         else:
-            await interaction.response.send_message(f'Howdy! The message has been updated.', ephemeral=True)
-            await self.message.edit(content=f'{self.answer}')
+            await interaction.response.send_message(
+                f"Howdy! The message has been updated.", ephemeral=True
+            )
+            await self.message.edit(content=f"{self.answer}")
 
 
 @app_commands.default_permissions(manage_events=True)
-@reg.context_menu(
-    name="Edit message",
-    guilds=guild_id
-)
-async def edit_message(interaction: discord.Interaction, message: discord.Message) -> None:
+@reg.context_menu(name="Edit message", guilds=guild_id)
+async def edit_message(
+    interaction: discord.Interaction, message: discord.Message
+) -> None:
     modal = EditModal(message)
     await interaction.response.send_modal(modal)
 
@@ -477,7 +494,7 @@ async def edit_message(interaction: discord.Interaction, message: discord.Messag
 @reg.command(
     name="send_editable_message",
     description="send a message that will be editable by user with permission configured in integrations",
-    guilds=guild_id
+    guilds=guild_id,
 )
 async def send_editable_message(interaction: discord.Interaction) -> None:
     modal = EditModal()
@@ -488,12 +505,14 @@ async def send_editable_message(interaction: discord.Interaction) -> None:
 @reg.command(
     name="update_calendar_events",
     description="create discord events for google calendar events",
-    guilds=guild_id
+    guilds=guild_id,
 )
 async def update_calendar_events(interaction: discord.Interaction):
     events = backend.calendar_events()
-    discord_events = [{'name': event.name, 'start': event.start_time, 'end': event.end_time} for event in
-                      interaction.guild.scheduled_events]
+    discord_events = [
+        {"name": event.name, "start": event.start_time, "end": event.end_time}
+        for event in interaction.guild.scheduled_events
+    ]
     if events is None:
         await interaction.response.send_message("No events found", ephemeral=True)
         return
@@ -502,17 +521,26 @@ async def update_calendar_events(interaction: discord.Interaction):
     count = 0
     newmsg = ""
     for event in events:
-        event_data = {'name': event['name'], 'start': event['start'], 'end': event['end']}
+        event_data = {
+            "name": event["name"],
+            "start": event["start"],
+            "end": event["end"],
+        }
         if event_data not in discord_events:
             try:
-                await interaction.guild.create_scheduled_event(name=event['name'], start_time=event['start'],
-                                                               end_time=event['end'],
-                                                               privacy_level=PrivacyLevel.guild_only,
-                                                               entity_type=EntityType.external,
-                                                               location=event['location'])
+                await interaction.guild.create_scheduled_event(
+                    name=event["name"],
+                    start_time=event["start"],
+                    end_time=event["end"],
+                    privacy_level=PrivacyLevel.guild_only,
+                    entity_type=EntityType.external,
+                    location=event["location"],
+                )
                 count += 1
             except discord.Forbidden:
-                await interaction.followup.send("I don't have permission to create events in this server.")
+                await interaction.followup.send(
+                    "I don't have permission to create events in this server."
+                )
                 return
             except discord.HTTPException:
                 newmsg += "There was an error creating an event. Has the event already started?\n"
@@ -528,7 +556,7 @@ async def update_calendar_events(interaction: discord.Interaction):
 @reg.command(
     name="delete_all_events",
     description="delete all current discord events",
-    guilds=guild_id
+    guilds=guild_id,
 )
 async def delete_all_events(interaction: discord.Interaction):
     num_events = len(interaction.guild.scheduled_events)
@@ -536,6 +564,7 @@ async def delete_all_events(interaction: discord.Interaction):
     await interaction.response.send_message(msg)
     for event in interaction.guild.scheduled_events:
         await event.delete()
+
 
 activity_group_channels = {
     "cyber op": 1278359289160929332,
@@ -545,11 +574,12 @@ activity_group_channels = {
     "cisco": 946612171360579627,
 }
 
+
 @app_commands.default_permissions(manage_events=True)
 @reg.command(
     name="generate_announcements",
     description="generates announcements boilerplate based on events",
-    guilds=guild_id
+    guilds=guild_id,
 )
 async def generate_announcements(interaction: discord.Interaction):
     await interaction.response.defer(thinking=True)
@@ -565,7 +595,9 @@ async def generate_announcements(interaction: discord.Interaction):
     friday = monday + timedelta(days=4)
 
     # Create dictionary of events to sort
-    events = dict([(key, {}) for key in [x for x in range(5)]])  # cursed list comprehension
+    events = dict(
+        [(key, {}) for key in [x for x in range(5)]]
+    )  # cursed list comprehension
     events_announced = 0
 
     boilerplate = """
@@ -574,8 +606,8 @@ async def generate_announcements(interaction: discord.Interaction):
     """
 
     for event in await interaction.guild.fetch_scheduled_events():
-        start_time = event.start_time.astimezone(timezone('US/Central'))
-        end_time = event.end_time.astimezone(timezone('US/Central'))
+        start_time = event.start_time.astimezone(timezone("US/Central"))
+        end_time = event.end_time.astimezone(timezone("US/Central"))
 
         if 0 <= weekday_now <= 4:
             if monday <= start_time.date() <= friday:
@@ -601,10 +633,18 @@ async def generate_announcements(interaction: discord.Interaction):
                         boilerplate += f"**{location}**\n"
 
                     for event in events:
-                        start_time = event.start_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip(
-                            "0").replace(" 0", " ")
-                        end_time = event.end_time.astimezone(timezone('US/Central')).strftime("%I:%M%p").lstrip(
-                            "0").replace(" 0", " ")
+                        start_time = (
+                            event.start_time.astimezone(timezone("US/Central"))
+                            .strftime("%I:%M%p")
+                            .lstrip("0")
+                            .replace(" 0", " ")
+                        )
+                        end_time = (
+                            event.end_time.astimezone(timezone("US/Central"))
+                            .strftime("%I:%M%p")
+                            .lstrip("0")
+                            .replace(" 0", " ")
+                        )
 
                         channel_mention = ""
                         for key, value in activity_group_channels.items():

@@ -118,6 +118,14 @@ SerializedDict: TypeAlias = Mapping[str, UniversalAttributeValueTypeDef]
 MaybeData: TypeAlias = Optional[T]
 UpdateData: TypeAlias = Callable[[MaybeData[T]], MaybeData[T]]
 
+UpdateUser: TypeAlias = Callable[[MaybeUser], MaybeUser]
+UpdateEvent: TypeAlias = Callable[[MaybeEvent], MaybeEvent]
+
+DummyUser: User = User(user_id=0, name="", points=0, attended=0, grad_year=0, email="")
+DummyEvent: Event = Event(
+    name="", code="", points=0, date="", resources="", attended_users=[]
+)
+
 
 def data_to_item(data: MaybeData[T]) -> MaybeItem:
     if data is None:

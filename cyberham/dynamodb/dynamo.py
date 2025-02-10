@@ -1,4 +1,5 @@
 import boto3
+from mypy_boto3_dynamodb.type_defs import ScanOutputTypeDef
 from cyberham import dynamo_keys
 from mypy_boto3_dynamodb import DynamoDBClient
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
@@ -11,6 +12,7 @@ from cyberham.dynamodb.types import (
     SerializedDict,
     UpdateItem,
 )
+from typing import Any
 
 DEFAULT_REGION = "us-east-1"
 
@@ -71,8 +73,8 @@ class DynamoDB:
     def update_item(self, table: TableName, key: Key, update: UpdateItem) -> MaybeItem:
         """
         Access an item, change its contents, and the upload the change.
-        The accessed item can be None (the item is new) and you can return None (delete the existing item).
-        Returns the new item following the update.
+        The accessed item can be None (the item doesn't exist) and you can return None (delete the item).
+        Returns the updated item.
         """
 
         get_item = self.get_item(table, key)
@@ -100,6 +102,20 @@ class DynamoDB:
             return self._deserialize(old_item)
 
         return None
+
+    def get_all(self, table: TableName) -> list[Item]:
+        result: ScanOutputTypeDef = self._dynamodb.scan(TableName=table)
+        items: list[SerializedItem] | None = result.get("Items")
+
+        deserialized: list[Item] = []
+        for item in items:
+            deserialized.append(self._deserialize(item))
+
+        return deserialized
+
+    def get_all_raw(self, table: TableName) -> list[Any]:
+        result: ScanOutputTypeDef = self._dynamodb.scan(TableName=table)
+        return result.get("Items")
 
     @staticmethod
     def create_key(
