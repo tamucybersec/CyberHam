@@ -43,7 +43,7 @@ class Bot(discord.Client):
         time = event.start_time.astimezone(timezone("US/Central"))
 
         code = backend.create_event(
-            event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id
+            event.name, points, time.strftime("%m/%d/%Y"), "", str(event.creator_id)
         )
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
         await self.get_channel(admin_channel_id).send(
@@ -194,9 +194,7 @@ class AttendModal(ui.Modal, title="Attend"):
 
     async def on_submit(self, interaction: discord.Interaction):
         code: str = self.code.value
-        msg, event = backend.attend_event(
-            code, interaction.user.id, interaction.user.name
-        )
+        msg, event = backend.attend_event(code, str(interaction.user.id))
         if event is None:
             await interaction.response.send_message(msg, ephemeral=True)
             return
@@ -218,9 +216,7 @@ async def attend(interaction: discord.Interaction, code: str = ""):
     if code == "":
         await interaction.response.send_modal(AttendModal())
         return
-    msg, event = backend.attend_event(
-        code, str(interaction.user.id), interaction.user.name
-    )
+    msg, event = backend.attend_event(code, str(interaction.user.id))
     if event is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return

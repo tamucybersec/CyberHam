@@ -27,7 +27,10 @@ class MockDB(Generic[T]):
         self.contents[item[self.partition_key_name]] = item
 
     def get(self, partition_key: str, sort_key: Optional[str] = None) -> Maybe[T]:
-        return self.contents[partition_key]
+        if partition_key in self.contents:
+            return self.contents[partition_key]
+        else:
+            return None
 
     def update(
         self, update: Update[T], partition_key: str, sort_key: Optional[str] = None
@@ -43,9 +46,12 @@ class MockDB(Generic[T]):
             return updated_item
 
     def delete(self, partition_key: str, sort_key: Optional[str] = None) -> Maybe[T]:
-        item = self.contents[partition_key]
-        del self.contents[partition_key]
-        return item
+        if partition_key in self.contents:
+            item = self.contents[partition_key]
+            del self.contents[partition_key]
+            return item
+        else:
+            return None
 
     def get_all(self) -> list[T]:
         return list(self.contents.values())

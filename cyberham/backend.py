@@ -78,7 +78,7 @@ def create_event(
 
 # FIXME concurrency concerns
 # use consistent read
-def attend_event(code: str, user_id: str, user_name: str) -> tuple[str, MaybeEvent]:
+def attend_event(code: str, user_id: str) -> tuple[str, MaybeEvent]:
     code = code.upper()
 
     # user validation
@@ -96,10 +96,10 @@ def attend_event(code: str, user_id: str, user_name: str) -> tuple[str, MaybeEve
         return f"You have already redeemed {code}!", None
 
     cst_tz = timezone("America/Chicago")
-    event_day = datetime.strptime(event["date"], "%m/%d/%Y").date()
-    current_day = datetime.now(cst_tz).date()
+    event_date = datetime.strptime(event["date"], "%m/%d/%Y").date()
+    today = datetime.now(cst_tz).date()
 
-    if event_day != current_day:
+    if event_date != today:
         return "You must redeem an event on the day it occurs!", None
 
     # attend event
@@ -196,6 +196,7 @@ def register(
         else:
             user["name"] = name
             user["grad_year"] = grad_year
+            user["email"] = email
             return user
 
     usersdb.update(update, user_id)

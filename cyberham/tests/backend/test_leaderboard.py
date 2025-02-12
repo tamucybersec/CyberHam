@@ -1,37 +1,26 @@
 from pytest import MonkeyPatch
 from cyberham.tests.backend.mockdb import MockDB
-from cyberham.dynamodb.types import User
 from cyberham.backend import leaderboard
-
-users = [
-    User(points=100, attended=5, user_id="0", name="Lane", grad_year=2024, email=""),
-    User(points=200, attended=1, user_id="1", name="Colby", grad_year=2025, email=""),
-    User(points=50, attended=50, user_id="2", name="Damian", grad_year=2026, email=""),
-    User(points=0, attended=15, user_id="3", name="Stella", grad_year=2025, email=""),
-    User(points=1000, attended=0, user_id="4", name="Ezra", grad_year=2027, email=""),
-]
+from cyberham.tests.backend.models import users
 
 
 class TestLeaderboard:
     def setup_method(self):
-        self.mp = MonkeyPatch()
-        self.db = MockDB(users, "user_id", None)
-        self.mp.setattr("cyberham.backend.usersdb", self.db)
-
-    def teardown_method(self):
-        self.mp.undo()
+        mp = MonkeyPatch()
+        self.usersdb = MockDB(users, "user_id", None)
+        mp.setattr("cyberham.backend.usersdb", self.usersdb)
 
     def test_points(self):
-        got = leaderboard("points")
+        got = leaderboard("points", len(users))
         expected = sorted(users, key=lambda user: user["points"], reverse=True)
 
-        assert got == expected
+        assert got == expected, "Attended users should be correctly sorted"
 
     def test_attended(self):
-        got = leaderboard("attended")
+        got = leaderboard("attended", len(users))
         expected = sorted(users, key=lambda user: user["attended"], reverse=True)
 
-        assert got == expected
+        assert got == expected, "Attended users should be correctly sorted"
 
     def test_limit(self):
         limit = 2
@@ -39,4 +28,4 @@ class TestLeaderboard:
         got = leaderboard("points", limit)
         expected = sorted(users, key=lambda user: user["points"], reverse=True)
 
-        assert got == expected[:limit]
+        assert got == expected[:limit], "List should be correctly truncated"

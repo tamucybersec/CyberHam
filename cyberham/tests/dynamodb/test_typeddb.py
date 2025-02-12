@@ -1,5 +1,5 @@
 from cyberham.dynamodb.types import TestItem
-from cyberham.tests.dynamodb.dynamo_models import (
+from cyberham.tests.dynamodb.models import (
     existing_test_item,
     non_existent_test_item,
     new_test_item,
