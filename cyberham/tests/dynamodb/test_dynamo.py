@@ -1,6 +1,6 @@
 from cyberham.dynamodb.dynamo import DynamoDB
 from cyberham.dynamodb.types import MaybeItem
-from cyberham.tests.dynamo_models import (
+from cyberham.tests.dynamodb.dynamo_models import (
     table,
     partition_key,
     sort_key,
