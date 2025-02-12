@@ -8,7 +8,7 @@ from cyberham.tests.dynamodb.models import (
 from cyberham.dynamodb.typeddb import testdb
 
 
-class TestDynamoCrud:
+class TestTypedDB:
     def test_get_item(self):
         item = testdb.get(existing_test_item["partition"], existing_test_item["sort"])
         assert item and existing_test_item == item

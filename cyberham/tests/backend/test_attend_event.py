@@ -1,14 +1,23 @@
 from pytest import MonkeyPatch
 from cyberham.tests.backend.mockdb import MockDB
 from cyberham.backend import attend_event
-from cyberham.tests.backend.models import valid_user, no_grad_year_user, unregistered_user, current_event, events
+from cyberham.tests.backend.models import (
+    valid_user,
+    unregistered_user,
+    current_event,
+    past_event,
+    future_event,
+    attended_event,
+    unregistered_event,
+    events,
+)
 from copy import deepcopy
 
 
 class TestAttendEvent:
     def setup_method(self):
         mp = MonkeyPatch()
-        self.usersdb = MockDB([valid_user, no_grad_year_user], "user_id", None)
+        self.usersdb = MockDB([valid_user], "user_id", None)
         self.eventsdb = MockDB(events, "code", None)
         mp.setattr("cyberham.backend.usersdb", self.usersdb)
         mp.setattr("cyberham.backend.eventsdb", self.eventsdb)
@@ -41,10 +50,37 @@ class TestAttendEvent:
         assert ev is None, "No event should be returned"
 
     def test_non_existent_event(self):
-        assert False
+        user = deepcopy(valid_user)
+        event = deepcopy(unregistered_event)
+
+        msg, ev = attend_event(event["code"], user["user_id"])
+
+        assert msg, "String should be neither None nor empty"
+        assert ev is None, "No event should be returned"
 
     def test_already_redeemed(self):
-        assert False
+        user = deepcopy(valid_user)
+        event = deepcopy(attended_event)
 
-    def test_not_same_day(self):
-        assert False
+        msg, ev = attend_event(event["code"], user["user_id"])
+
+        assert msg, "String should be neither None nor empty"
+        assert ev is None, "No event should be returned"
+
+    def test_not_same_day_past(self):
+        user = deepcopy(valid_user)
+        event = deepcopy(past_event)
+
+        msg, ev = attend_event(event["code"], user["user_id"])
+
+        assert msg, "String should be neither None nor empty"
+        assert ev is None, "No event should be returned"
+
+    def test_not_same_day_future(self):
+        user = deepcopy(valid_user)
+        event = deepcopy(future_event)
+
+        msg, ev = attend_event(event["code"], user["user_id"])
+
+        assert msg, "String should be neither None nor empty"
+        assert ev is None, "No event should be returned"

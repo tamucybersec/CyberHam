@@ -1,11 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 from cyberham.dynamodb.types import User, Event
 
 cst_tz = timezone("America/Chicago")
-today = datetime.now(cst_tz).date().strftime("%m/%d/%Y")
-yesterday = datetime.now(cst_tz).date().strftime("%m/%d/%Y")
-tomorrow = datetime.now(cst_tz).date().strftime("%m/%d/%Y")
+now = datetime.now(cst_tz).date()
+today = now.strftime("%m/%d/%Y")
+yesterday = (now - timedelta(days=1)).strftime("%m/%d/%Y")
+tomorrow = (now + timedelta(days=1)).strftime("%m/%d/%Y")
 
 valid_user = User(
     points=100,
@@ -56,6 +57,9 @@ unregistered_user = User(
     email="owen@tamu.edu",
 )
 
+users = [valid_user, no_grad_year_user, no_email_user, user4, user5]
+ids = [user["user_id"] for user in users]
+
 current_event = Event(
     name="AWS Academy",
     code="AWSAC",
@@ -80,13 +84,13 @@ future_event = Event(
     resources="",
     attended_users=[],
 )
-event4 = Event(
+attended_event = Event(
     name="Cisco Networking Academy",
     code="CISCO",
     points=50,
     date=today,
     resources="",
-    attended_users=[],
+    attended_users=ids,
 )
 event5 = Event(
     name="Hardware Hacking",
@@ -105,5 +109,5 @@ unregistered_event = Event(
     attended_users=[],
 )
 
-users = [valid_user, no_grad_year_user, no_email_user, user4, user5]
-events = [current_event, past_event, future_event, event4, event5]
+
+events = [current_event, past_event, future_event, attended_event, event5]
