@@ -1,14 +1,13 @@
 from cyberham.dynamodb.dynamo import DynamoDB
-from cyberham.dynamodb.types import MaybeItem
-from cyberham.tests.dynamodb.models import (
-    table,
-    partition_key,
-    sort_key,
-    existing_item,
-    non_existent_item,
-    new_item,
-    update_item,
+from cyberham.dynamodb.types import MaybeItem, TableName
+from cyberham.tests.backend.models import (
+    valid_user_item,
+    updated_user_item,
+    unregistered_user_item,
 )
+
+table: TableName = "tests"
+pk = "user_id"
 
 
 class TestDynamoCrud:
@@ -19,22 +18,12 @@ class TestDynamoCrud:
         cls.dynamo = DynamoDB()
 
     def test_get_item(self):
-        key = self.dynamo.create_key(
-            partition_key,
-            existing_item[partition_key],
-            sort_key,
-            existing_item[sort_key],
-        )
+        key = self.dynamo.create_key(pk, str(valid_user_item[pk]))
         item = self.dynamo.get_item(table, key)
-        assert item and existing_item == item
+        assert item and valid_user_item == item
 
     def test_get_non_existent_item(self):
-        key = self.dynamo.create_key(
-            partition_key,
-            non_existent_item[partition_key],
-            sort_key,
-            non_existent_item[sort_key],
-        )
+        key = self.dynamo.create_key(pk, str(unregistered_user_item[pk]))
         item = self.dynamo.get_item(table, key)
         assert item is None
 
@@ -43,29 +32,19 @@ class TestDynamoCrud:
         self._test_delete_item()
 
     def _test_put_item(self):
-        old_item = self.dynamo.put_item(table, new_item)
+        old_item = self.dynamo.put_item(table, updated_user_item)
         assert old_item is None
 
     def _test_delete_item(self):
-        key = self.dynamo.create_key(
-            partition_key,
-            new_item[partition_key],
-            sort_key,
-            new_item[sort_key],
-        )
+        key = self.dynamo.create_key(pk, str(updated_user_item[pk]))
         old_item = self.dynamo.delete_item(table, key)
-        assert old_item == new_item
+        assert old_item == updated_user_item
 
     def test_update_item(self):
-        key = self.dynamo.create_key(
-            partition_key,
-            update_item[partition_key],
-            sort_key,
-            update_item[sort_key],
-        )
+        key = self.dynamo.create_key(pk, str(updated_user_item[pk]))
 
         item1 = self.dynamo.update_item(table, key, _test_update_item_func)
-        assert item1 == update_item
+        assert item1 == updated_user_item
 
         item2 = self.dynamo.update_item(table, key, _test_update_item_func)
         assert item2 is None
@@ -73,6 +52,6 @@ class TestDynamoCrud:
 
 def _test_update_item_func(item: MaybeItem) -> MaybeItem:
     if item is None:
-        return update_item
+        return updated_user_item
     else:
         return None

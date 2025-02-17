@@ -1,7 +1,6 @@
 from cyberham.dynamodb.dynamo import DynamoDB
 from cyberham.dynamodb.types import (
     TableName,
-    TestItem,
     User,
     Event,
     Flagged,
@@ -86,7 +85,7 @@ class _TypedDB(Generic[T]):
 
 
 _db = DynamoDB()
-testdb = _TypedDB[TestItem](_db, "tests", "partition", "sort")
+testdb = _TypedDB[User](_db, "tests", "user_id", None)
 usersdb = _TypedDB[User](_db, "users", "user_id", None)
 eventsdb = _TypedDB[Event](_db, "events", "code", None)
 flaggeddb = _TypedDB[Flagged](_db, "flagged", "user_id", None)

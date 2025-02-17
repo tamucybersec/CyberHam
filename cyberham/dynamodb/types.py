@@ -7,6 +7,7 @@ from typing import (
     TypeVar,
     Mapping,
     TypedDict,
+    Union
 )
 from mypy_boto3_dynamodb.type_defs import (
     UniversalAttributeValueTypeDef,
@@ -49,12 +50,6 @@ class Flagged(TypedDict):
 MaybeFlagged: TypeAlias = Optional[Flagged]
 
 
-class TestItem(TypedDict):
-    partition: str
-    sort: str
-    name: str
-
-
 type TableName = Literal["users", "events", "flagged", "tests"]
 
 Item: TypeAlias = Mapping[str, Any]
@@ -64,6 +59,8 @@ UpdateItem: TypeAlias = Callable[[MaybeItem], MaybeItem]
 
 Key: TypeAlias = Item
 SerializedDict: TypeAlias = Mapping[str, UniversalAttributeValueTypeDef]
+
+TestItem: TypeAlias = Mapping[str, Union[str, int]]
 
 
 DummyUser: User = User(

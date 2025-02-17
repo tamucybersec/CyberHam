@@ -4,7 +4,7 @@ from cyberham.backend import attend_event
 from cyberham.tests.backend.models import (
     valid_user,
     unregistered_user,
-    current_event,
+    valid_event,
     past_event,
     future_event,
     attended_event,
@@ -24,7 +24,7 @@ class TestAttendEvent:
 
     def test_successful(self):
         user = deepcopy(valid_user)
-        event = deepcopy(current_event)
+        event = deepcopy(valid_event)
 
         user["points"] += event["points"]
         user["attended"] += 1
@@ -42,7 +42,7 @@ class TestAttendEvent:
 
     def test_unregistered_user(self):
         user = deepcopy(unregistered_user)
-        event = deepcopy(current_event)
+        event = deepcopy(valid_event)
 
         msg, ev = attend_event(event["code"], user["user_id"])
 

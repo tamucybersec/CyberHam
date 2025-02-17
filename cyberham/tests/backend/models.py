@@ -16,6 +16,22 @@ valid_user = User(
     grad_year=2024,
     email="lane@tamu.edu",
 )
+valid_user_2 = User(
+    points=0,
+    attended=15,
+    user_id="3",
+    name="Stella",
+    grad_year=2025,
+    email="stella@tamu.edu",
+)
+updated_user = User(
+    points=1000,
+    attended=0,
+    user_id="4",
+    name="Emma",
+    grad_year=2027,
+    email="emma@tamu.edu",
+)
 no_grad_year_user = User(
     points=200,
     attended=1,
@@ -32,22 +48,6 @@ no_email_user = User(
     grad_year=2026,
     email="",
 )
-user4 = User(
-    points=0,
-    attended=15,
-    user_id="3",
-    name="Stella",
-    grad_year=2025,
-    email="stella@tamu.edu",
-)
-user5 = User(
-    points=1000,
-    attended=0,
-    user_id="4",
-    name="Emma",
-    grad_year=2027,
-    email="emma@tamu.edu",
-)
 unregistered_user = User(
     points=1000000,
     attended=0,
@@ -57,12 +57,32 @@ unregistered_user = User(
     email="owen@tamu.edu",
 )
 
-users = [valid_user, no_grad_year_user, no_email_user, user4, user5]
+valid_user_item = dict(valid_user)
+valid_user_2_item = dict(valid_user_2)
+updated_user_item = dict(updated_user)
+no_grad_year_user_item = dict(no_grad_year_user)
+no_email_user_item = dict(no_email_user)
+unregistered_user_item = dict(unregistered_user)
+users = [
+    valid_user,
+    no_grad_year_user,
+    no_email_user,
+    valid_user_2,
+    updated_user,
+]
 ids = [user["user_id"] for user in users]
 
-current_event = Event(
+valid_event = Event(
     name="AWS Academy",
     code="AWSAC",
+    points=50,
+    date=today,
+    resources="",
+    attended_users=[],
+)
+valid_event_2 = Event(
+    name="Hardware Hacking",
+    code="HRDHK",
     points=50,
     date=today,
     resources="",
@@ -92,14 +112,6 @@ attended_event = Event(
     resources="",
     attended_users=ids,
 )
-event5 = Event(
-    name="Hardware Hacking",
-    code="HRDHK",
-    points=50,
-    date=today,
-    resources="",
-    attended_users=[],
-)
 unregistered_event = Event(
     name="Hack the Box",
     code="HKBOX",
@@ -110,4 +122,10 @@ unregistered_event = Event(
 )
 
 
-events = [current_event, past_event, future_event, attended_event, event5]
+events = [
+    valid_event,
+    valid_event_2,
+    past_event,
+    future_event,
+    attended_event,
+]
