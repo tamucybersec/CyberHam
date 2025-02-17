@@ -1,6 +1,6 @@
 from cyberham.dynamodb.dynamo import DynamoDB
 from cyberham.dynamodb.types import MaybeItem, TableName
-from cyberham.tests.backend.models import (
+from cyberham.tests.models import (
     valid_user_item,
     updated_user_item,
     unregistered_user_item,

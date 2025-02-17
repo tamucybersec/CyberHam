@@ -1,7 +1,7 @@
 from pytest import MonkeyPatch
-from cyberham.tests.backend.mockdb import MockDB
+from cyberham.dynamodb.mockdb import MockDB
 from cyberham.backend import leaderboard
-from cyberham.tests.backend.models import users
+from cyberham.tests.models import users
 
 
 class TestLeaderboard:

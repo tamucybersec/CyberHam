@@ -1,7 +1,7 @@
 from pytest import MonkeyPatch
-from cyberham.tests.backend.mockdb import MockDB
+from cyberham.dynamodb.mockdb import MockDB
 from cyberham.backend import attend_event
-from cyberham.tests.backend.models import (
+from cyberham.tests.models import (
     valid_user,
     unregistered_user,
     valid_event,

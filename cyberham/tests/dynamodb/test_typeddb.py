@@ -1,5 +1,5 @@
 from cyberham.dynamodb.types import MaybeUser
-from cyberham.tests.backend.models import (
+from cyberham.tests.models import (
     valid_user,
     valid_user_2,
     updated_user,
