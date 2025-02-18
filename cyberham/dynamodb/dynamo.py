@@ -51,6 +51,7 @@ class DynamoDB:
 
         return None
 
+
     def get_item(
         self,
         table: TableName,
@@ -119,11 +120,11 @@ class DynamoDB:
     @staticmethod
     def create_key(
         partition_key_name: str,
-        partition_key: str,
+        partition_key: str | int,
         sort_key_name: str = "",
         sort_key: str = "",
     ) -> Key:
-        if sort_key_name is not "" and sort_key is not "":
+        if sort_key_name != "" and sort_key != "":
             return {
                 partition_key_name: partition_key,
                 sort_key_name: sort_key,

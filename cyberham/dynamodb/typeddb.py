@@ -34,12 +34,12 @@ class _TypedDB(Generic[T]):
     def put(self, item: T) -> None:
         self.db.put_item(self.table, item)
 
-    def get(self, partition_key: str, sort_key: Optional[str] = None) -> Maybe[T]:
+    def get(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
         key = self._get_key(partition_key, sort_key)
         return cast(Maybe[T], self.db.get_item(self.table, key))
 
     def update(
-        self, update: Update[T], partition_key: str, sort_key: Optional[str] = None
+        self, update: Update[T], partition_key: str | int, sort_key: Optional[str] = None
     ) -> Maybe[T]:
         """
         Access an user, change its contents, and the upload the change.
@@ -57,7 +57,7 @@ class _TypedDB(Generic[T]):
             self.put(updated_item)
             return updated_item
 
-    def delete(self, partition_key: str, sort_key: Optional[str] = None) -> Maybe[T]:
+    def delete(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
         """
         Returns the user that was deleted.
         """
@@ -71,7 +71,7 @@ class _TypedDB(Generic[T]):
     def get_count(self) -> int:
         return self.db.get_count(self.table)
 
-    def _get_key(self, partition_key: str, sort_key: Optional[str]) -> Key:
+    def _get_key(self, partition_key: str | int, sort_key: Optional[str]) -> Key:
         if self.sort_key_name is None:
             if sort_key is not None:
                 raise Exception(f"A sort key is not needed for the {self.table} table.")

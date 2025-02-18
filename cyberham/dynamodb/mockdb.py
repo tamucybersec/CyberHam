@@ -1,4 +1,5 @@
 from typing import TypeVar, Generic, TypeAlias, Optional, Callable, Mapping, Any
+from copy import deepcopy
 
 T = TypeVar("T", bound=Mapping[str, Any])
 Maybe: TypeAlias = Optional[T]
@@ -21,19 +22,22 @@ class MockDB(Generic[T]):
         self.sort_key_name = sort_key_name
 
         for item in initial_contents:
-            self.contents[item[partition_key_name]] = item
+            self.contents[item[partition_key_name]] = deepcopy(item)
 
     def put(self, item: T) -> None:
-        self.contents[item[self.partition_key_name]] = item
+        self.contents[item[self.partition_key_name]] = deepcopy(item)
 
-    def get(self, partition_key: str, sort_key: Optional[str] = None) -> Maybe[T]:
+    def get(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
         if partition_key in self.contents:
             return self.contents[partition_key]
         else:
             return None
 
     def update(
-        self, update: Update[T], partition_key: str, sort_key: Optional[str] = None
+        self,
+        update: Update[T],
+        partition_key: str | int,
+        sort_key: Optional[str] = None,
     ) -> Maybe[T]:
         item = self.get(partition_key, sort_key)
         updated_item = update(item)
@@ -45,7 +49,9 @@ class MockDB(Generic[T]):
             self.put(updated_item)
             return updated_item
 
-    def delete(self, partition_key: str, sort_key: Optional[str] = None) -> Maybe[T]:
+    def delete(
+        self, partition_key: str | int, sort_key: Optional[str] = None
+    ) -> Maybe[T]:
         if partition_key in self.contents:
             item = self.contents[partition_key]
             del self.contents[partition_key]

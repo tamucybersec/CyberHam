@@ -19,7 +19,7 @@ from cyberham.dynamodb.types import (
 from cyberham.dynamodb.typeddb import usersdb, eventsdb, flaggeddb
 
 # dict[user_id, EmailPending]
-pending_emails: dict[str, EmailPending] = {}
+pending_emails: dict[int, EmailPending] = {}
 google_client = GoogleClient()
 
 
@@ -35,7 +35,7 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS "
         "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT)"
     )
-    # flagged: user_id, offences
+    # flagged: user_id, offenses
     c.execute(
         "CREATE TABLE IF NOT EXISTS "
         "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
@@ -44,7 +44,7 @@ def init_db():
 
 
 def create_event(
-    name: str, points: int, date: str, resources: str, user_id: str
+    name: str, points: int, date: str, resources: str, user_id: int
 ) -> str:
     # code generation
     event_code: str = ""
@@ -69,7 +69,7 @@ def create_event(
         points=points,
         date=date,
         resources=resources,
-        attended_users=[str(user_id)],
+        attended_users=[user_id],
     )
     eventsdb.put(event)
 
@@ -78,7 +78,7 @@ def create_event(
 
 # FIXME concurrency concerns
 # use consistent read
-def attend_event(code: str, user_id: str) -> tuple[str, MaybeEvent]:
+def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
     code = code.upper()
 
     # user validation
@@ -92,7 +92,7 @@ def attend_event(code: str, user_id: str) -> tuple[str, MaybeEvent]:
     if event is None:
         return f"{code} does not exist!", None
 
-    if str(user_id) in event["attended_users"]:
+    if user_id in event["attended_users"]:
         return f"You have already redeemed {code}!", None
 
     cst_tz = timezone("America/Chicago")
@@ -105,7 +105,7 @@ def attend_event(code: str, user_id: str) -> tuple[str, MaybeEvent]:
     # attend event
     user["points"] += event["points"]
     user["attended"] += 1
-    event["attended_users"].append(str(user_id))
+    event["attended_users"].append(user_id)
 
     usersdb.put(user)
     eventsdb.put(event)
@@ -128,7 +128,7 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10) -> list[User
 # fetch all users at once or individually?
 def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     events = eventsdb.get_all()
-    counts: dict[str, int] = {}
+    counts: dict[int, int] = {}
 
     # sum frequencies
     for event in events:
@@ -158,7 +158,7 @@ def register(
     name: str,
     grad_year_str: str,
     email: str,
-    user_id: str,
+    user_id: int,
     user_name: str,
     guild_id: int | None,
 ) -> str:
@@ -204,7 +204,7 @@ def register(
     return f"You have successfully updated your profile! {ask_to_verify}"
 
 
-def register_email(user_id: str, email: str, guild_id: int | None) -> str:
+def register_email(user_id: int, email: str, guild_id: int | None) -> str:
     user = usersdb.get(user_id)
     if user is not None and user["email"] == email:
         return ""
@@ -225,7 +225,7 @@ def register_email(user_id: str, email: str, guild_id: int | None) -> str:
 
     # send email
     verification = EmailPending(
-        int(user_id), email, random.randint(1000, 10000), datetime.now()
+        user_id, email, random.randint(1000, 10000), datetime.now()
     )
     pending_emails[user_id] = verification
 
@@ -239,7 +239,7 @@ def register_email(user_id: str, email: str, guild_id: int | None) -> str:
     return "Please use /verify with the code you received in your email."
 
 
-def verify_email(code: int, user_id: str) -> str:
+def verify_email(code: int, user_id: int) -> str:
     if user_id not in pending_emails:
         return "Please use /register to submit your email"
 
@@ -258,11 +258,11 @@ def verify_email(code: int, user_id: str) -> str:
     return "Email verified! It is now visible on your /profile"
 
 
-def remove_pending(user_id: str = "0") -> None:
+def remove_pending(user_id: int = 0) -> None:
     del pending_emails[user_id]
 
 
-def profile(user_id: str) -> tuple[str, MaybeUser]:
+def profile(user_id: int) -> tuple[str, MaybeUser]:
     user = usersdb.get(user_id)
 
     if user is None:
@@ -290,7 +290,7 @@ def get_event_count() -> int:
     return eventsdb.get_count()
 
 
-def award(user_id: str, user_name: str, points: int) -> str:
+def award(user_id: int, user_name: str, points: int) -> str:
     user = usersdb.get(user_id)
 
     if user is None:

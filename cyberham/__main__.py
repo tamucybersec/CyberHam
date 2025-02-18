@@ -43,7 +43,7 @@ class Bot(discord.Client):
         time = event.start_time.astimezone(timezone("US/Central"))
 
         code = backend.create_event(
-            event.name, points, time.strftime("%m/%d/%Y"), "", str(event.creator_id)
+            event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id
         )
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
         await self.get_channel(admin_channel_id).send(
@@ -101,7 +101,7 @@ def event_info(
     date: str,
     code: str,
     resources: str,
-    attendees: list[str] = [],
+    attendees: list[int] = [],
 ):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
@@ -184,7 +184,7 @@ async def create(
     date: str,
     resources: str = "",
 ):
-    code = backend.create_event(name, points, date, resources, str(interaction.user.id))
+    code = backend.create_event(name, points, date, resources, interaction.user.id)
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
@@ -194,7 +194,7 @@ class AttendModal(ui.Modal, title="Attend"):
 
     async def on_submit(self, interaction: discord.Interaction):
         code: str = self.code.value
-        msg, event = backend.attend_event(code, str(interaction.user.id))
+        msg, event = backend.attend_event(code, interaction.user.id)
         if event is None:
             await interaction.response.send_message(msg, ephemeral=True)
             return
@@ -216,7 +216,7 @@ async def attend(interaction: discord.Interaction, code: str = ""):
     if code == "":
         await interaction.response.send_modal(AttendModal())
         return
-    msg, event = backend.attend_event(code, str(interaction.user.id))
+    msg, event = backend.attend_event(code, interaction.user.id)
     if event is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return
@@ -306,7 +306,7 @@ class RegisterModal(ui.Modal, title="Register"):
                 name,
                 grad_year,
                 email,
-                str(interaction.user.id),
+                interaction.user.id,
                 interaction.user.name,
                 interaction.guild_id,
             )
@@ -330,7 +330,7 @@ async def register(interaction: discord.Interaction):
 @reg.command(name="verify", description="verify your TAMU email", guilds=guild_id)
 @app_commands.describe(code="Please enter the code sent to your TAMU email")
 async def verify(interaction: discord.Interaction, code: int):
-    msg: str = backend.verify_email(code, str(interaction.user.id))
+    msg: str = backend.verify_email(code, interaction.user.id)
     if "verified!" in msg and interaction.guild_id == 631254092332662805:
         await interaction.user.add_roles(
             discord.Object(id=1015024081432743996), reason="TAMU email verified"
@@ -343,7 +343,7 @@ async def on_verify_error(
     interaction: discord.Interaction, error: app_commands.AppCommandError
 ):
     if isinstance(error, app_commands.CommandOnCooldown):
-        backend.remove_pending(str(interaction.user.id))
+        backend.remove_pending(interaction.user.id)
         await interaction.response.send_message(
             "You have verified too many times! Please contact an officer",
             ephemeral=True,
@@ -354,7 +354,7 @@ async def on_verify_error(
     name="profile", description="get your current attendance info!", guilds=guild_id
 )
 async def profile(interaction: discord.Interaction):
-    msg, user = backend.profile(str(interaction.user.id))
+    msg, user = backend.profile(interaction.user.id)
     if user is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return
@@ -378,7 +378,7 @@ async def profile(interaction: discord.Interaction):
 @app_commands.default_permissions(manage_events=True)
 @app_commands.describe(member="The profile for which member")
 async def profile_member(interaction: discord.Interaction, member: discord.Member):
-    msg, user = backend.profile(str(member.id))
+    msg, user = backend.profile(member.id)
     if user is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return
@@ -436,7 +436,7 @@ async def event_list(interaction: discord.Interaction):
     user="The user to award the points to", points="The number of points"
 )
 async def award(interaction: discord.Interaction, user: discord.Member, points: int):
-    msg: str = backend.award(str(user.id), user.name, points)
+    msg: str = backend.award(user.id, user.name, points)
     await interaction.response.send_message(msg)
 
 

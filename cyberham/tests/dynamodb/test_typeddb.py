@@ -3,6 +3,7 @@ from cyberham.tests.models import (
     valid_user,
     valid_user_2,
     updated_user,
+    updated_user_2,
     unregistered_user,
 )
 from cyberham.dynamodb.typeddb import testdb
@@ -11,17 +12,20 @@ from cyberham.dynamodb.typeddb import testdb
 class TestTypedDB:
     def test_get_item(self):
         item = testdb.get(valid_user["user_id"])
+        print(valid_user)
+        print(item)
+        assert valid_user == item
         assert (
             item and valid_user == item
         ), "Get should return the item with the given partition key"
 
     def test_get_all_items(self):
         items = testdb.get_all()
-        assert sorted(items, key=lambda user: user["user_id"]) == sorted(
-            [
-                valid_user,
-                valid_user_2,
-            ],
+        assert sorted(
+            items,
+            key=lambda user: user["user_id"],
+        ) == sorted(
+            [valid_user, valid_user_2],
             key=lambda user: user["user_id"],
         ), "Get All should return all items in the database"
 
@@ -36,12 +40,12 @@ class TestTypedDB:
         self._test_delete_item()
 
     def _test_put_item(self):
-        old_item = testdb.put(updated_user)
+        old_item = testdb.put(updated_user_2)
         assert old_item is None, "Put should not return any item"
 
     def _test_delete_item(self):
-        old_item = testdb.delete(updated_user["user_id"])
-        assert old_item == updated_user, "Delete should return the item being deleted"
+        old_item = testdb.delete(updated_user_2["user_id"])
+        assert old_item == updated_user_2, "Delete should return the item being deleted"
 
     def test_update_item(self):
         item1 = testdb.update(

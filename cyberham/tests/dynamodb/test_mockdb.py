@@ -6,9 +6,9 @@ from cyberham.tests.models import valid_user, valid_user_2
 
 class TestMockDB:
     def setup_method(self):
-        mp = MonkeyPatch()
+        self.mp = MonkeyPatch()
         self.testdb = MockDB([valid_user, valid_user_2], "user_id", None)
-        mp.setattr("cyberham.dynamodb.typeddb.testdb", self.testdb)
+        self.mp.setattr("cyberham.tests.dynamodb.test_typeddb.testdb", self.testdb)
         self.typeddb = TypedDB()
 
     def test_get_item(self):

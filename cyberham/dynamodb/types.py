@@ -7,7 +7,7 @@ from typing import (
     TypeVar,
     Mapping,
     TypedDict,
-    Union
+    Union,
 )
 from mypy_boto3_dynamodb.type_defs import (
     UniversalAttributeValueTypeDef,
@@ -19,7 +19,7 @@ T = TypeVar("T")
 
 
 class User(TypedDict):
-    user_id: str
+    user_id: int
     name: str
     points: int
     attended: int
@@ -36,14 +36,14 @@ class Event(TypedDict):
     points: int
     date: str
     resources: str
-    attended_users: list[str]
+    attended_users: list[int]
 
 
 MaybeEvent: TypeAlias = Optional[Event]
 
 
 class Flagged(TypedDict):
-    user_id: str
+    user_id: int
     offenses: int
 
 
@@ -64,7 +64,7 @@ TestItem: TypeAlias = Mapping[str, Union[str, int]]
 
 
 DummyUser: User = User(
-    user_id="0", name="", points=0, attended=0, grad_year=0, email=""
+    user_id=0, name="", points=0, attended=0, grad_year=0, email=""
 )
 DummyEvent: Event = Event(
     name="", code="", points=0, date="", resources="", attended_users=[]

@@ -6,9 +6,9 @@ from cyberham.tests.models import users
 
 class TestLeaderboard:
     def setup_method(self):
-        mp = MonkeyPatch()
+        self.mp = MonkeyPatch()
         self.usersdb = MockDB(users, "user_id", None)
-        mp.setattr("cyberham.backend.usersdb", self.usersdb)
+        self.mp.setattr("cyberham.backend.usersdb", self.usersdb)
 
     def test_points(self):
         got = leaderboard("points", len(users))

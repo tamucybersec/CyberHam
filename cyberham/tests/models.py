@@ -8,10 +8,11 @@ today = now.strftime("%m/%d/%Y")
 yesterday = (now - timedelta(days=1)).strftime("%m/%d/%Y")
 tomorrow = (now + timedelta(days=1)).strftime("%m/%d/%Y")
 
+
 valid_user = User(
     points=100,
     attended=5,
-    user_id="0",
+    user_id=0,
     name="Lane",
     grad_year=2024,
     email="lane@tamu.edu",
@@ -19,7 +20,7 @@ valid_user = User(
 valid_user_2 = User(
     points=0,
     attended=15,
-    user_id="3",
+    user_id=1,
     name="Stella",
     grad_year=2025,
     email="stella@tamu.edu",
@@ -27,31 +28,39 @@ valid_user_2 = User(
 updated_user = User(
     points=1000,
     attended=0,
-    user_id="4",
+    user_id=2,
     name="Emma",
     grad_year=2027,
     email="emma@tamu.edu",
 )
-no_grad_year_user = User(
+updated_user_2 = User(
     points=200,
     attended=1,
-    user_id="1",
+    user_id=3,
     name="Colby",
     grad_year=0,
     email="colby@tamu.edu",
 )
-no_email_user = User(
+no_grad_year_user = User(
     points=50,
     attended=50,
-    user_id="2",
+    user_id=4,
     name="Damian",
     grad_year=2026,
     email="",
 )
+no_email_user = User(
+    points=1000000,
+    attended=0,
+    user_id=5,
+    name="Owen",
+    grad_year=2027,
+    email="owen@tamu.edu",
+)
 unregistered_user = User(
     points=1000000,
     attended=0,
-    user_id="9",
+    user_id=9,
     name="Owen",
     grad_year=2027,
     email="owen@tamu.edu",
@@ -60,15 +69,17 @@ unregistered_user = User(
 valid_user_item = dict(valid_user)
 valid_user_2_item = dict(valid_user_2)
 updated_user_item = dict(updated_user)
+updated_user_2_item = dict(updated_user_2)
 no_grad_year_user_item = dict(no_grad_year_user)
 no_email_user_item = dict(no_email_user)
 unregistered_user_item = dict(unregistered_user)
 users = [
     valid_user,
-    no_grad_year_user,
-    no_email_user,
     valid_user_2,
     updated_user,
+    updated_user_2,
+    no_grad_year_user,
+    no_email_user,
 ]
 ids = [user["user_id"] for user in users]
 
