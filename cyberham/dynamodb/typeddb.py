@@ -31,15 +31,18 @@ class _TypedDB(Generic[T]):
         self.partition_key_name = partition_key_name
         self.sort_key_name = sort_key_name
 
-    def put(self, item: T) -> None:
-        self.db.put_item(self.table, item)
+    def put(self, item: T) -> Maybe[T]:
+        return cast(Maybe[T], self.db.put_item(self.table, item))
 
     def get(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
         key = self._get_key(partition_key, sort_key)
         return cast(Maybe[T], self.db.get_item(self.table, key))
 
     def update(
-        self, update: Update[T], partition_key: str | int, sort_key: Optional[str] = None
+        self,
+        update: Update[T],
+        partition_key: str | int,
+        sort_key: Optional[str] = None,
     ) -> Maybe[T]:
         """
         Access an user, change its contents, and the upload the change.
@@ -57,7 +60,9 @@ class _TypedDB(Generic[T]):
             self.put(updated_item)
             return updated_item
 
-    def delete(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
+    def delete(
+        self, partition_key: str | int, sort_key: Optional[str] = None
+    ) -> Maybe[T]:
         """
         Returns the user that was deleted.
         """

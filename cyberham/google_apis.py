@@ -1,6 +1,7 @@
 import logging
 import os.path
 import base64
+
 # import mimetypes
 
 
@@ -15,6 +16,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from email.message import EmailMessage
+
 # from email.mime.audio import MIMEAudio
 # from email.mime.base import MIMEBase
 # from email.mime.image import MIMEImage
@@ -23,8 +25,12 @@ from email.message import EmailMessage
 from cyberham import google_token, client_secret
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://mail.google.com/", "https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = [
+    "https://mail.google.com/",
+    "https://www.googleapis.com/auth/calendar.readonly",
+]
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class EmailPending:
@@ -67,11 +73,9 @@ class GoogleClient:
 
             message.set_content(
                 f"Welcome to {org}!\n\n"
-
                 "-----------------------------------------------------------\n"
                 f"CODE: [{code}]\n"
                 "-----------------------------------------------------------"
-
                 "\n\nContact:\n"
                 "discord: bit.py"
             )
@@ -93,7 +97,7 @@ class GoogleClient:
             )
 
             logger.info(f'Message Id: {send_message["id"]}')
-            logger.info(f'[{code}] -> {address}')
+            logger.info(f"[{code}] -> {address}")
         except HttpError as error:
             logger.error(f"An error occurred: {error}")
             send_message = None
@@ -104,7 +108,7 @@ class GoogleClient:
             service = build("calendar", "v3", credentials=self.creds)
 
             # Call the Calendar API
-            cst_tz = timezone('America/Chicago')
+            cst_tz = timezone("America/Chicago")
             now = datetime.now(cst_tz)
             days_until_sunday = 6 - now.weekday() if now.weekday() < 6 else 7
             later = now + timedelta(days=days_until_sunday)
@@ -114,8 +118,8 @@ class GoogleClient:
             later = cst_tz.localize(later)
             now = now.isoformat()
             later = later.isoformat()
-            logger.info(f'{now=}')
-            logger.info(f'{later=}')
+            logger.info(f"{now=}")
+            logger.info(f"{later=}")
             events_result = (
                 service.events()
                 .list(
@@ -146,7 +150,15 @@ class GoogleClient:
                     location = event["location"]
                 else:
                     location = "TBD"
-                result.append({"id": event_id, "name": summary, "start": start, "end": end, "location": location})
+                result.append(
+                    {
+                        "id": event_id,
+                        "name": summary,
+                        "start": start,
+                        "end": end,
+                        "location": location,
+                    }
+                )
 
         except HttpError as error:
             logger.error(f"An error occurred: {error}")

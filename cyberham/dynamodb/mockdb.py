@@ -24,8 +24,15 @@ class MockDB(Generic[T]):
         for item in initial_contents:
             self.contents[item[partition_key_name]] = deepcopy(item)
 
-    def put(self, item: T) -> None:
+    def put(self, item: T) -> Maybe[T]:
+        old = None
+        if self.sort_key_name:
+            old = self.get(item[self.partition_key_name], item[self.sort_key_name])
+        else:
+            old = self.get(item[self.partition_key_name])
+
         self.contents[item[self.partition_key_name]] = deepcopy(item)
+        return old
 
     def get(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
         if partition_key in self.contents:

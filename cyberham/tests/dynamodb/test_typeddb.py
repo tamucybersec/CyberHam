@@ -1,3 +1,4 @@
+from copy import deepcopy
 from cyberham.dynamodb.types import MaybeUser
 from cyberham.tests.models import (
     valid_user,
@@ -12,12 +13,16 @@ from cyberham.dynamodb.typeddb import testdb
 class TestTypedDB:
     def test_get_item(self):
         item = testdb.get(valid_user["user_id"])
-        print(valid_user)
-        print(item)
         assert valid_user == item
         assert (
             item and valid_user == item
         ), "Get should return the item with the given partition key"
+
+    def test_get_non_existent_item(self):
+        item = testdb.get(unregistered_user["user_id"])
+        assert (
+            item is None
+        ), "Get should not return if the item with the given partition key does not exist"
 
     def test_get_all_items(self):
         items = testdb.get_all()
@@ -29,19 +34,38 @@ class TestTypedDB:
             key=lambda user: user["user_id"],
         ), "Get All should return all items in the database"
 
-    def test_get_non_existent_item(self):
-        item = testdb.get(unregistered_user["user_id"])
-        assert (
-            item is None
-        ), "Get should not return if the item with the given partition key does not exist"
+    def test_get_count(self):
+        assert testdb.get_count() == 2
 
     def test_put_and_delete_item(self):
+        self._test_delete_non_existent_item()
         self._test_put_item()
+        self._test_put_overwrite_item()
         self._test_delete_item()
+
+    def _test_delete_non_existent_item(self):
+        old_item = testdb.delete(updated_user_2["user_id"])
+        assert old_item is None
 
     def _test_put_item(self):
         old_item = testdb.put(updated_user_2)
         assert old_item is None, "Put should not return any item"
+
+    def _test_put_overwrite_item(self):
+        mutated_item = deepcopy(updated_user_2)
+        mutated_item["name"] = "mutated"
+
+        old_item = testdb.get(updated_user_2["user_id"])
+        assert old_item == updated_user_2
+
+        old_item = testdb.put(mutated_item)
+        assert old_item == updated_user_2
+
+        old_item = testdb.get(updated_user_2["user_id"])
+        assert old_item == mutated_item
+
+        old_item = testdb.put(updated_user_2)
+        assert old_item == mutated_item
 
     def _test_delete_item(self):
         old_item = testdb.delete(updated_user_2["user_id"])

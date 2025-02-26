@@ -51,7 +51,6 @@ class DynamoDB:
 
         return None
 
-
     def get_item(
         self,
         table: TableName,
