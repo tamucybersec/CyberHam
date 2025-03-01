@@ -82,6 +82,7 @@ users = [
     no_email_user,
 ]
 ids = [user["user_id"] for user in users]
+fewer_ids = [valid_user["user_id"], valid_user_2["user_id"]]
 
 valid_event = Event(
     name="AWS Academy",
@@ -123,6 +124,14 @@ attended_event = Event(
     resources="",
     attended_users=ids,
 )
+attended_event_2 = Event(
+    name="Cisco Networking Academy",
+    code="CISC2",
+    points=50,
+    date=today,
+    resources="",
+    attended_users=fewer_ids,
+)
 unregistered_event = Event(
     name="Hack the Box",
     code="HKBOX",
@@ -139,5 +148,5 @@ events = [
     past_event,
     future_event,
     attended_event,
+    attended_event_2,
 ]
-

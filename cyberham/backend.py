@@ -44,9 +44,8 @@ def init_db():
 
 
 # NOTE removed functionality of awarding creator with points for event
-def create_event(
-    name: str, points: int, date: str, resources: str, user_id: int
-) -> str:
+# FIXME should throw error if name is "", as find_event does
+def create_event(name: str, points: int, date: str, resources: str) -> str:
     # code generation
     event_code: str = ""
     existing_event = DummyEvent
@@ -57,7 +56,7 @@ def create_event(
     # user validation and update
     # user = usersdb.get(user_id)
     # if user is None:
-    #     return f'User with user_id "{user_id}" does not exist.'
+    #     return f'Only registered users can create an event.'
     # else:
     #     user["attended"] += 1
     #     user["points"] += points
@@ -70,7 +69,7 @@ def create_event(
         points=points,
         date=date,
         resources=resources,
-        attended_users=[user_id],
+        attended_users=[],
     )
     eventsdb.put(event)
 
@@ -128,6 +127,10 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10) -> list[User
 # FIXME inefficient
 # fetch all users at once or individually?
 def leaderboard_search(activity: str) -> list[tuple[str, int]]:
+    """
+    Gets a ranked list of users' names who attended the most meetings that contain the string activity
+    """
+
     events = eventsdb.get_all()
     counts: dict[int, int] = {}
 

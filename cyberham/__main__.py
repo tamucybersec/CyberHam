@@ -43,7 +43,7 @@ class Bot(discord.Client):
         time = event.start_time.astimezone(timezone("US/Central"))
 
         code = backend.create_event(
-            event.name, points, time.strftime("%m/%d/%Y"), "", event.creator_id
+            event.name, points, time.strftime("%m/%d/%Y"), ""
         )
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
         await self.get_channel(admin_channel_id).send(
@@ -184,7 +184,7 @@ async def create(
     date: str,
     resources: str = "",
 ):
-    code = backend.create_event(name, points, date, resources, interaction.user.id)
+    code = backend.create_event(name, points, date, resources)
     embed = event_info(name, points, date, code, resources)
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
