@@ -32,6 +32,10 @@ class _TypedDB(Generic[T]):
         self.sort_key_name = sort_key_name
 
     def put(self, item: T) -> Maybe[T]:
+        """
+        Returns the item that was overwritten (if any).
+        """
+
         return cast(Maybe[T], self.db.put_item(self.table, item))
 
     def get(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
@@ -45,9 +49,9 @@ class _TypedDB(Generic[T]):
         sort_key: Optional[str] = None,
     ) -> Maybe[T]:
         """
-        Access an user, change its contents, and the upload the change.
-        The accessed user can be None (the user doesn't exist) and you can return None (delete the user).
-        Returns the updated user.
+        Access an item, change its contents, and the upload the change.
+        The accessed item can be None (the item doesn't exist) and you can return None (delete the item).
+        Returns the updated item.
         """
 
         item = self.get(partition_key, sort_key)
@@ -64,7 +68,7 @@ class _TypedDB(Generic[T]):
         self, partition_key: str | int, sort_key: Optional[str] = None
     ) -> Maybe[T]:
         """
-        Returns the user that was deleted.
+        Returns the item that was deleted.
         """
 
         key = self._get_key(partition_key, sort_key)

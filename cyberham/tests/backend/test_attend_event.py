@@ -1,6 +1,5 @@
-from pytest import MonkeyPatch
 from copy import deepcopy
-from cyberham.dynamodb.mockdb import MockDB
+from backend_patcher import BackendPatcher
 from cyberham.backend import attend_event
 from cyberham.tests.models import (
     valid_user,
@@ -10,17 +9,15 @@ from cyberham.tests.models import (
     future_event,
     attended_event,
     unregistered_event,
-    events,
+    events
 )
 
 
-class TestAttendEvent:
+class TestAttendEvent(BackendPatcher):
     def setup_method(self):
-        self.mp = MonkeyPatch()
-        self.usersdb = MockDB([valid_user], "user_id", None)
-        self.eventsdb = MockDB(events, "code", None)
-        self.mp.setattr("cyberham.backend.usersdb", self.usersdb)
-        self.mp.setattr("cyberham.backend.eventsdb", self.eventsdb)
+        self.initial_users = [valid_user]
+        self.initial_events = events
+        super().setup_method()
 
     def test_successful(self):
         user = deepcopy(valid_user)

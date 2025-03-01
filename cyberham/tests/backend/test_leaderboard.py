@@ -1,14 +1,12 @@
-from pytest import MonkeyPatch
-from cyberham.dynamodb.mockdb import MockDB
+from backend_patcher import BackendPatcher
 from cyberham.backend import leaderboard
 from cyberham.tests.models import users
 
 
-class TestLeaderboard:
+class TestLeaderboard(BackendPatcher):
     def setup_method(self):
-        self.mp = MonkeyPatch()
-        self.usersdb = MockDB(users, "user_id", None)
-        self.mp.setattr("cyberham.backend.usersdb", self.usersdb)
+        self.initial_users = users
+        super().setup_method()
 
     def test_points(self):
         got = leaderboard("points", len(users))

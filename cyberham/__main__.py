@@ -86,7 +86,7 @@ class PageDisplay(discord.ui.View):
         style=discord.ButtonStyle.primary, custom_id="el_next", emoji="▶"
     )
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.page < backend.get_event_count() // 5:
+        if self.page < backend.event_count() // 5:
             self.page += 1
         embed = event_list_embed(self.page)
         if embed is None:

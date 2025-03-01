@@ -140,3 +140,4 @@ events = [
     future_event,
     attended_event,
 ]
+

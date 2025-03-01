@@ -43,6 +43,7 @@ def init_db():
     conn.commit()
 
 
+# NOTE removed functionality of awarding creator with points for event
 def create_event(
     name: str, points: int, date: str, resources: str, user_id: int
 ) -> str:
@@ -54,13 +55,13 @@ def create_event(
         existing_event = eventsdb.get(event_code)
 
     # user validation and update
-    user = usersdb.get(user_id)
-    if user is None:
-        return f'User with user_id "{user_id}" does not exist.'
-    else:
-        user["attended"] += 1
-        user["points"] += points
-    usersdb.put(user)
+    # user = usersdb.get(user_id)
+    # if user is None:
+    #     return f'User with user_id "{user_id}" does not exist.'
+    # else:
+    #     user["attended"] += 1
+    #     user["points"] += points
+    # usersdb.put(user)
 
     # event creation
     event = Event(
@@ -286,7 +287,7 @@ def event_list() -> list[Event]:
     return eventsdb.get_all()
 
 
-def get_event_count() -> int:
+def event_count() -> int:
     return eventsdb.get_count()
 
 
