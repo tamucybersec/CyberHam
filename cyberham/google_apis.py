@@ -6,7 +6,9 @@ import base64
 
 
 from dataclasses import dataclass
+from typing import TypedDict, cast
 from datetime import datetime, timedelta, time
+from googleapiclient._apis.gmail.v1.schemas import Message
 from pytz import timezone
 
 from google.auth.transport.requests import Request
@@ -25,7 +27,7 @@ from email.message import EmailMessage
 from cyberham import google_token, client_secret
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = [
+SCOPES: list[str] = [
     "https://mail.google.com/",
     "https://www.googleapis.com/auth/calendar.readonly",
 ]
@@ -40,17 +42,28 @@ class EmailPending:
     time: datetime
 
 
+class CalendarEvent(TypedDict):
+    id: str
+    name: str
+    start: datetime
+    end: datetime
+    location: str
+
+
 class GoogleClient:
+    creds: Credentials | None = None
+
     def __init__(self):
         """Shows basic usage of the Gmail API.
         Lists the user's Gmail labels.
         """
-        self.creds = None
+
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
         if os.path.exists(google_token):
             self.creds = Credentials.from_authorized_user_file(google_token, SCOPES)
+
         # If there are no (valid) credentials available, let the user log in.
         if not self.creds or not self.creds.valid:
             if self.creds and self.creds.expired and self.creds.refresh_token:
@@ -61,10 +74,13 @@ class GoogleClient:
                     SCOPES,
                 )
                 self.creds = flow.run_local_server(port=0)
+                
             # Save the credentials for the next run
             google_token.write_text(self.creds.to_json())
 
     def send_email(self, address: str, code: str, org: str):
+        send_message: Message | None = None
+
         try:
             # create gmail api client
             service = build("gmail", "v1", credentials=self.creds)
@@ -86,24 +102,32 @@ class GoogleClient:
 
             # encoded message
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-
             create_message = {"raw": encoded_message}
+
             # pylint: disable=E1101
             send_message = (
                 service.users()
                 .messages()
-                .send(userId="me", body=create_message)
+                .send(userId="me", body=cast(Message, create_message))
                 .execute()
             )
 
-            logger.info(f'Message Id: {send_message["id"]}')
-            logger.info(f"[{code}] -> {address}")
+            if "id" in send_message:
+                logger.info(f'Message Id: {send_message["id"]}')
+                logger.info(f"[{code}] -> {address}")
+            else:
+                logger.info(f"Error: sent message missing id")
+                logger.info(f"[{code}] -> {address}")
+
         except HttpError as error:
             logger.error(f"An error occurred: {error}")
             send_message = None
+
         return send_message
 
     def get_events(self):
+        result: list[CalendarEvent] | None = None
+
         try:
             service = build("calendar", "v3", credentials=self.creds)
 
@@ -114,12 +138,14 @@ class GoogleClient:
             later = now + timedelta(days=days_until_sunday)
             midnight = time(23, 59, 59)
             later = datetime.combine(later, midnight)
+
             # Adjust the timezone
             later = cst_tz.localize(later)
             now = now.isoformat()
             later = later.isoformat()
             logger.info(f"{now=}")
             logger.info(f"{later=}")
+
             events_result = (
                 service.events()
                 .list(
@@ -140,27 +166,38 @@ class GoogleClient:
             # Moves result of the start, end, and name of the events in the next week
             result = []
             for event in events:
+                if not "id" in event:
+                    raise TypeError("ID not found for event")
+                elif not "start" in event:
+                    raise TypeError(f"Start time not found for event {id}")
+                elif not "end" in event:
+                    raise TypeError(f"End time not found for event {id}")
+                elif not "summary" in event:
+                    raise TypeError(f"Summary not found for event {id}")
+
                 event_id = event["id"]
                 start = event["start"].get("dateTime", event["start"].get("date"))
-                start = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S%z")
+                start = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S%z")  # type: ignore
                 end = event["end"].get("dateTime", event["end"].get("date"))
-                end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
+                end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")  # type: ignore
                 summary = event["summary"]
-                if "location" in event:
-                    location = event["location"]
-                else:
-                    location = "TBD"
+                location = event["location"] if ("location" in event) else "TBD"
+
                 result.append(
-                    {
-                        "id": event_id,
-                        "name": summary,
-                        "start": start,
-                        "end": end,
-                        "location": location,
-                    }
+                    CalendarEvent(
+                        id=event_id,
+                        name=summary,
+                        start=start,
+                        end=end,
+                        location=location,
+                    )
                 )
 
         except HttpError as error:
             logger.error(f"An error occurred: {error}")
             result = None
+        except TypeError as error:
+            logger.error(f"An error occurred: {error}")
+            result = None
+
         return result

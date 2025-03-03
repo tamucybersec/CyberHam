@@ -4,8 +4,8 @@ import string
 from typing import Literal
 from datetime import datetime
 from pytz import timezone
-from typing import Any
 
+from google_apis import CalendarEvent
 from cyberham import conn, c
 from cyberham.google_apis import GoogleClient, EmailPending
 from cyberham.dynamodb.types import (
@@ -305,5 +305,5 @@ def award(user_id: int, user_name: str, points: int) -> str:
     return f"Successfully added {points} points to {user_name} ({user["name"]})."
 
 
-def calendar_events() -> list[Any] | None:
-    return google_client.get_events()  # type: ignore
+def calendar_events() -> list[CalendarEvent] | None:
+    return google_client.get_events()

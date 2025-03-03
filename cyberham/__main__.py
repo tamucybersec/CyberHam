@@ -20,6 +20,15 @@ Define Bot Attributes
 logger = logging.getLogger(__name__)
 
 
+async def valid_guild(interaction: discord.Interaction):
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "Error: No GuildID found in discord interaction."
+        )
+        return False
+    return True
+
+
 class Bot(discord.Client):
     def __init__(self):
         super().__init__(
@@ -42,9 +51,7 @@ class Bot(discord.Client):
         points = 50
         time = event.start_time.astimezone(timezone("US/Central"))
 
-        code = backend.create_event(
-            event.name, points, time.strftime("%m/%d/%Y"), ""
-        )
+        code = backend.create_event(event.name, points, time.strftime("%m/%d/%Y"), "")
         embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
         await self.get_channel(admin_channel_id).send(
             f"The code is `{code}`", embed=embed
@@ -151,18 +158,15 @@ Register Discord Bot Commands
     name="size", description="find the number of human members", guilds=guild_id
 )
 async def size(interaction: discord.Interaction):
-    if interaction.guild is None:
-        await interaction.response.send_message(
-            "The GuildID is not set and the number of human members could not be verified."
-        )
-    else:
-        count = 0
-        for member in interaction.guild.members:
-            if not member.bot:
-                count += 1
-        await interaction.response.send_message(
-            f"There are {count} humans in the server."
-        )
+    if not await valid_guild(interaction):
+        return
+    assert interaction.guild is not None
+
+    count = 0
+    for member in interaction.guild.members:
+        if not member.bot:
+            count += 1
+    await interaction.response.send_message(f"There are {count} humans in the server.")
 
 
 @app_commands.default_permissions(manage_events=True)
@@ -298,6 +302,10 @@ class RegisterModal(ui.Modal, title="Register"):
     email = ui.TextInput(label="email", placeholder="TAMU email")
 
     async def on_submit(self, interaction: discord.Interaction):
+        if not await valid_guild(interaction):
+            return
+        assert interaction.guild is not None
+
         name = self.name.value
         grad_year = self.grad_year.value
         email = self.email.value
@@ -510,14 +518,12 @@ async def send_editable_message(interaction: discord.Interaction) -> None:
     guilds=guild_id,
 )
 async def update_calendar_events(interaction: discord.Interaction):
-    if interaction.guild is None:
-        await interaction.response.send_message(
-            "No GuildID found in discord interaction."
-        )
+    if not await valid_guild(interaction):
         return
+    assert interaction.guild is not None
 
     events = backend.calendar_events()
-    discord_events = [
+    discord_events: list[dict[str, str | dt | None]] = [
         {"name": event.name, "start": event.start_time, "end": event.end_time}
         for event in interaction.guild.scheduled_events
     ]
@@ -529,9 +535,9 @@ async def update_calendar_events(interaction: discord.Interaction):
     msg = f"Imported {len(events)} events from calendar."
     await interaction.response.send_message(msg)
     count = 0
-    newmsg: str = ""
+    new_msg: str = ""
     for event in events:
-        event_data = {
+        event_data: dict[str, str | dt | None] = {
             "name": event["name"],
             "start": event["start"],
             "end": event["end"],
@@ -553,13 +559,13 @@ async def update_calendar_events(interaction: discord.Interaction):
                 )
                 return
             except discord.HTTPException:
-                newmsg += "There was an error creating an event. Has the event already started?\n"
+                new_msg += "There was an error creating an event. Has the event already started?\n"
 
     if count != 0:
-        newmsg += f"Added {count} server events to the server."
+        new_msg += f"Added {count} server events to the server."
     else:
-        newmsg += "All calendar events already in the discord."
-    await interaction.followup.send(newmsg)
+        new_msg += "All calendar events already in the discord."
+    await interaction.followup.send(new_msg)
 
 
 @app_commands.default_permissions(manage_events=True)
@@ -569,6 +575,10 @@ async def update_calendar_events(interaction: discord.Interaction):
     guilds=guild_id,
 )
 async def delete_all_events(interaction: discord.Interaction):
+    if not await valid_guild(interaction):
+        return
+    assert interaction.guild is not None
+
     num_events = len(interaction.guild.scheduled_events)
     msg = f"Deleting {num_events} events from server."
     await interaction.response.send_message(msg)
@@ -592,6 +602,9 @@ activity_group_channels = {
     guilds=guild_id,
 )
 async def generate_announcements(interaction: discord.Interaction):
+    if not await valid_guild(interaction):
+        return
+    assert interaction.guild is not None
     await interaction.response.defer(thinking=True)
 
     # Current datetime
