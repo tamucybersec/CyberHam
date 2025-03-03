@@ -31,6 +31,9 @@ class _TypedDB(Generic[T]):
         self.partition_key_name = partition_key_name
         self.sort_key_name = sort_key_name
 
+        if not db.table_exists(table):
+            raise Exception(f"{table} does not exist in the database. Create it first.")
+
     def put(self, item: T) -> Maybe[T]:
         """
         Returns the item that was overwritten (if any).

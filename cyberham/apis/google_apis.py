@@ -4,9 +4,7 @@ import base64
 
 # import mimetypes
 
-
-from dataclasses import dataclass
-from typing import TypedDict
+from cyberham.apis.types import EmailPending, CalendarEvent
 from datetime import datetime, timedelta, time
 from pytz import timezone
 
@@ -14,7 +12,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google.auth.external_account_authorized_user import Credentials as ExCredentials
 from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore
-from googleapiclient.discovery import build # type: ignore
+from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError
 
 from email.message import EmailMessage
@@ -34,23 +32,9 @@ SCOPES: list[str] = [
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class EmailPending:
-    user_id: int
-    email: str
-    code: int
-    time: datetime
-
-
-class CalendarEvent(TypedDict):
-    id: str
-    name: str
-    start: datetime
-    end: datetime
-    location: str
-
-
 class GoogleClient:
+    # dict[user_id, EmailPending]
+    pending_emails: dict[int, EmailPending] = {}
     creds: Credentials | ExCredentials | None = None
 
     def __init__(self):
@@ -202,3 +186,18 @@ class GoogleClient:
             result = None
 
         return result
+
+    def has_pending_email(self, user_id: int):
+        return user_id in self.pending_emails
+
+    def get_pending_email(self, user_id: int):
+        return self.pending_emails[user_id]
+
+    def set_pending_email(self, user_id: int, verification: EmailPending):
+        self.pending_emails[user_id] = verification
+
+    def remove_pending_email(self, user_id: int):
+        del self.pending_emails[user_id]
+
+
+google_client = GoogleClient()

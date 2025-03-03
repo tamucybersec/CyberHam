@@ -5,8 +5,9 @@ from typing import Literal
 from datetime import datetime
 from pytz import timezone
 
-from cyberham import conn, c
-from cyberham.google_apis import GoogleClient, EmailPending, CalendarEvent
+from cyberham.apis.google_apis import google_client
+from cyberham.apis.types import EmailPending, CalendarEvent
+from cyberham.dynamodb.typeddb import usersdb, eventsdb, flaggeddb
 from cyberham.dynamodb.types import (
     User,
     MaybeUser,
@@ -15,31 +16,6 @@ from cyberham.dynamodb.types import (
     Flagged,
     DummyEvent,
 )
-from cyberham.dynamodb.typeddb import usersdb, eventsdb, flaggeddb
-
-# dict[user_id, EmailPending]
-pending_emails: dict[int, EmailPending] = {}
-google_client = GoogleClient()
-
-
-# TODO
-def init_db():
-    # users: user_id, name, points, attended_dates, grad_year, tamu_email
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS "
-        "users(user_id INTEGER PRIMARY KEY, name TEXT, points INTEGER, attended INTEGER, grad_year INTEGER, email TEXT)"
-    )
-    # events: name, code, points, date (mm/dd/yy), resources, attended_users
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS "
-        "events(name TEXT, code TEXT PRIMARY KEY, points INTEGER, date TEXT, resources TEXT, attended_users TEXT)"
-    )
-    # flagged: user_id, offenses
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS "
-        "flagged(user_id INTEGER PRIMARY KEY, offences INTEGER)"
-    )
-    conn.commit()
 
 
 # NOTE removed functionality of awarding creator with points for event
@@ -207,13 +183,14 @@ def register(
     return f"You have successfully updated your profile! {ask_to_verify}"
 
 
+# NOTE update's a user's email if it differs from their original email
 def register_email(user_id: int, email: str, guild_id: int | None) -> str:
     user = usersdb.get(user_id)
     if user is not None and user["email"] == email:
         return ""
 
     # check offenses
-    if user_id in pending_emails:
+    if google_client.has_pending_email(user_id):
         flagged = flaggeddb.get(user_id)
 
         if flagged is None:
@@ -228,14 +205,17 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
 
     # send email
     verification = EmailPending(
-        user_id, email, random.randint(1000, 10000), datetime.now()
+        user_id=user_id,
+        email=email,
+        code=random.randint(1000, 10000),
+        time=datetime.now(),
     )
-    pending_emails[user_id] = verification
+    google_client.set_pending_email(user_id, verification)
 
     # FIXME hardcoded GuildID
     google_client.send_email(
         email,
-        str(verification.code),
+        str(verification["code"]),
         "Texas A&M Cybersecurity Club" if guild_id == 631254092332662805 else "TAMUctf",
     )
 
@@ -243,26 +223,26 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
 
 
 def verify_email(code: int, user_id: int) -> str:
-    if user_id not in pending_emails:
+    if google_client.has_pending_email(user_id):
         return "Please use /register to submit your email"
 
-    pending = pending_emails[user_id]
+    pending = google_client.get_pending_email(user_id)
 
-    if pending.code != code:
+    if pending["code"] != code:
         return "This code is not correct!"
 
     def update(user: MaybeUser) -> MaybeUser:
         if user is not None:
-            user["email"] = pending.email
+            user["email"] = pending["email"]
         return user
 
     usersdb.update(update, user_id)
-    pending_emails.pop(user_id)
+    google_client.remove_pending_email(user_id)
     return "Email verified! It is now visible on your /profile"
 
 
 def remove_pending(user_id: int = 0) -> None:
-    del pending_emails[user_id]
+    google_client.remove_pending_email(user_id)
 
 
 def profile(user_id: int) -> tuple[str, MaybeUser]:

@@ -59,8 +59,6 @@ class Bot(discord.Client):
 
 
 client = Bot()
-
-backend.init_db()
 reg = app_commands.CommandTree(client)
 """
 Discord Bot UI
@@ -534,6 +532,7 @@ async def update_calendar_events(interaction: discord.Interaction):
 
     msg = f"Imported {len(events)} events from calendar."
     await interaction.response.send_message(msg)
+
     count = 0
     new_msg: str = ""
     for event in events:
@@ -542,6 +541,7 @@ async def update_calendar_events(interaction: discord.Interaction):
             "start": event["start"],
             "end": event["end"],
         }
+
         if event_data not in discord_events:
             try:
                 await interaction.guild.create_scheduled_event(
@@ -553,6 +553,7 @@ async def update_calendar_events(interaction: discord.Interaction):
                     location=event["location"],
                 )
                 count += 1
+
             except discord.Forbidden:
                 await interaction.followup.send(
                     "I don't have permission to create events in this server."
@@ -565,6 +566,7 @@ async def update_calendar_events(interaction: discord.Interaction):
         new_msg += f"Added {count} server events to the server."
     else:
         new_msg += "All calendar events already in the discord."
+
     await interaction.followup.send(new_msg)
 
 

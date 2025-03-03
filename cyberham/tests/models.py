@@ -55,7 +55,7 @@ no_email_user = User(
     user_id=5,
     name="Owen",
     grad_year=2027,
-    email="owen@tamu.edu",
+    email="",
 )
 unregistered_user = User(
     points=1000000,

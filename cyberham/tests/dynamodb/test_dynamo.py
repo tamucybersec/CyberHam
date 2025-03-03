@@ -20,6 +20,12 @@ class TestDynamoCrud:
     def setup_class(cls):
         cls.dynamo = DynamoDB()
 
+    def test_table_exists(self):
+        assert self.dynamo.table_exists(table) == True
+
+    def test_table_not_exists(self):
+        assert self.dynamo.table_exists("non_existent_table") == False # type: ignore
+
     def test_get_item(self):
         key = self._create_key(valid_user_item)
         item = self.dynamo.get_item(table, key)

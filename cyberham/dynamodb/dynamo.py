@@ -35,6 +35,14 @@ class DynamoDB:
         self._serializer = TypeSerializer()
         self._deserializer = TypeDeserializer()
 
+    def table_exists(self, table: TableName) -> bool:
+        try:
+            self._dynamodb.describe_table(TableName=table)
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
     def put_item(self, table: TableName, item: Item) -> MaybeItem:
         """
         Returns the item the operation overwrote, if any.
