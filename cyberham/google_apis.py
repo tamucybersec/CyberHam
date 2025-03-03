@@ -6,15 +6,15 @@ import base64
 
 
 from dataclasses import dataclass
-from typing import TypedDict, cast
+from typing import TypedDict
 from datetime import datetime, timedelta, time
-from googleapiclient._apis.gmail.v1.schemas import Message
 from pytz import timezone
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
+from google.auth.external_account_authorized_user import Credentials as ExCredentials
+from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore
+from googleapiclient.discovery import build # type: ignore
 from googleapiclient.errors import HttpError
 
 from email.message import EmailMessage
@@ -51,7 +51,7 @@ class CalendarEvent(TypedDict):
 
 
 class GoogleClient:
-    creds: Credentials | None = None
+    creds: Credentials | ExCredentials | None = None
 
     def __init__(self):
         """Shows basic usage of the Gmail API.
@@ -74,13 +74,11 @@ class GoogleClient:
                     SCOPES,
                 )
                 self.creds = flow.run_local_server(port=0)
-                
+
             # Save the credentials for the next run
             google_token.write_text(self.creds.to_json())
 
     def send_email(self, address: str, code: str, org: str):
-        send_message: Message | None = None
-
         try:
             # create gmail api client
             service = build("gmail", "v1", credentials=self.creds)
@@ -108,7 +106,10 @@ class GoogleClient:
             send_message = (
                 service.users()
                 .messages()
-                .send(userId="me", body=cast(Message, create_message))
+                .send(
+                    userId="me",
+                    body=create_message,  # type: ignore
+                )
                 .execute()
             )
 

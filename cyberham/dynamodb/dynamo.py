@@ -25,7 +25,7 @@ class DynamoDB:
         self,
         region: str = DEFAULT_REGION,
     ) -> None:
-        self._dynamodb = boto3.client(  # type: ignore
+        self._dynamodb = boto3.client(
             "dynamodb",
             aws_access_key_id=dynamo_keys["access_key_id"],
             aws_secret_access_key=dynamo_keys["secret_access_key"],

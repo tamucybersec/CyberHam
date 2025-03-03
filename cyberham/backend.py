@@ -5,9 +5,8 @@ from typing import Literal
 from datetime import datetime
 from pytz import timezone
 
-from google_apis import CalendarEvent
 from cyberham import conn, c
-from cyberham.google_apis import GoogleClient, EmailPending
+from cyberham.google_apis import GoogleClient, EmailPending, CalendarEvent
 from cyberham.dynamodb.types import (
     User,
     MaybeUser,
