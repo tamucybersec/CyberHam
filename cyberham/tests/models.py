@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from pytz import timezone
-from cyberham.dynamodb.types import User, Event
+from cyberham.dynamodb.types import User, Event, Flagged
+from cyberham.apis.types import EmailPending
 
 cst_tz = timezone("America/Chicago")
 now = datetime.now(cst_tz).date()
@@ -41,7 +42,7 @@ updated_user_2 = User(
     grad_year=0,
     email="colby@tamu.edu",
 )
-no_grad_year_user = User(
+flagged_user = User(
     points=50,
     attended=50,
     user_id=4,
@@ -58,7 +59,7 @@ no_email_user = User(
     email="",
 )
 unregistered_user = User(
-    points=1000000,
+    points=0,
     attended=0,
     user_id=9,
     name="Owen",
@@ -70,7 +71,7 @@ valid_user_item = dict(valid_user)
 valid_user_2_item = dict(valid_user_2)
 updated_user_item = dict(updated_user)
 updated_user_2_item = dict(updated_user_2)
-no_grad_year_user_item = dict(no_grad_year_user)
+no_grad_year_user_item = dict(flagged_user)
 no_email_user_item = dict(no_email_user)
 unregistered_user_item = dict(unregistered_user)
 users = [
@@ -78,7 +79,6 @@ users = [
     valid_user_2,
     updated_user,
     updated_user_2,
-    no_grad_year_user,
     no_email_user,
 ]
 ids = [user["user_id"] for user in users]
@@ -149,4 +149,32 @@ events = [
     future_event,
     attended_event,
     attended_event_2,
+]
+
+flagged_users = [
+    Flagged(
+        user_id=flagged_user["user_id"],
+        offenses=3,
+    ),
+]
+
+NEW_EMAIL = "NEW_EMAIL@tamu.edu"
+VERIFICATION_CODE = 1234
+
+pending_users = [
+    EmailPending(
+        user_id=flagged_user["user_id"],
+        email=NEW_EMAIL,
+        code=VERIFICATION_CODE,
+        time=datetime.now(),
+    )
+]
+
+extended_pending_users: list[EmailPending] = pending_users + [
+    EmailPending(
+        user_id=valid_user["user_id"],
+        email=NEW_EMAIL,
+        code=VERIFICATION_CODE,
+        time=datetime.now(),
+    )
 ]

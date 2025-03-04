@@ -59,7 +59,7 @@ def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
     # user validation
     user = usersdb.get(user_id)
     if user is None or user["grad_year"] == 0:
-        return "Please use /register to make a profile!", None
+        return "Please use /register to make a profile first!", None
 
     # event validation
     event = eventsdb.get(code)
@@ -138,16 +138,16 @@ def register(
     grad_year_str: str,
     email: str,
     user_id: int,
-    user_name: str,
     guild_id: int | None,
 ) -> str:
     # validate grad year
     try:
         grad_year = int(grad_year_str)
     except ValueError:
-        return "Please set your graduation year in the format YYYY (e.g. 2022)"
-    if not datetime.now().year - 100 < grad_year < datetime.now().year + 5:
-        return "Please set your graduation year in the format YYYY (e.g. 2022)"
+        return "Please set your graduation year in the format YYYY (e.g. 2022)."
+
+    if not datetime.now().year - 100 < grad_year < datetime.now().year + 8:
+        return "Please set your graduation year in the format YYYY (e.g. 2022)."
 
     # validate email
     email = email.lower()
@@ -157,7 +157,7 @@ def register(
         or email.count("@") != 1
         or not email.endswith("tamu.edu")
     ):
-        return "Please set a proper TAMU email address"
+        return "Please use a proper TAMU email address."
 
     ask_to_verify: str = register_email(user_id, email, guild_id)
 
@@ -201,7 +201,7 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
         flaggeddb.put(flagged)
 
         if flagged["offenses"] >= 3:
-            return "Too many failed attempts to email verification, please contact an officer"
+            return "Too many failed attempts to email verification, please contact an officer."
 
     # send email
     verification = EmailPending(
@@ -223,22 +223,21 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
 
 
 def verify_email(code: int, user_id: int) -> str:
-    if google_client.has_pending_email(user_id):
-        return "Please use /register to submit your email"
+    user = usersdb.get(user_id)
+    if user is None:
+        return "Please use /register first."
+    elif not google_client.has_pending_email(user_id):
+        return "Please use /register to set your email first."
 
     pending = google_client.get_pending_email(user_id)
-
     if pending["code"] != code:
         return "This code is not correct!"
 
-    def update(user: MaybeUser) -> MaybeUser:
-        if user is not None:
-            user["email"] = pending["email"]
-        return user
+    user["email"] = pending["email"]
+    usersdb.put(user)
 
-    usersdb.update(update, user_id)
     google_client.remove_pending_email(user_id)
-    return "Email verified! It is now visible on your /profile"
+    return "Email verified! It is now visible using /profile."
 
 
 def remove_pending(user_id: int = 0) -> None:
@@ -249,7 +248,7 @@ def profile(user_id: int) -> tuple[str, MaybeUser]:
     user = usersdb.get(user_id)
 
     if user is None:
-        return "Your profile does not exist", None
+        return "Your profile does not exist.", None
 
     return "", user
 
@@ -260,7 +259,7 @@ def find_event(code: str = "") -> tuple[str, MaybeEvent]:
 
     event = eventsdb.get(code)
     if event is None:
-        return "This event does not exist", None
+        return "This event does not exist.", None
     else:
         return "", event
 

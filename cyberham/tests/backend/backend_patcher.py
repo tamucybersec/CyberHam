@@ -2,17 +2,18 @@ from pytest import MonkeyPatch
 from cyberham.apis.mock_google_apis import MockGoogleClient
 from cyberham.dynamodb.mockdb import MockDB
 from cyberham.dynamodb.types import User, Event, Flagged
+from cyberham.apis.types import EmailPending
 
 
 class BackendPatcher:
     initial_users: list[User] = []
     initial_events: list[Event] = []
     initial_flagged: list[Flagged] = []
+    initial_pending: list[EmailPending] = []
 
     usersdb: MockDB[User]
     eventsdb: MockDB[Event]
     flaggeddb: MockDB[Flagged]
-
     google_client: MockGoogleClient
 
     def setup_method(self):
@@ -27,5 +28,5 @@ class BackendPatcher:
         self.flaggeddb = MockDB(self.initial_flagged, "user_id", None)
         self.mp.setattr("cyberham.backend.flaggeddb", self.flaggeddb)
 
-        self.google_client = MockGoogleClient()
+        self.google_client = MockGoogleClient(self.initial_pending)
         self.mp.setattr("cyberham.backend.google_client", self.google_client)

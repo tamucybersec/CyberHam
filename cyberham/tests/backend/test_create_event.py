@@ -33,8 +33,9 @@ class TestCreateEvent(BackendPatcher):
             code = create_event(
                 event["name"], event["points"], event["date"], event["resources"]
             )
-            if code in created:
-                assert False, f"Collision detected on iteration {i} code {code}"
+            assert (
+                code not in created
+            ), f"Collision detected on iteration {i} code {code}"
             created[code] = None
 
         assert True

@@ -313,7 +313,6 @@ class RegisterModal(ui.Modal, title="Register"):
                 grad_year,
                 email,
                 interaction.user.id,
-                interaction.user.name,
                 interaction.guild_id,
             )
         except:

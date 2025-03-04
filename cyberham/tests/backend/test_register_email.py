@@ -2,13 +2,14 @@ from backend_patcher import BackendPatcher
 from cyberham.apis.types import EmailPending
 from cyberham.backend import register_email
 from cyberham.dynamodb.types import User
-from cyberham.tests.models import users, valid_user, no_email_user, unregistered_user
+from cyberham.tests.models import users, valid_user, no_email_user, unregistered_user, flagged_user, pending_users
 from datetime import datetime
 
 
 class TestRegisterEmail(BackendPatcher):
     def setup_method(self):
         self.initial_users = users
+        self.initial_pending = pending_users
         super().setup_method()
         self.now = datetime.now()
 
@@ -48,49 +49,37 @@ class TestRegisterEmail(BackendPatcher):
 
     def test_register_offense(self):
         prev_pending: EmailPending | None = None
-        self._set_already_pending(unregistered_user)
 
         for i in range(1, 10):
             res = register_email(
-                unregistered_user["user_id"], unregistered_user["email"], 0
+                flagged_user["user_id"], flagged_user["email"], 0
             )
             assert res != ""
             self._assert_valid_pending_email(
-                unregistered_user, unregistered_user["email"]
+                flagged_user, flagged_user["email"]
             )
 
             if i == 0:
                 assert self._no_offenses(
-                    unregistered_user
+                    flagged_user
                 ), "There should be no offenses"
             else:
                 assert (
-                    self._offense_count(unregistered_user) == i
+                    self._offense_count(flagged_user) == i
                 ), "Should have expected offense count"
 
             if i < 3:
                 prev_pending = self.google_client.get_pending_email(
-                    unregistered_user["user_id"]
+                    flagged_user["user_id"]
                 )
             elif i > 3:
                 assert prev_pending is not None
                 assert (
                     prev_pending["code"]
                     == self.google_client.get_pending_email(
-                        unregistered_user["user_id"]
+                        flagged_user["user_id"]
                     )["code"]
                 ), "Should retain the same pending email"
-
-    def _set_already_pending(self, user: User):
-        self.google_client.set_pending_email(
-            unregistered_user["user_id"],
-            EmailPending(
-                user_id=user["user_id"],
-                email=user["email"],
-                code=1_000,
-                time=datetime.now(),
-            ),
-        )
 
     def _assert_valid_pending_email(self, user: User, email: str):
         after = datetime.now()

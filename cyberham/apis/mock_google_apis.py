@@ -1,9 +1,14 @@
 from cyberham.apis.types import EmailPending
-from datetime import datetime, timezone
+from copy import deepcopy
 
 
 class MockGoogleClient:
     pending_emails: dict[int, EmailPending] = {}
+
+    def __init__(self, initial_pending: list[EmailPending]):
+        self.pending_emails.clear()
+        for pending in initial_pending:
+            self.pending_emails[pending["user_id"]] = deepcopy(pending)
 
     def send_email(self, address: str, code: str, org: str):
         # unnecessary for mock implementation
@@ -17,23 +22,10 @@ class MockGoogleClient:
         return user_id in self.pending_emails
 
     def get_pending_email(self, user_id: int):
-        return self.pending_emails[user_id]
+        return deepcopy(self.pending_emails[user_id])
 
     def set_pending_email(self, user_id: int, verification: EmailPending):
-        self.pending_emails[user_id] = verification
+        self.pending_emails[user_id] = deepcopy(verification)
 
     def remove_pending_email(self, user_id: int):
         del self.pending_emails[user_id]
-
-    def wipe_pending_email(self, user_id: int):
-        """
-        Wipe randomly generated attributes of a pending email for testing purposes.
-        """
-
-        prev = self.get_pending_email(user_id)
-        self.pending_emails[user_id] = EmailPending(
-            user_id=prev["user_id"],
-            email=prev["email"],
-            code=-1,
-            time=datetime.fromtimestamp(0, tz=timezone.utc),
-        )
