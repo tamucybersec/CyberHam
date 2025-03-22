@@ -279,6 +279,7 @@ def award(user_id: int, user_name: str, points: int) -> str:
         return "This user has not registered yet!"
 
     user["points"] += points
+    usersdb.put(user)
 
     return f"Successfully added {points} points to {user_name} ({user["name"]})."
 

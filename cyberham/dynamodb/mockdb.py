@@ -36,7 +36,7 @@ class MockDB(Generic[T]):
 
     def get(self, partition_key: str | int, sort_key: Optional[str] = None) -> Maybe[T]:
         if partition_key in self.contents:
-            return self.contents[partition_key]
+            return deepcopy(self.contents[partition_key])
         else:
             return None
 
