@@ -17,7 +17,8 @@ client_secret = project_path.joinpath("secrets").joinpath(
 )
 discord_token = data["discord"]["token"]
 dynamo_keys = data["dynamo"]
-
+encryption_keys = data["encryption"]
+dashboard_credentials = data["dashboard"]
 
 # discord outputs configs
 @dataclass

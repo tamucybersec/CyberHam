@@ -100,7 +100,7 @@ def leaderboard(axis: Literal["points", "attended"], lim: int = 10) -> list[User
 
 
 # FIXME inefficient
-# fetch all users at once or individually?
+# fetch all users at once or individually? implement a batch get
 def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     """
     Gets a ranked list of users' names who attended the most meetings that contain the string activity
@@ -212,7 +212,6 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
     )
     google_client.set_pending_email(user_id, verification)
 
-    # FIXME hardcoded GuildID
     google_client.send_email(
         email,
         str(verification["code"]),
