@@ -4,6 +4,7 @@ from cyberham.dashboard_api import run_api
 
 
 def run_threads():
+    # run_api()
     Thread(target=run_api, daemon=True).start()
     run_bot()
 

@@ -1,7 +1,8 @@
-from typing import TypedDict
+from typing import TypedDict, Any
 from datetime import datetime
 from pydantic import BaseModel
 from enum import Enum
+from functools import total_ordering
 
 
 class EmailPending(TypedDict):
@@ -24,11 +25,23 @@ class Credentials(BaseModel):
     password: str
 
 
-class Body(BaseModel):
+class AuthenticationRequest(BaseModel):
     credentials: Credentials
 
 
+@total_ordering
 class Permissions(Enum):
-    ADMIN = "ADMIN"
-    SPONSOR = "SPONSOR"
-    DENIED = "DENIED"
+    NONE = 0
+    DENIED = 1
+    SPONSOR = 2
+    ADMIN = 3
+
+    def __lt__(self, other: Any):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
+
+
+class ValidateBody(BaseModel):
+    password: str
+    credentials: Credentials

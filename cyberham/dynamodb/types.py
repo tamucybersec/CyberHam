@@ -44,7 +44,7 @@ MaybeEvent: TypeAlias = Optional[Event]
 
 class Flagged(TypedDict):
     user_id: int
-    offenses: int
+    offences: int
 
 
 MaybeFlagged: TypeAlias = Optional[Flagged]

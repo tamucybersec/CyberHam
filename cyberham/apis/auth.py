@@ -1,8 +1,9 @@
 from cyberham import dashboard_credentials, encryption_keys
-from cyberham.apis.types import Body, Permissions
+from cyberham.apis.types import Credentials, Permissions, AuthenticationRequest
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.backends import default_backend
+from fastapi import HTTPException, Depends
 import base64
 
 
@@ -28,10 +29,10 @@ def decrypt(s: str) -> str:
     return decrypted_message.decode("utf-8")  # type: ignore
 
 
-def authenticate(body: Body) -> Permissions:
+def authenticate(credentials: Credentials) -> Permissions:
     try:
-        username = decrypt(body.credentials.username)
-        password = decrypt(body.credentials.password)
+        username = decrypt(credentials.username)
+        password = decrypt(credentials.password)
     except:
         return Permissions.DENIED
 
@@ -47,3 +48,26 @@ def authenticate(body: Body) -> Permissions:
         return Permissions.SPONSOR
 
     return Permissions.DENIED
+
+
+def authenticate_only(req: AuthenticationRequest):
+    return authenticate(req.credentials)
+
+
+def req_perm(level: Permissions, perms: Permissions):
+    if perms != Permissions.NONE and perms < level:
+        raise HTTPException(status_code=403, detail="Insufficient Permissions")
+
+
+def require_permission(level: Permissions):
+    async def dependency(perms: Permissions = Depends(authenticate)):
+        req_perm(level, perms)
+
+    return Depends(dependency)
+
+
+def require_permission_only(level: Permissions):
+    async def dependency(perms: Permissions = Depends(authenticate_only)):
+        req_perm(level, perms)
+
+    return Depends(dependency)
