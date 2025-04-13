@@ -249,7 +249,7 @@ async def leaderboard(
     point_column = ""
     for user in users:
         names_column += user["name"] + "\n"
-        point_column += f"{user["points"]}\n"
+        point_column += str(user["points"]) + "\n"
     embed = discord.Embed(title=f"{axis.capitalize()} Leaderboard", color=0xFFFFFF)
     embed.add_field(name="Name", value=names_column, inline=True)
     embed.add_field(name=f"{axis.capitalize()}", value=point_column, inline=True)
