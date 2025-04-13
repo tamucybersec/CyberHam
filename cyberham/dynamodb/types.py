@@ -50,7 +50,7 @@ class Flagged(TypedDict):
 MaybeFlagged: TypeAlias = Optional[Flagged]
 
 
-type TableName = Literal["users", "events", "flagged", "tests"]
+# type TableName = Literal["users", "events", "flagged", "tests"]
 
 Item: TypeAlias = Mapping[str, Any]
 MaybeItem: TypeAlias = Optional[Item]
