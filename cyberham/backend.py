@@ -280,7 +280,7 @@ def award(user_id: int, user_name: str, points: int) -> str:
     user["points"] += points
     usersdb.put(user)
 
-    return f"Successfully added {points} points to {user_name} ({user["name"]})."
+    return f"Successfully added {points} points to {user_name} " + user["name"] + "."
 
 
 def calendar_events() -> list[CalendarEvent] | None:
