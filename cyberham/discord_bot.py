@@ -248,8 +248,8 @@ async def leaderboard(
     names_column = ""
     point_column = ""
     for user in users:
-        names_column += user["name"] + "\n"
-        point_column += str(user["points"]) + "\n"
+        names_column += f"{user["name"]}\n"
+        point_column += f"{user["points"]}\n"
     embed = discord.Embed(title=f"{axis.capitalize()} Leaderboard", color=0xFFFFFF)
     embed.add_field(name="Name", value=names_column, inline=True)
     embed.add_field(name=f"{axis.capitalize()}", value=point_column, inline=True)
@@ -280,11 +280,13 @@ async def leaderboard_search(interaction: discord.Interaction, activity: str):
             point_column += f"{point}\n"
             curr += 1
 
+        print("here 1")
         prev = curr
         embed = discord.Embed(title=f"Leaderboard for {activity}", color=0xFFFFFF)
         embed.add_field(name="Name", value=names_column, inline=True)
         embed.add_field(name=f"Attended", value=point_column, inline=True)
         embeds.append(embed)
+        print("here 5")
 
     await interaction.response.send_message(embeds=embeds)
     # await interaction.response.send_message(f"The leaderboard for {activity}")

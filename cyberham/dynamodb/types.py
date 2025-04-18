@@ -50,7 +50,7 @@ class Flagged(TypedDict):
 MaybeFlagged: TypeAlias = Optional[Flagged]
 
 
-TableName: TypeAlias = Literal["users", "events", "flagged", "tests"]
+type TableName = Literal["users", "events", "flagged", "tests"]
 
 Item: TypeAlias = Mapping[str, Any]
 MaybeItem: TypeAlias = Optional[Item]
@@ -63,9 +63,7 @@ SerializedDict: TypeAlias = Mapping[str, UniversalAttributeValueTypeDef]
 TestItem: TypeAlias = Mapping[str, Union[str, int]]
 
 
-DummyUser: User = User(
-    user_id=0, name="", points=0, attended=0, grad_year=0, email=""
-)
+DummyUser: User = User(user_id=0, name="", points=0, attended=0, grad_year=0, email="")
 DummyEvent: Event = Event(
     name="", code="", points=0, date="", resources="", attended_users=[]
 )

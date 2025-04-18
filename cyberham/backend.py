@@ -1,7 +1,7 @@
 import random
 import string
 
-from typing import Literal
+from typing import Literal, Any
 from datetime import datetime
 from pytz import timezone
 
@@ -88,13 +88,20 @@ def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
     return f"Successfully registered for {code}!", event
 
 
+def parse_int(s: Any) -> int:
+    try:
+        return int(s)
+    except (ValueError, TypeError):
+        return 0
+
+
 def leaderboard(axis: Literal["points", "attended"], lim: int = 10) -> list[User]:
     users = usersdb.get_all()
 
     if axis == "points":
-        users.sort(key=lambda user: user["points"], reverse=True)
+        users.sort(key=lambda user: parse_int(user["points"]), reverse=True)
     else:
-        users.sort(key=lambda user: user["attended"], reverse=True)
+        users.sort(key=lambda user: parse_int(user["attended"]), reverse=True)
 
     return users[:lim]
 
@@ -122,12 +129,12 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     # map ids to names
     leaderboard: list[tuple[str, int]] = []
     for user_id, count in counts.items():
-        user = usersdb.get(user_id)
+        user = usersdb.get(parse_int(user_id))
 
-        if user is None:
-            raise Exception(f"User {user_id} is in events but not in users.")
+        if user is not None:
+            leaderboard.append((user["name"], count))
 
-        leaderboard.append((user["name"], count))
+        # raise Exception(f"User {user_id} is in events but not in users.")
 
     return leaderboard
 
@@ -194,13 +201,13 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
         flagged = flaggeddb.get(user_id)
 
         if flagged is None:
-            flagged = Flagged(user_id=user_id, offenses=1)
+            flagged = Flagged(user_id=user_id, offences=1)
         else:
-            flagged["offenses"] += 1
+            flagged["offences"] += 1
 
         flaggeddb.put(flagged)
 
-        if flagged["offenses"] >= 3:
+        if flagged["offences"] >= 3:
             return "Too many failed attempts to email verification, please contact an officer."
 
     # send email
@@ -280,7 +287,7 @@ def award(user_id: int, user_name: str, points: int) -> str:
     user["points"] += points
     usersdb.put(user)
 
-    return f"Successfully added {points} points to {user_name} " + user["name"] + "."
+    return f"Successfully added {points} points to {user_name} {user["name"]}."
 
 
 def calendar_events() -> list[CalendarEvent] | None:

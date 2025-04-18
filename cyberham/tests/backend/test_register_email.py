@@ -108,4 +108,4 @@ class TestRegisterEmail(BackendPatcher):
 
         if flagged is None:
             raise Exception(f"No offenses for user {user['user_id']}")
-        return flagged["offenses"]
+        return flagged["offences"]

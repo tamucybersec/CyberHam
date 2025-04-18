@@ -154,7 +154,7 @@ events = [
 flagged_users = [
     Flagged(
         user_id=flagged_user["user_id"],
-        offenses=3,
+        offences=3,
     ),
 ]
 
