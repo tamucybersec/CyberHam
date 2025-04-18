@@ -88,20 +88,13 @@ def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
     return f"Successfully registered for {code}!", event
 
 
-def parse_int(s: Any) -> int:
-    try:
-        return int(s)
-    except (ValueError, TypeError):
-        return 0
-
-
 def leaderboard(axis: Literal["points", "attended"], lim: int = 10) -> list[User]:
     users = usersdb.get_all()
 
     if axis == "points":
-        users.sort(key=lambda user: parse_int(user["points"]), reverse=True)
+        users.sort(key=lambda user: user["points"], reverse=True)
     else:
-        users.sort(key=lambda user: parse_int(user["attended"]), reverse=True)
+        users.sort(key=lambda user: user["attended"], reverse=True)
 
     return users[:lim]
 
@@ -129,7 +122,7 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     # map ids to names
     leaderboard: list[tuple[str, int]] = []
     for user_id, count in counts.items():
-        user = usersdb.get(parse_int(user_id))
+        user = usersdb.get(user_id)
 
         if user is not None:
             leaderboard.append((user["name"], count))
@@ -222,10 +215,10 @@ def register_email(user_id: int, email: str, guild_id: int | None) -> str:
     google_client.send_email(
         email,
         str(verification["code"]),
-        "Texas A&M Cybersecurity Club" if guild_id == 631254092332662805 else "TAMUctf",
+        "Texas A&M Cybersecurity Club",
     )
 
-    return "Please use /verify with the code you received in your email."
+    return "Please use /verify with the code you received in your email. Be sure the check your spam folder as well."
 
 
 def verify_email(code: int, user_id: int) -> str:

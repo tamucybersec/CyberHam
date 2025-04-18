@@ -73,9 +73,10 @@ class GoogleClient:
                 f"Welcome to {org}!\n\n"
                 "-----------------------------------------------------------\n"
                 f"CODE: [{code}]\n"
-                "-----------------------------------------------------------"
-                "\n\nContact:\n"
-                "discord: bit.py"
+                "-----------------------------------------------------------\n\n"
+                "Please continue to use /verify in the same place you registered to verify this email.\n\n"
+                "If you did not request this code, you can safely ignore this email.\n"
+                "For any further questions or information, feel free to reply to this email."
             )
 
             message["To"] = address

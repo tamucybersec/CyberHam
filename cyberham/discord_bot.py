@@ -263,13 +263,16 @@ async def leaderboard(
 )
 @app_commands.describe(activity="what activity group to search for")
 async def leaderboard_search(interaction: discord.Interaction, activity: str):
+    await interaction.response.defer(thinking=True)
     lb = backend.leaderboard_search(activity)
     if not lb:
         await interaction.response.send_message("There are no registered users yet")
         return
+
     prev, curr = 0, 0
     lb = sorted(lb, key=lambda kv: (kv[1], kv[0]), reverse=True)
     embeds: list[discord.Embed] = []
+
     while curr < len(lb):
         names_column = ""
         point_column = ""
@@ -280,15 +283,13 @@ async def leaderboard_search(interaction: discord.Interaction, activity: str):
             point_column += f"{point}\n"
             curr += 1
 
-        print("here 1")
         prev = curr
         embed = discord.Embed(title=f"Leaderboard for {activity}", color=0xFFFFFF)
         embed.add_field(name="Name", value=names_column, inline=True)
         embed.add_field(name=f"Attended", value=point_column, inline=True)
         embeds.append(embed)
-        print("here 5")
 
-    await interaction.response.send_message(embeds=embeds)
+    await interaction.followup.send(embeds=embeds)
     # await interaction.response.send_message(f"The leaderboard for {activity}")
 
 
@@ -674,11 +675,11 @@ async def generate_announcements(interaction: discord.Interaction):
 
                         channel_mention = ""
                         for key, value in activity_group_channels.items():
-                            print(key, value, event.name)
+                            # print(key, value, event.name)
                             if key in event.name.lower():
                                 channel_mention = f"<#{value}> "
                                 break
-                        print(channel_mention)
+                        # print(channel_mention)
                         boilerplate += f"- **[{event.name}](<{event.url}>)** | {channel_mention}{start_time} - {end_time}\n"
 
     if events_announced == 0:
