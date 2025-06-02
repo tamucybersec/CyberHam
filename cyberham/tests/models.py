@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from pytz import timezone
-from cyberham.dynamodb.types import User, Event, Flagged
+from cyberham.database.types import User, Event, Flagged
 from cyberham.apis.types import EmailPending
 
 cst_tz = timezone("America/Chicago")
@@ -54,7 +54,7 @@ no_email_user = User(
     points=1000000,
     attended=0,
     user_id=5,
-    name="Owen",
+    name="Javi",
     grad_year=2027,
     email="",
 )
@@ -66,13 +66,17 @@ unregistered_user = User(
     grad_year=2027,
     email="owen@tamu.edu",
 )
+unregistered_user_2 = User(
+    points=100,
+    attended=15,
+    user_id=10,
+    name="Zach",
+    grad_year=2027,
+    email="zach@tamu.edu",
+)
 
 valid_user_item = dict(valid_user)
 valid_user_2_item = dict(valid_user_2)
-updated_user_item = dict(updated_user)
-updated_user_2_item = dict(updated_user_2)
-no_grad_year_user_item = dict(flagged_user)
-no_email_user_item = dict(no_email_user)
 unregistered_user_item = dict(unregistered_user)
 users = [
     valid_user,
@@ -81,8 +85,8 @@ users = [
     updated_user_2,
     no_email_user,
 ]
-ids = [user["user_id"] for user in users]
-fewer_ids = [valid_user["user_id"], valid_user_2["user_id"]]
+ids = ",".join([str(user["user_id"]) for user in users])
+fewer_ids = ",".join([str(valid_user["user_id"]), str(valid_user_2["user_id"])])
 
 valid_event = Event(
     name="AWS Academy",
@@ -90,7 +94,7 @@ valid_event = Event(
     points=50,
     date=today,
     resources="",
-    attended_users=[],
+    attended_users="",
 )
 valid_event_2 = Event(
     name="Hardware Hacking",
@@ -98,7 +102,7 @@ valid_event_2 = Event(
     points=50,
     date=today,
     resources="",
-    attended_users=[],
+    attended_users="",
 )
 past_event = Event(
     name="Red Hat Academy",
@@ -106,7 +110,7 @@ past_event = Event(
     points=50,
     date=yesterday,
     resources="",
-    attended_users=[],
+    attended_users="",
 )
 future_event = Event(
     name="Palo Alto Academy",
@@ -114,7 +118,7 @@ future_event = Event(
     points=50,
     date=tomorrow,
     resources="",
-    attended_users=[],
+    attended_users="",
 )
 attended_event = Event(
     name="Cisco Networking Academy",
@@ -138,7 +142,7 @@ unregistered_event = Event(
     points=50,
     date=today,
     resources="",
-    attended_users=[],
+    attended_users="",
 )
 
 

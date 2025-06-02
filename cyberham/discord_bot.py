@@ -1,11 +1,11 @@
 import logging
-from typing import Literal
+from typing import Literal, cast, Optional
 from pytz import timezone
 
 import discord
 from discord import app_commands, ui
 from discord import EntityType
-from discord import PrivacyLevel
+from discord import PrivacyLevel, ScheduledEvent
 
 from datetime import datetime as dt, timedelta
 from calendar import day_name
@@ -46,16 +46,15 @@ class Bot(discord.Client):
         self.synced = True
         logger.info("bot online")
 
-    async def on_scheduled_event_create(self, event):
+    async def on_scheduled_event_create(self, event: ScheduledEvent):
         # voice channel events do not trigger this
         points = 50
         time = event.start_time.astimezone(timezone("US/Central"))
 
         code = backend.create_event(event.name, points, time.strftime("%m/%d/%Y"), "")
-        embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "")
-        await self.get_channel(admin_channel_id).send(
-            f"The code is `{code}`", embed=embed
-        )
+        embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "", "")
+        channel = cast(discord.TextChannel, self.get_channel(admin_channel_id))
+        await channel.send(f"The code is `{code}`", embed=embed)
 
 
 client = Bot()
@@ -74,7 +73,9 @@ class PageDisplay(discord.ui.View):
     @discord.ui.button(
         style=discord.ButtonStyle.primary, custom_id="el_left", emoji="◀"
     )
-    async def left(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def left(
+        self, interaction: discord.Interaction, _: discord.ui.Button[discord.ui.View]
+    ):
         if self.page > 0:
             self.page -= 1
         else:
@@ -90,7 +91,9 @@ class PageDisplay(discord.ui.View):
     @discord.ui.button(
         style=discord.ButtonStyle.primary, custom_id="el_next", emoji="▶"
     )
-    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def next(
+        self, interaction: discord.Interaction, _: discord.ui.Button[discord.ui.View]
+    ):
         if self.page < backend.event_count() // 5:
             self.page += 1
         embed = event_list_embed(self.page)
@@ -106,7 +109,7 @@ def event_info(
     date: str,
     code: str,
     resources: str,
-    attendees: list[int] = [],
+    attendees: str,
 ):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
@@ -187,12 +190,12 @@ async def create(
     resources: str = "",
 ):
     code = backend.create_event(name, points, date, resources)
-    embed = event_info(name, points, date, code, resources)
+    embed = event_info(name, points, date, code, resources, "")
     await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
 
 class AttendModal(ui.Modal, title="Attend"):
-    code = ui.TextInput(label="code")
+    code = ui.TextInput["AttendModal"](label="code")
 
     async def on_submit(self, interaction: discord.Interaction):
         code: str = self.code.value
@@ -202,7 +205,7 @@ class AttendModal(ui.Modal, title="Attend"):
             return
 
         embed = event_info(
-            event["name"], event["points"], event["date"], code, event["resources"]
+            event["name"], event["points"], event["date"], code, event["resources"], ""
         )
         await interaction.response.send_message(msg, embed=embed, ephemeral=True)
 
@@ -224,7 +227,7 @@ async def attend(interaction: discord.Interaction, code: str = ""):
         return
 
     embed = event_info(
-        event["name"], event["points"], event["date"], code, event["resources"]
+        event["name"], event["points"], event["date"], code, event["resources"], ""
     )
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
 
@@ -294,13 +297,13 @@ async def leaderboard_search(interaction: discord.Interaction, activity: str):
 
 
 class RegisterModal(ui.Modal, title="Register"):
-    name = ui.TextInput(
+    name = ui.TextInput["RegisterModal"](
         label="name", placeholder="please enter your full name/names you go by"
     )
-    grad_year = ui.TextInput(
+    grad_year = ui.TextInput["RegisterModal"](
         label="grad_year", placeholder="your graduation year (yyyy), e.g. 2024"
     )
-    email = ui.TextInput(label="email", placeholder="TAMU email")
+    email = ui.TextInput["RegisterModal"](label="email", placeholder="TAMU email")
 
     async def on_submit(self, interaction: discord.Interaction):
         if not await valid_guild(interaction):
@@ -319,7 +322,8 @@ class RegisterModal(ui.Modal, title="Register"):
                 interaction.guild_id,
             )
         except:
-            await client.get_channel(admin_channel_id).send(
+            channel = cast(discord.TextChannel, client.get_channel(admin_channel_id))
+            await channel.send(
                 f"{interaction.user.mention} registration attempt, update token"
             )
             logger.debug(name, grad_year, email, interaction.user.name)
@@ -340,7 +344,12 @@ async def register(interaction: discord.Interaction):
 async def verify(interaction: discord.Interaction, code: int):
     msg: str = backend.verify_email(code, interaction.user.id)
     if "verified!" in msg and interaction.guild_id == 631254092332662805:
-        await interaction.user.add_roles(
+        assert interaction.guild is not None
+        member = interaction.guild.get_member(interaction.user.id)
+        if member is None:
+            # Fallback in case member is not cached
+            member = await interaction.guild.fetch_member(interaction.user.id)
+        await member.add_roles(
             discord.Object(id=1015024081432743996), reason="TAMU email verified"
         )
     await interaction.response.send_message(msg, ephemeral=True)
@@ -470,11 +479,11 @@ async def list_of_commands(interaction: discord.Interaction):
 
 
 class EditModal(discord.ui.Modal, title="Edit a Message"):
-    answer = discord.ui.TextInput(
+    answer = discord.ui.TextInput["EditModal"](
         label="Message content", style=discord.TextStyle.paragraph, max_length=2000
     )
 
-    def __init__(self, message: discord.Message):
+    def __init__(self, message: Optional[discord.Message] = None):
         super().__init__()
         self.message = message
 
@@ -483,7 +492,8 @@ class EditModal(discord.ui.Modal, title="Edit a Message"):
             await interaction.response.send_message(
                 f"Howdy! The message has been sent.", ephemeral=True
             )
-            await interaction.channel.send(f"{self.answer}")
+            channel = cast(discord.TextChannel, interaction.channel)
+            await channel.send(f"{self.answer}")
         else:
             await interaction.response.send_message(
                 f"Howdy! The message has been updated.", ephemeral=True
@@ -622,7 +632,7 @@ async def generate_announcements(interaction: discord.Interaction):
     friday = monday + timedelta(days=4)
 
     # Create dictionary of events to sort
-    events = dict(
+    events: dict[int, dict[str, list[discord.ScheduledEvent]]] = dict(
         [(key, {}) for key in [x for x in range(5)]]
     )  # cursed list comprehension
     events_announced = 0
@@ -634,14 +644,21 @@ async def generate_announcements(interaction: discord.Interaction):
 
     for event in await interaction.guild.fetch_scheduled_events():
         start_time = event.start_time.astimezone(timezone("US/Central"))
-        end_time = event.end_time.astimezone(timezone("US/Central"))
+        end_time = (
+            None
+            if event.end_time is None
+            else event.end_time.astimezone(timezone("US/Central"))
+        )
 
         if 0 <= weekday_now <= 4:
             if monday <= start_time.date() <= friday:
                 events_announced += 1
 
                 if not event.location in events[start_time.weekday()]:
-                    events[start_time.weekday()][event.location] = [event]
+                    if event.location is None:
+                        events[start_time.weekday()]["TBD"] = [event]
+                    else:
+                        events[start_time.weekday()][event.location] = [event]
                 else:
                     events[start_time.weekday()][event.location].append(event)
 
@@ -649,8 +666,8 @@ async def generate_announcements(interaction: discord.Interaction):
         if len(locations) > 0:
             boilerplate += f"\n## __{day_name[weekday]}__:\n"
 
-            for location, events in locations.items():
-                if len(events) > 0:
+            for location, evts in locations.items():
+                if len(evts) > 0:
                     bldg = location.split(" ")[0]
 
                     # hacky method - concatenate location to url to get the map
@@ -659,19 +676,22 @@ async def generate_announcements(interaction: discord.Interaction):
                     else:
                         boilerplate += f"**{location}**\n"
 
-                    for event in events:
+                    for event in evts:
                         start_time = (
                             event.start_time.astimezone(timezone("US/Central"))
                             .strftime("%I:%M%p")
                             .lstrip("0")
                             .replace(" 0", " ")
                         )
-                        end_time = (
-                            event.end_time.astimezone(timezone("US/Central"))
-                            .strftime("%I:%M%p")
-                            .lstrip("0")
-                            .replace(" 0", " ")
-                        )
+                        if event.end_time is not None:
+                            end_time = (
+                                event.end_time.astimezone(timezone("US/Central"))
+                                .strftime("%I:%M%p")
+                                .lstrip("0")
+                                .replace(" 0", " ")
+                            )
+                        else:
+                            end_time = "TBD"  # fallback if end_time is None
 
                         channel_mention = ""
                         for key, value in activity_group_channels.items():

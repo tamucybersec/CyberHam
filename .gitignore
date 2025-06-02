@@ -1,6 +1,7 @@
 # Secrets
 config.toml
-cyberham/db/*.db
+:
+*.db
 cyberham/secrets/*
 *.pem
 

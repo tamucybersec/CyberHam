@@ -11,6 +11,7 @@ from cyberham.tests.models import (
     unregistered_event,
     events
 )
+from cyberham.utils.utils import add_attendee
 
 
 class TestAttendEvent(BackendPatcher):
@@ -25,11 +26,11 @@ class TestAttendEvent(BackendPatcher):
 
         user["points"] += event["points"]
         user["attended"] += 1
-        event["attended_users"].append(user["user_id"])
+        add_attendee(event, user["user_id"])
 
         msg, ev = attend_event(event["code"], user["user_id"])
-        db_user = self.usersdb.get(user["user_id"])
-        db_event = self.eventsdb.get(event["code"])
+        db_user = self.usersdb.get([user["user_id"]])
+        db_event = self.eventsdb.get([event["code"]])
 
         assert msg, "String should be neither None nor empty"
         assert ev, "Event should not be None"

@@ -16,7 +16,6 @@ client_secret = project_path.joinpath("secrets").joinpath(
     data["google"]["google_client"]
 )
 discord_token = data["discord"]["token"]
-dynamo_keys = data["dynamo"]
 encryption_keys = data["encryption"]
 dashboard_credentials = data["dashboard"]
 

@@ -1,8 +1,8 @@
 import os
 import json
 from typing import Sequence
-from cyberham.dynamodb.types import TableName, Item
-from cyberham.dynamodb.typeddb import usersdb, eventsdb, flaggeddb
+from cyberham.database.types import TableName, Item
+from cyberham.database.typeddb import usersdb, eventsdb, flaggeddb
 
 path = "backups"
 

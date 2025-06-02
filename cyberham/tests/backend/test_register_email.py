@@ -1,8 +1,15 @@
 from backend_patcher import BackendPatcher
 from cyberham.apis.types import EmailPending
 from cyberham.backend import register_email
-from cyberham.dynamodb.types import User
-from cyberham.tests.models import users, valid_user, no_email_user, unregistered_user, flagged_user, pending_users
+from cyberham.database.types import User
+from cyberham.tests.models import (
+    users,
+    valid_user,
+    no_email_user,
+    unregistered_user,
+    flagged_user,
+    pending_users,
+)
 from datetime import datetime
 
 
@@ -51,18 +58,12 @@ class TestRegisterEmail(BackendPatcher):
         prev_pending: EmailPending | None = None
 
         for i in range(1, 10):
-            res = register_email(
-                flagged_user["user_id"], flagged_user["email"], 0
-            )
+            res = register_email(flagged_user["user_id"], flagged_user["email"], 0)
             assert res != ""
-            self._assert_valid_pending_email(
-                flagged_user, flagged_user["email"]
-            )
+            self._assert_valid_pending_email(flagged_user, flagged_user["email"])
 
             if i == 0:
-                assert self._no_offenses(
-                    flagged_user
-                ), "There should be no offenses"
+                assert self._no_offenses(flagged_user), "There should be no offenses"
             else:
                 assert (
                     self._offense_count(flagged_user) == i
@@ -76,9 +77,9 @@ class TestRegisterEmail(BackendPatcher):
                 assert prev_pending is not None
                 assert (
                     prev_pending["code"]
-                    == self.google_client.get_pending_email(
-                        flagged_user["user_id"]
-                    )["code"]
+                    == self.google_client.get_pending_email(flagged_user["user_id"])[
+                        "code"
+                    ]
                 ), "Should retain the same pending email"
 
     def _assert_valid_pending_email(self, user: User, email: str):
@@ -100,11 +101,11 @@ class TestRegisterEmail(BackendPatcher):
         return self.google_client.has_pending_email(user["user_id"])
 
     def _no_offenses(self, user: User) -> bool:
-        flagged = self.flaggeddb.get(user["user_id"])
+        flagged = self.flaggeddb.get([user["user_id"]])
         return flagged == None
 
     def _offense_count(self, user: User) -> int:
-        flagged = self.flaggeddb.get(user["user_id"])
+        flagged = self.flaggeddb.get([user["user_id"]])
 
         if flagged is None:
             raise Exception(f"No offenses for user {user['user_id']}")

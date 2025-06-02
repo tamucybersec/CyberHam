@@ -9,10 +9,6 @@ from typing import (
     TypedDict,
     Union,
 )
-from mypy_boto3_dynamodb.type_defs import (
-    UniversalAttributeValueTypeDef,
-    AttributeValueTypeDef,
-)
 
 
 T = TypeVar("T")
@@ -36,7 +32,7 @@ class Event(TypedDict):
     points: int
     date: str
     resources: str
-    attended_users: list[int]
+    attended_users: str
 
 
 MaybeEvent: TypeAlias = Optional[Event]
@@ -54,16 +50,13 @@ type TableName = Literal["users", "events", "flagged", "tests"]
 
 Item: TypeAlias = Mapping[str, Any]
 MaybeItem: TypeAlias = Optional[Item]
-SerializedItem: TypeAlias = dict[str, AttributeValueTypeDef]
 UpdateItem: TypeAlias = Callable[[MaybeItem], MaybeItem]
 
-Key: TypeAlias = Item
-SerializedDict: TypeAlias = Mapping[str, UniversalAttributeValueTypeDef]
 
 TestItem: TypeAlias = Mapping[str, Union[str, int]]
 
 
 DummyUser: User = User(user_id=0, name="", points=0, attended=0, grad_year=0, email="")
 DummyEvent: Event = Event(
-    name="", code="", points=0, date="", resources="", attended_users=[]
+    name="", code="", points=0, date="", resources="", attended_users=""
 )

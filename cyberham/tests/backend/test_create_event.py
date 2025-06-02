@@ -16,14 +16,14 @@ class TestCreateEvent(BackendPatcher):
         )
         assert code is not None
 
-        created_event = self.eventsdb.get(code)
+        created_event = self.eventsdb.get([code])
         assert created_event is not None
 
         assert created_event["name"] == event["name"]
         assert created_event["points"] == event["points"]
         assert created_event["date"] == event["date"]
         assert created_event["resources"] == event["resources"]
-        assert created_event["attended_users"] == [], "Nobody attended the event yet"
+        assert created_event["attended_users"] == "", "Nobody attended the event yet"
 
     def test_no_collision(self):
         event = deepcopy(valid_event)

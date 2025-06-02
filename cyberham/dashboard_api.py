@@ -8,8 +8,15 @@ from cyberham.apis.auth import (
     decrypt,
 )
 from cyberham.apis.types import Permissions, ValidateBody
-from cyberham.dynamodb.typeddb import usersdb, eventsdb, flaggeddb
-from cyberham.dynamodb.types import User, Event, Flagged
+from cyberham.database.typeddb import usersdb, eventsdb, flaggeddb
+from cyberham.database.types import (
+    User,
+    MaybeUser,
+    Event,
+    MaybeEvent,
+    Flagged,
+    MaybeFlagged,
+)
 from fastapi import FastAPI, Depends, HTTPException
 from typing import Annotated
 import uvicorn
@@ -52,7 +59,7 @@ async def getUsers():
 async def createUser(
     user: User,
 ):
-    usersdb.put(user)
+    usersdb.create(user)
     return {"message": "created"}
 
 
@@ -64,8 +71,10 @@ async def updateUser(
     original: User,
     new: User,
 ):
-    usersdb.delete(original["user_id"])
-    usersdb.put(new)
+    def update_user(_: MaybeUser) -> MaybeUser:
+        return new
+
+    usersdb.update(update_user, original=original)
     return {"message": "updated"}
 
 
@@ -76,7 +85,7 @@ async def updateUser(
 async def deleteUser(
     user: User,
 ):
-    usersdb.delete(user["user_id"])
+    usersdb.delete([user["user_id"]])
     return {"message": "deleted"}
 
 
@@ -104,7 +113,7 @@ async def getEvents():
 async def createEvent(
     event: Event,
 ):
-    eventsdb.put(event)
+    eventsdb.create(event)
     return {"message": "created"}
 
 
@@ -116,8 +125,10 @@ async def updateEvent(
     original: Event,
     new: Event,
 ):
-    eventsdb.delete(original["code"])
-    eventsdb.put(new)
+    def update_event(_: MaybeEvent) -> MaybeEvent:
+        return new
+
+    eventsdb.update(update_event, original=original)
     return {"message": "updated"}
 
 
@@ -128,7 +139,7 @@ async def updateEvent(
 async def deleteEvent(
     event: Event,
 ):
-    eventsdb.delete(event["code"])
+    eventsdb.delete([event["code"]])
     return {"message": "deleted"}
 
 
@@ -156,7 +167,7 @@ async def getFlagged():
 async def createFlagged(
     flagged: Flagged,
 ):
-    flaggeddb.put(flagged)
+    flaggeddb.create(flagged)
     return {"message": "created"}
 
 
@@ -168,8 +179,10 @@ async def updateFlagged(
     original: Flagged,
     new: Flagged,
 ):
-    flaggeddb.delete(original["user_id"])
-    flaggeddb.put(new)
+    def update_flagged(_: MaybeFlagged) -> MaybeFlagged:
+        return new
+
+    flaggeddb.update(update_flagged, original=original)
     return {"message": "updated"}
 
 
@@ -180,7 +193,7 @@ async def updateFlagged(
 async def deleteFlagged(
     flagged: Flagged,
 ):
-    flaggeddb.delete(flagged["user_id"])
+    flaggeddb.delete([flagged["user_id"]])
     return {"message": "deleted"}
 
 

@@ -21,7 +21,7 @@ class TestAward(BackendPatcher):
         res = award(user["user_id"], user["name"], points)
         assert res != ""
 
-        got = self.usersdb.get(user["user_id"])
+        got = self.usersdb.get([user["user_id"]])
         assert got == user
 
     def test_invalid_user(self):
@@ -30,4 +30,4 @@ class TestAward(BackendPatcher):
 
         res = award(user["user_id"], user["name"], points)
         assert res != ""
-        assert self.usersdb.get(unregistered_user["user_id"]) is None
+        assert self.usersdb.get([unregistered_user["user_id"]]) is None
