@@ -1,5 +1,5 @@
 from backend_patcher import BackendPatcher
-from cyberham.backend import profile
+from cyberham.backend.users import profile
 from cyberham.tests.models import users, valid_user, unregistered_user
 
 

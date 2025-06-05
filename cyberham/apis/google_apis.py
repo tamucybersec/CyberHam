@@ -2,8 +2,7 @@ import logging
 import os.path
 import base64
 
-# import mimetypes
-
+from typing import TYPE_CHECKING
 from cyberham.apis.types import EmailPending, CalendarEvent
 from datetime import datetime, timedelta, time
 from pytz import timezone
@@ -14,15 +13,18 @@ from google.auth.external_account_authorized_user import Credentials as ExCreden
 from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore
 from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError
-
 from email.message import EmailMessage
 
-# from email.mime.audio import MIMEAudio
-# from email.mime.base import MIMEBase
-# from email.mime.image import MIMEImage
-# from email.mime.text import MIMEText
-
 from cyberham import google_token, client_secret
+
+
+# force the type checker to populate the structure to prevent type errors
+# finicky, to say the least
+if TYPE_CHECKING:
+    from googleapiclient.discovery import Resource
+
+    _: Resource
+
 
 # If modifying these scopes, delete the file token.json.
 SCOPES: list[str] = [
@@ -162,10 +164,10 @@ class GoogleClient:
                     raise TypeError(f"Summary not found for event {id}")
 
                 event_id = event["id"]
-                start = event["start"].get("dateTime", event["start"].get("date"))
-                start = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S%z")  # type: ignore
-                end = event["end"].get("dateTime", event["end"].get("date"))
-                end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")  # type: ignore
+                start = str(event["start"].get("dateTime", event["start"].get("date")))
+                start = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S%z")
+                end = str(event["end"].get("dateTime", event["end"].get("date")))
+                end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
                 summary = event["summary"]
                 location = event["location"] if ("location" in event) else "TBD"
 

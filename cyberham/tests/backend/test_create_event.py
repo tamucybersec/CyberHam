@@ -1,6 +1,6 @@
 from copy import deepcopy
 from backend_patcher import BackendPatcher
-from cyberham.backend import create_event
+from cyberham.backend.events import create_event
 from cyberham.tests.models import valid_event
 
 

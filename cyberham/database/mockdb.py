@@ -80,4 +80,4 @@ class MockDB(Generic[T]):
         return self._key_vals([item[pk] for pk in self.pk_names])
 
     def _key_vals(self, pk_values: list[Any]) -> str:
-        return f"({", ".join([str(v) for v in pk_values])})"
+        return f"({",".join([str(v) for v in pk_values])})"

@@ -1,5 +1,5 @@
 from backend_patcher import BackendPatcher
-from cyberham.backend import verify_email
+from cyberham.backend.register import verify_email
 from cyberham.database.types import User
 from cyberham.tests.models import (
     users,

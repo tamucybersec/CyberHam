@@ -1,5 +1,5 @@
 from backend_patcher import BackendPatcher
-from cyberham.backend import register
+from cyberham.backend.register import register
 from cyberham.database.types import User
 from cyberham.tests.models import (
     users,
@@ -31,7 +31,6 @@ class TestRegister(BackendPatcher):
             str(user["grad_year"]),
             user["email"],
             user["user_id"],
-            0,
         )
         assert res != ""
 
@@ -45,7 +44,6 @@ class TestRegister(BackendPatcher):
             "hello world",
             unregistered_user["email"],
             unregistered_user["user_id"],
-            0,
         )
         assert res != ""
 
@@ -58,7 +56,6 @@ class TestRegister(BackendPatcher):
             "0",
             unregistered_user["email"],
             unregistered_user["user_id"],
-            0,
         )
         assert res != ""
 
@@ -81,7 +78,6 @@ class TestRegister(BackendPatcher):
                 str(unregistered_user["grad_year"]),
                 email,
                 unregistered_user["user_id"],
-                0,
             )
             assert res != ""
 
@@ -96,7 +92,6 @@ class TestRegister(BackendPatcher):
             str(valid_user["grad_year"]),
             valid_user["email"],
             valid_user["user_id"],
-            0,
         )
         assert res != ""
 
@@ -115,7 +110,6 @@ class TestRegister(BackendPatcher):
             str(new_grad),
             new_email,
             valid_user["user_id"],
-            0,
         )
         assert res != ""
 

@@ -19,7 +19,7 @@ Update: TypeAlias = Callable[[Maybe[T]], Maybe[T]]
 
 
 # Change pk_values to be strongly typed
-class _TypedDB(Generic[T]):
+class TypedDB(Generic[T]):
     db: SQLiteDB
     table: TableName
     pk_names: list[str]
@@ -114,7 +114,7 @@ class _TypedDB(Generic[T]):
 
 
 _db = SQLiteDB("cyberham.db")
-testdb = _TypedDB[User](_db, "tests", ["user_id"])
-usersdb = _TypedDB[User](_db, "users", ["user_id"])
-eventsdb = _TypedDB[Event](_db, "events", ["code"])
-flaggeddb = _TypedDB[Flagged](_db, "flagged", ["user_id"])
+testdb = TypedDB[User](_db, "tests", ["user_id"])
+usersdb = TypedDB[User](_db, "users", ["user_id"])
+eventsdb = TypedDB[Event](_db, "events", ["code"])
+flaggeddb = TypedDB[Flagged](_db, "flagged", ["user_id"])

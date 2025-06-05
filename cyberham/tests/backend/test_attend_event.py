@@ -1,6 +1,6 @@
 from copy import deepcopy
 from backend_patcher import BackendPatcher
-from cyberham.backend import attend_event
+from cyberham.backend.events import attend_event
 from cyberham.tests.models import (
     valid_user,
     unregistered_user,
@@ -11,7 +11,7 @@ from cyberham.tests.models import (
     unregistered_event,
     events
 )
-from cyberham.utils.utils import add_attendee
+from cyberham.utils.events import add_attendee
 
 
 class TestAttendEvent(BackendPatcher):

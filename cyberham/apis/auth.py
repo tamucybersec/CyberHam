@@ -1,23 +1,25 @@
+from typing import cast
 from cyberham import dashboard_credentials, encryption_keys
 from cyberham.apis.types import Credentials, Permissions, AuthenticationRequest
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.backends import default_backend
 from fastapi import HTTPException, Depends
 import base64
 
 
-_private_key = serialization.load_pem_private_key(
+_private_key = cast(RSAPrivateKey, serialization.load_pem_private_key(
     encryption_keys["private"].encode("utf-8"),
     password=None,
     backend=default_backend(),
-)
+))
 
 public_key = encryption_keys["public"]
 
 
 def decrypt(s: str) -> str:
-    decrypted_message = _private_key.decrypt(  # type: ignore
+    decrypted_message = _private_key.decrypt(
         base64.b64decode(s),
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -26,7 +28,7 @@ def decrypt(s: str) -> str:
         ),
     )
 
-    return decrypted_message.decode("utf-8")  # type: ignore
+    return decrypted_message.decode("utf-8")
 
 
 def authenticate(credentials: Credentials) -> Permissions:
@@ -49,6 +51,7 @@ def authenticate(credentials: Credentials) -> Permissions:
 
     return Permissions.DENIED
 
+# FIXME phase out these functions in favor of a bearer token
 
 def authenticate_only(req: AuthenticationRequest):
     return authenticate(req.credentials)

@@ -1,6 +1,6 @@
 from backend_patcher import BackendPatcher
 from cyberham.apis.types import EmailPending
-from cyberham.backend import register_email
+from cyberham.backend.register import register_email
 from cyberham.database.types import User
 from cyberham.tests.models import (
     users,
@@ -21,7 +21,7 @@ class TestRegisterEmail(BackendPatcher):
         self.now = datetime.now()
 
     def test_already_registered(self):
-        res = register_email(valid_user["user_id"], valid_user["email"], 0)
+        res = register_email(valid_user["user_id"], valid_user["email"])
 
         assert (
             res == ""
@@ -34,9 +34,7 @@ class TestRegisterEmail(BackendPatcher):
         ), "No offense should be created for users not changing their email"
 
     def test_register_email(self):
-        res = register_email(
-            unregistered_user["user_id"], unregistered_user["email"], 0
-        )
+        res = register_email(unregistered_user["user_id"], unregistered_user["email"])
 
         assert res != ""
         self._assert_valid_pending_email(unregistered_user, unregistered_user["email"])
@@ -46,7 +44,7 @@ class TestRegisterEmail(BackendPatcher):
 
     def test_registered_new_email(self):
         email = "new_email@tamu.edu"
-        res = register_email(no_email_user["user_id"], email, 0)
+        res = register_email(no_email_user["user_id"], email)
 
         assert res != ""
         self._assert_valid_pending_email(no_email_user, email)
@@ -58,7 +56,7 @@ class TestRegisterEmail(BackendPatcher):
         prev_pending: EmailPending | None = None
 
         for i in range(1, 10):
-            res = register_email(flagged_user["user_id"], flagged_user["email"], 0)
+            res = register_email(flagged_user["user_id"], flagged_user["email"])
             assert res != ""
             self._assert_valid_pending_email(flagged_user, flagged_user["email"])
 

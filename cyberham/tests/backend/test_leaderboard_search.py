@@ -1,5 +1,5 @@
 from backend_patcher import BackendPatcher
-from cyberham.backend import leaderboard_search
+from cyberham.backend.users import leaderboard_search
 from cyberham.tests.models import (
     users,
     valid_user,

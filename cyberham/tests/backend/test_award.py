@@ -1,6 +1,6 @@
 from backend_patcher import BackendPatcher
 from copy import deepcopy
-from cyberham.backend import award
+from cyberham.backend.users import award
 from cyberham.tests.models import (
     users,
     valid_user,
