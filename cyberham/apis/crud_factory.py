@@ -1,8 +1,8 @@
 from cyberham.database.typeddb import TypedDB
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from cyberham.apis.types import Permissions
 from cyberham.apis.auth import require_permission, require_permission_only
-from typing import TypeVar, Any, Mapping, TypeAlias, Optional
+from typing import TypeVar, Any, Mapping, TypeAlias, Optional, Sequence
 
 T = TypeVar("T", bound=Mapping[str, Any])
 Maybe: TypeAlias = Optional[T]
@@ -46,8 +46,8 @@ def create_crud_routes(
         return {"message": "deleted"}
 
     @router.post(f"{prefix}/replace", dependencies=[require_permission(modify_perm)])
-    async def replace(replacement: list[T]):
-        raise HTTPException(status_code=501, detail="Feature not yet implemented")
+    async def replace(replacement: Sequence[T]):
+        return db.replace(replacement)
 
     # satisfy type checker
     _: list[Any] = [get_all, create, update, delete, replace]

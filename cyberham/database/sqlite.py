@@ -1,6 +1,7 @@
 import sqlite3
-from typing import Optional, Any
-from cyberham.database.types import Item
+from typing import Optional, Any, Sequence
+from cyberham.database.types import Item, TableName
+from cyberham.database.backup import write_backup
 
 
 class SQLiteDB:
@@ -65,7 +66,7 @@ class SQLiteDB:
         self.conn.commit()
 
     # create
-    def create_row(self, table: str, item: Item) -> None:
+    def create_row(self, table: TableName, item: Item) -> None:
         cols = ", ".join(list(item.keys()))
         placeholders = ", ".join("?" for _ in item)
         vals = list(item.values())
@@ -77,7 +78,7 @@ class SQLiteDB:
 
     # read
     def get_row(
-        self, table: str, pk_names: list[str], pk_values: list[Any]
+        self, table: TableName, pk_names: list[str], pk_values: list[Any]
     ) -> Optional[Item]:
         wheres = self._wheres(pk_names)
         self.cursor.execute(f"SELECT * FROM {table} WHERE {wheres}", pk_values)
@@ -86,7 +87,7 @@ class SQLiteDB:
 
     # update
     def update_row(
-        self, table: str, pk_names: list[str], original: Item, updated: Item
+        self, table: TableName, pk_names: list[str], original: Item, updated: Item
     ) -> None:
         # Determine the columns that have changed
         diffs = {key: updated[key] for key in updated if original[key] != updated[key]}
@@ -106,7 +107,7 @@ class SQLiteDB:
 
     # delete
     def delete_row(
-        self, table: str, pk_names: list[str], pk_values: list[Any]
+        self, table: TableName, pk_names: list[str], pk_values: list[Any]
     ) -> Optional[Item]:
         old = self.get_row(table, pk_names, pk_values)
         if old:
@@ -115,16 +116,47 @@ class SQLiteDB:
             self.conn.commit()
         return old
 
-    def get_all_rows(self, table: str) -> list[Item]:
+    def get_all_rows(self, table: TableName) -> list[Item]:
         self.cursor.execute(f"SELECT * FROM {table}")
         return [dict(row) for row in self.cursor.fetchall()]
 
-    def get_count(self, table: str) -> int:
+    def get_count(self, table: TableName) -> int:
         self.cursor.execute(f"SELECT COUNT(*) FROM {table}")
         return self.cursor.fetchone()[0]
 
-    def reset_table(self, table: str) -> None:
+    def reset_table(self, table: TableName) -> None:
         self.cursor.execute(f"DELETE FROM {table}")
+        self.conn.commit()
+
+    def replace_table(self, table: TableName, items: Sequence[Item]):
+        try:
+            self.conn.execute("BEGIN IMMEDIATE")
+            old_items = self.get_all_rows(table)
+            self.cursor.execute(f"DELETE FROM {table}")
+            self.batch_insert(table, items)
+            write_backup(table, old_items)
+            return {"message": "Replacement successful"}
+
+        except sqlite3.IntegrityError as e:
+            self.conn.rollback()
+            return {
+                "error": "Replacement failed due to foreign key constraints",
+                "details": str(e),
+            }
+
+        except Exception as e:
+            self.conn.rollback()
+            return {"error": "Unexpected failure", "details": str(e)}
+
+    def batch_insert(self, table: TableName, items: Sequence[Item]):
+        keys = items[0].keys()
+        placeholders = ", ".join(["?"] * len(keys))
+        columns = ", ".join(keys)
+        sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
+
+        # Convert items to list of tuples
+        values = [tuple(item[key] for key in keys) for item in items]
+        self.cursor.executemany(sql, values)
         self.conn.commit()
 
     def _wheres(self, pk_names: list[str]) -> str:

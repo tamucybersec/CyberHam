@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Any,
     overload,
+    Sequence
 )
 from copy import deepcopy
 
@@ -105,6 +106,14 @@ class TypedDB(Generic[T]):
 
     def get_count(self) -> int:
         return self.db.get_count(self.table)
+
+    def replace(self, items: Sequence[Item]):
+        """
+        Resets and replaces the entire database with the given values.
+        Use under extreme caution.
+        """
+
+        return self.db.replace_table(self.table, items)
 
     def reset(self):
         self.db.reset_table(self.table)

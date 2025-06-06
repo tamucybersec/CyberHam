@@ -1,29 +1,29 @@
-import os
-import json
-from typing import Sequence
-from cyberham.database.types import TableName, Item
 from cyberham.database.typeddb import usersdb, eventsdb, flaggeddb
-
-path = "backups"
+from cyberham.database.backup import write_backup, load_latest_backup
 
 
 class TestBackup:
     def test_backup_all(self):
-        assert True, "Only backup the database when necessary."
-        return
-
         users = usersdb.get_all()
-        self._write_backup("users", users)
+        write_backup("users", users)
 
         events = eventsdb.get_all()
-        self._write_backup("events", events)
+        write_backup("events", events)
 
         flagged = flaggeddb.get_all()
-        self._write_backup("flagged", flagged)
+        write_backup("flagged", flagged)
 
-    def _write_backup(self, table: TableName, data: Item | Sequence[Item]):
-        if not os.path.exists(path):
-            os.mkdir(path)
 
-        with open(f"{path}/{table}.json", "w") as file:
-            file.write(json.dumps(data))
+class TestRecovery:
+    def test_recover_all(self):
+        assert True, "Only recover the database when necessary"
+        return
+
+        users = load_latest_backup("users")
+        usersdb.replace(users)
+
+        events = load_latest_backup("events")
+        eventsdb.replace(events)
+
+        flagged = load_latest_backup("flagged")
+        flaggeddb.replace(flagged)
