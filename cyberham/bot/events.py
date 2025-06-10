@@ -29,9 +29,14 @@ def setup_commands(bot: Bot):
         points: int,
         date: str,
     ):
-        code = backend_events.create_event(name, points, date)
-        embed = event_info(name, points, date, code, 0)
-        await interaction.response.send_message(f"The code is `{code}`", embed=embed)
+        code, err = backend_events.create_event(name, points, date)
+        if err != "":
+            await interaction.response.send_message(err)
+        else:
+            embed = event_info(name, points, date, code, 0)
+            await interaction.response.send_message(
+                f"The code is `{code}`", embed=embed
+            )
 
     @app_commands.checks.cooldown(5, 30 * 60)
     @command_tree.command(

@@ -2,7 +2,7 @@ import random
 
 from datetime import datetime
 
-from cyberham.apis.google_apis import google_client
+from cyberham.apis.google_apis import google
 from cyberham.apis.types import EmailPending
 from cyberham.database.typeddb import usersdb, flaggeddb
 from cyberham.database.types import (
@@ -73,7 +73,7 @@ def register_email(user_id: int, email: str) -> str:
         return ""
 
     # check offenses
-    if google_client.has_pending_email(user_id):
+    if google.client.has_pending_email(user_id):
 
         def update_flagged(flagged: MaybeFlagged) -> MaybeFlagged:
             if flagged is None:
@@ -94,9 +94,9 @@ def register_email(user_id: int, email: str) -> str:
         code=random.randint(1000, 10000),
         time=datetime.now(),
     )
-    google_client.set_pending_email(user_id, verification)
+    google.client.set_pending_email(user_id, verification)
 
-    google_client.send_email(
+    google.client.send_email(
         email,
         str(verification["code"]),
         "Texas A&M Cybersecurity Club",
@@ -109,10 +109,10 @@ def verify_email(code: int, user_id: int) -> str:
     user = usersdb.get([user_id])
     if user is None:
         return "Please use /register first."
-    elif not google_client.has_pending_email(user_id):
+    elif not google.client.has_pending_email(user_id):
         return "Please use /register to set your email first."
 
-    pending = google_client.get_pending_email(user_id)
+    pending = google.client.get_pending_email(user_id)
     if pending["code"] != code:
         return "This code is not correct!"
 
@@ -124,9 +124,9 @@ def verify_email(code: int, user_id: int) -> str:
 
     usersdb.update(update_user, original=user)
 
-    google_client.remove_pending_email(user_id)
+    google.client.remove_pending_email(user_id)
     return "Email verified! It is now visible using /profile."
 
 
 def remove_pending(user_id: int = 0) -> None:
-    google_client.remove_pending_email(user_id)
+    google.client.remove_pending_email(user_id)

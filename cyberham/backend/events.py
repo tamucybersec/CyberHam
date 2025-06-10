@@ -2,7 +2,7 @@ import random
 import string
 
 from datetime import datetime
-from cyberham.apis.google_apis import google_client
+from cyberham.apis.google_apis import google
 from cyberham.apis.types import CalendarEvent
 from cyberham.database.queries import user_attendance_counts_for_events
 from cyberham.database.typeddb import usersdb, eventsdb, attendancedb
@@ -15,8 +15,10 @@ from cyberham.utils.date import (
 )
 
 
-# FIXME should throw error if name is "", as find_event does
-def create_event(name: str, points: int, date: str) -> str:
+def create_event(name: str, points: int, date: str) -> tuple[str, str]:
+    if name == "":
+        return "", "Event name cannot be empty."
+
     # code generation
     event_code: str = ""
     while True:
@@ -35,7 +37,7 @@ def create_event(name: str, points: int, date: str) -> str:
     )
     eventsdb.create(event)
 
-    return event_code
+    return event_code, ""
 
 
 def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
@@ -90,4 +92,4 @@ def event_count() -> int:
 
 
 def calendar_events() -> list[CalendarEvent] | None:
-    return google_client.get_events()
+    return google.client.get_events()

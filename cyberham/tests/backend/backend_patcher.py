@@ -1,4 +1,4 @@
-from pytest import MonkeyPatch
+from cyberham.apis.google_apis import google
 from cyberham.apis.mock_google_apis import MockGoogleClient
 from cyberham.database.typeddb import (
     T,
@@ -12,12 +12,9 @@ from cyberham.database.typeddb import (
 )
 from cyberham.database.types import User, Event, Flagged, Attendance, Points, TableName
 from cyberham.apis.types import EmailPending
-from pathlib import Path
 
 
 class BackendPatcher:
-    tables: list[TableName] = ["users", "events", "flagged", "attendance", "points"]
-
     initial_users: list[User] = []
     initial_events: list[Event] = []
     initial_flagged: list[Flagged] = []
@@ -30,7 +27,9 @@ class BackendPatcher:
     def setup_method(self):
         # create a temporary, in-memory database for testing
         db.setup(":memory:")
-        for table in self.tables:
+
+        tables: list[TableName] = ["users", "events", "flagged", "attendance", "points"]
+        for table in tables:
             db.reset_table(table)
 
         self.set_initial(usersdb, self.initial_users)
@@ -39,19 +38,8 @@ class BackendPatcher:
         self.set_initial(attendancedb, self.initial_attendance)
         self.set_initial(pointsdb, self.initial_points)
 
-        # monkey patch the mock implementations over the real ones
-        # some files don't import them, so they are skipped in that case
-        self.mp = MonkeyPatch()
         self.google_client = MockGoogleClient(self.initial_pending)
-
-        files = [f.stem for f in Path("cyberham/backend").iterdir() if f.is_file()]
-        for file in files:
-            try:
-                self.mp.setattr(
-                    f"cyberham.backend.{file}.google_client", self.google_client
-                )
-            except:
-                pass
+        google.client = self.google_client
 
     def set_initial(self, typeddb: TypedDB[T], initial: list[T]):
         for init in initial:

@@ -11,7 +11,8 @@ class TestCreateEvent(BackendPatcher):
     def test_create_event(self):
         event = valid_event()
 
-        code = create_event(event["name"], event["points"], event["date"])
+        code, err = create_event(event["name"], event["points"], event["date"])
+        assert err == ""
         assert code is not None
 
         created_event = eventsdb.get([code])
@@ -26,7 +27,8 @@ class TestCreateEvent(BackendPatcher):
 
         created: dict[str, None] = {}
         for i in range(100_000):
-            code = create_event(event["name"], event["points"], event["date"])
+            code, err = create_event(event["name"], event["points"], event["date"])
+            assert err == ""
             assert (
                 code not in created
             ), f"Collision detected on iteration {i} code {code}"

@@ -2,7 +2,8 @@ import logging
 import os.path
 import base64
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol, runtime_checkable, Any
+
 from cyberham.apis.types import EmailPending, CalendarEvent
 from datetime import datetime, timedelta, time
 from pytz import timezone
@@ -34,7 +35,17 @@ SCOPES: list[str] = [
 logger = logging.getLogger(__name__)
 
 
-class GoogleClient:
+@runtime_checkable
+class GoogleClientProtocol(Protocol):
+    def send_email(self, address: str, code: str, org: str) -> Any | None: ...
+    def get_events(self) -> list[CalendarEvent] | None: ...
+    def has_pending_email(self, user_id: int) -> bool: ...
+    def get_pending_email(self, user_id: int) -> EmailPending: ...
+    def set_pending_email(self, user_id: int, verification: EmailPending) -> None: ...
+    def remove_pending_email(self, user_id: int) -> None: ...
+
+
+class _Client(GoogleClientProtocol):
     # dict[user_id, EmailPending]
     pending_emails: dict[int, EmailPending] = {}
     creds: Credentials | ExCredentials | None = None
@@ -109,7 +120,7 @@ class GoogleClient:
 
         except HttpError as error:
             logger.error(f"An error occurred: {error}")
-            send_message = None
+            return None
 
         return send_message
 
@@ -203,4 +214,12 @@ class GoogleClient:
         del self.pending_emails[user_id]
 
 
-google_client = GoogleClient()
+# wrapper Google class to make testing easy
+class Google:
+    client: GoogleClientProtocol
+
+    def __init__(self):
+        self.client = _Client()
+
+
+google = Google()

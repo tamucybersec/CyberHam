@@ -1,8 +1,9 @@
+from cyberham.apis.google_apis import GoogleClientProtocol
 from cyberham.apis.types import EmailPending
 from copy import deepcopy
 
 
-class MockGoogleClient:
+class MockGoogleClient(GoogleClientProtocol):
     pending_emails: dict[int, EmailPending] = {}
 
     def __init__(self, initial_pending: list[EmailPending]):
@@ -15,7 +16,7 @@ class MockGoogleClient:
         pass
 
     def get_events(self):
-        # TODO when testing __main__.py
+        # implement when testing discord bot commands
         pass
 
     def has_pending_email(self, user_id: int):

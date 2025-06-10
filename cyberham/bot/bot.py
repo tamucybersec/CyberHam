@@ -39,12 +39,15 @@ class Bot(discord.Client):
         points = 50
         time = event.start_time.astimezone(timezone("US/Central"))
 
-        code = backend_events.create_event(
+        code, err = backend_events.create_event(
             event.name, points, time.strftime("%m/%d/%Y")
         )
-        embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, 0)
         channel = cast(discord.TextChannel, self.get_channel(admin_channel_id))
-        await channel.send(f"The code is `{code}`", embed=embed)
+        if err != "":
+            await channel.send(err)
+        else:
+            embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, 0)
+            await channel.send(f"The code is `{code}`", embed=embed)
 
 
 def run_bot():
