@@ -1,17 +1,14 @@
-from cyberham.database.typeddb import TypedDB
+from cyberham.database.typeddb import TypedDB, T, Maybe, PK
 from fastapi import APIRouter
 from cyberham.apis.types import Permissions
 from cyberham.apis.auth import require_permission, require_permission_only
-from typing import TypeVar, Any, Mapping, TypeAlias, Optional, Sequence
-
-T = TypeVar("T", bound=Mapping[str, Any])
-Maybe: TypeAlias = Optional[T]
+from typing import Any, Sequence, cast
 
 
 def create_crud_routes(
     *,
     prefix: str,
-    db: TypedDB[T],
+    db: TypedDB[T, PK],
     pk_names: list[str],
     get_perm: Permissions,
     modify_perm: Permissions,
@@ -42,7 +39,7 @@ def create_crud_routes(
     @router.post(f"/delete", dependencies=[require_permission(modify_perm)])
     async def delete(item: T):
         pk_values = [item[pk] for pk in pk_names]
-        db.delete(pk_values)
+        db.delete(cast(PK, pk_values))
         return {"message": "deleted"}
 
     @router.post(f"/replace", dependencies=[require_permission(modify_perm)])

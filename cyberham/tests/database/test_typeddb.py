@@ -17,7 +17,7 @@ class TestTypedDB(BackendPatcher):
 
     def test_create_item(self):
         usersdb.create(unregistered_user())
-        after = usersdb.get([unregistered_user()["user_id"]])
+        after = usersdb.get((unregistered_user()["user_id"],))
         assert after == unregistered_user()
 
     def test_create_item_fails_overwrite(self):
@@ -25,29 +25,29 @@ class TestTypedDB(BackendPatcher):
             usersdb.create(valid_user())
 
     def test_get_item(self):
-        item = usersdb.get([valid_user()["user_id"]])
+        item = usersdb.get((valid_user()["user_id"],))
         assert item and valid_user() == item
 
     def test_get_non_existent_item(self):
-        item = usersdb.get([unregistered_user()["user_id"]])
+        item = usersdb.get((unregistered_user()["user_id"],))
         assert item is None
 
     def test_update_item_using_pk(self):
         # create
         item = usersdb.update(
-            _test_update_func, pk_values=[unregistered_user()["user_id"]]
+            _test_update_func, pk_values=(unregistered_user()["user_id"],)
         )
         assert item == unregistered_user()
 
         # update
         item = usersdb.update(
-            _test_update_func, pk_values=[unregistered_user()["user_id"]]
+            _test_update_func, pk_values=(unregistered_user()["user_id"],)
         )
         assert item == unregistered_user_2()
 
         # delete
         item = usersdb.update(
-            _test_update_func, pk_values=[unregistered_user_2()["user_id"]]
+            _test_update_func, pk_values=(unregistered_user_2()["user_id"],)
         )
         assert item is None
 
@@ -64,11 +64,11 @@ class TestTypedDB(BackendPatcher):
         assert item is None
 
     def test_delete_item(self):
-        old_item = usersdb.delete([valid_user()["user_id"]])
+        old_item = usersdb.delete((valid_user()["user_id"],))
         assert old_item == valid_user()
 
     def test_delete_non_existent_item(self):
-        old_item = usersdb.delete([unregistered_user()["user_id"]])
+        old_item = usersdb.delete((unregistered_user()["user_id"],))
         assert old_item is None
 
     def test_get_all_items(self):

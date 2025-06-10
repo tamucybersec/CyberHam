@@ -7,6 +7,7 @@ from cyberham.database.types import (
     Attendance,
     Points,
     Item,
+    Semester,
 )
 from typing import (
     cast,
@@ -26,9 +27,10 @@ T = TypeVar("T", bound=Mapping[str, Any])
 Maybe: TypeAlias = Optional[T]
 Update: TypeAlias = Callable[[Maybe[T]], Maybe[T]]
 
+PK = TypeVar("PK", bound=tuple[Any, ...])
 
-# Change pk_values to be strongly typed
-class TypedDB(Generic[T]):
+
+class TypedDB(Generic[T, PK]):
     _db: SQLiteDB
     table: TableName
     pk_names: list[str]
@@ -50,7 +52,7 @@ class TypedDB(Generic[T]):
 
         self._db.create_row(self.table, item)
 
-    def get(self, pk_values: list[Any]) -> Maybe[T]:
+    def get(self, pk_values: PK) -> Maybe[T]:
         return self._cast(self._db.get_row(self.table, self.pk_names, pk_values))
 
     @overload
@@ -58,7 +60,7 @@ class TypedDB(Generic[T]):
         self,
         update: Update[T],
         *,
-        pk_values: list[Any],
+        pk_values: PK,
     ) -> Maybe[T]: ...
 
     @overload
@@ -73,7 +75,7 @@ class TypedDB(Generic[T]):
         self,
         update: Update[T],
         *,
-        pk_values: list[Any] = [],
+        pk_values: PK | None = None,
         original: Maybe[T] = None,
     ) -> Maybe[T]:
         """
@@ -82,18 +84,18 @@ class TypedDB(Generic[T]):
         Returns the updated item.
         """
 
-        if (not pk_values) == (original is None):
+        if (pk_values is None) == (original is None):
             raise ValueError("Either pk_values or original_item must be provided")
-        elif pk_values:
+        elif pk_values is not None:
             original = self.get(pk_values)
         elif original is not None:
-            pk_values = [original[pk] for pk in self.pk_names]
+            pk_values = cast(PK, tuple(original[pk] for pk in self.pk_names))
 
         updated = update(deepcopy(original))
 
         if updated is None:
             if original is not None:
-                self.delete(pk_values)
+                self.delete(cast(PK, pk_values))
             return None
         elif original is None:
             self.create(updated)
@@ -102,14 +104,14 @@ class TypedDB(Generic[T]):
             self._db.update_row(self.table, self.pk_names, original, updated)
             return updated
 
-    def delete(self, pk_values: list[Any]) -> Maybe[T]:
+    def delete(self, pk_values: PK) -> Maybe[T]:
         """
         Returns the item that was deleted.
         """
 
         return self._cast(self._db.delete_row(self.table, self.pk_names, pk_values))
 
-    def get_batch(self, pk_values: list[list[Any]]) -> list[Maybe[T]]:
+    def get_batch(self, pk_values: list[PK]) -> list[Maybe[T]]:
         return cast(
             list[Maybe[T]], self._db.get_batch(self.table, self.pk_names, pk_values)
         )
@@ -136,8 +138,12 @@ class TypedDB(Generic[T]):
 
 
 db = SQLiteDB("cyberham.db")
-usersdb = TypedDB[User](db, "users", ["user_id"])
-eventsdb = TypedDB[Event](db, "events", ["code"])
-flaggeddb = TypedDB[Flagged](db, "flagged", ["user_id"])
-attendancedb = TypedDB[Attendance](db, "attendance", ["user_id", "code"])
-pointsdb = TypedDB[Points](db, "points", ["user_id", "semester", "year"])
+usersdb = TypedDB[User, tuple[int]](db, "users", ["user_id"])
+eventsdb = TypedDB[Event, tuple[str]](db, "events", ["code"])
+flaggeddb = TypedDB[Flagged, tuple[int]](db, "flagged", ["user_id"])
+attendancedb = TypedDB[Attendance, tuple[int, str]](
+    db, "attendance", ["user_id", "code"]
+)
+pointsdb = TypedDB[Points, tuple[int, Semester, int]](
+    db, "points", ["user_id", "semester", "year"]
+)

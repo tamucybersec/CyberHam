@@ -61,14 +61,14 @@ def register(
                 user["verified"] = False
             return user
 
-    usersdb.update(update, pk_values=[user_id])
+    usersdb.update(update, pk_values=(user_id,))
 
     return f"You have successfully updated your profile! {ask_to_verify}"
 
 
 # NOTE update's a user's email if it differs from their original email
 def register_email(user_id: int, email: str) -> str:
-    user = usersdb.get([user_id])
+    user = usersdb.get((user_id,))
     if user is not None and user["email"] == email:
         return ""
 
@@ -82,7 +82,7 @@ def register_email(user_id: int, email: str) -> str:
                 flagged["offenses"] += 1
                 return flagged
 
-        flagged = flaggeddb.update(update_flagged, pk_values=[user_id])
+        flagged = flaggeddb.update(update_flagged, pk_values=(user_id,))
 
         if flagged is not None and flagged["offenses"] >= 3:
             return "Too many failed attempts to email verification, please contact an officer."
@@ -106,7 +106,7 @@ def register_email(user_id: int, email: str) -> str:
 
 
 def verify_email(code: int, user_id: int) -> str:
-    user = usersdb.get([user_id])
+    user = usersdb.get((user_id,))
     if user is None:
         return "Please use /register first."
     elif not google.client.has_pending_email(user_id):

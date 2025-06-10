@@ -35,7 +35,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        u = usersdb.get([user["user_id"]])
+        u = usersdb.get((user["user_id"],))
         assert u is not None
         assert u == user
 
@@ -48,7 +48,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = usersdb.get([unregistered_user()["user_id"]])
+        user = usersdb.get((unregistered_user()["user_id"],))
         assert user is None, "Should not create user"
 
     def test_invalid_date(self):
@@ -60,7 +60,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = usersdb.get([unregistered_user()["user_id"]])
+        user = usersdb.get((unregistered_user()["user_id"],))
         assert user is None, "Should not create user"
 
     def test_invalid_emails(self):
@@ -82,7 +82,7 @@ class TestRegister(BackendPatcher):
             )
             assert res != ""
 
-            user = usersdb.get([unregistered_user()["user_id"]])
+            user = usersdb.get((unregistered_user()["user_id"],))
             assert (
                 user is None
             ), f"Should not create user because email '{email}' is invalid"
@@ -96,7 +96,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = usersdb.get([valid_user()["user_id"]])
+        user = usersdb.get((valid_user()["user_id"],))
         assert (
             user == valid_user()
         ), "Should not remove attributes like points or attended"
@@ -114,7 +114,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = usersdb.get([valid_user()["user_id"]])
+        user = usersdb.get((valid_user()["user_id"],))
         assert user is not None
         assert user["name"] == new_name
         assert user["grad_year"] == new_grad

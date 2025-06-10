@@ -2,6 +2,7 @@ from cyberham.apis.google_apis import google
 from cyberham.apis.mock_google_apis import MockGoogleClient
 from cyberham.database.typeddb import (
     T,
+    PK,
     TypedDB,
     db,
     usersdb,
@@ -41,6 +42,6 @@ class BackendPatcher:
         self.google_client = MockGoogleClient(self.initial_pending)
         google.client = self.google_client
 
-    def set_initial(self, typeddb: TypedDB[T], initial: list[T]):
+    def set_initial(self, typeddb: TypedDB[T, PK], initial: list[T]):
         for init in initial:
             typeddb.create(init)

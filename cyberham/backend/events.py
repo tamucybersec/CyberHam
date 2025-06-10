@@ -23,7 +23,7 @@ def create_event(name: str, points: int, date: str) -> tuple[str, str]:
     event_code: str = ""
     while True:
         event_code = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        if eventsdb.get([event_code]) is None:
+        if eventsdb.get((event_code,)) is None:
             break
 
     # event creation
@@ -44,7 +44,7 @@ def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
     code = code.upper()
 
     # user validation
-    user = usersdb.get([user_id])
+    user = usersdb.get((user_id,))
     if user is None or user["grad_year"] == 0:
         return "Please use /register to make a profile first!", None
 
@@ -53,11 +53,11 @@ def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
         email_reminder = "Please verify your email address with /verify or request a new code if it timed out using /register."
 
     # event validation
-    event = eventsdb.get([code])
+    event = eventsdb.get((code,))
     if event is None:
         return f"{code} does not exist!", None
 
-    attendance = attendancedb.get([user["user_id"], event["code"]])
+    attendance = attendancedb.get((user["user_id"], event["code"]))
     if attendance is not None:
         return f"You have already redeemed {code}!", None
 
@@ -75,7 +75,7 @@ def find_event(code: str = "") -> tuple[str, MaybeEvent, int]:
     if code == "":
         return "Please include an event name or code.", None, 0
 
-    event = eventsdb.get([code])
+    event = eventsdb.get((code,))
     if event is None:
         return "This event does not exist.", None, 0
     else:

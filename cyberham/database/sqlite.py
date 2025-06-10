@@ -3,6 +3,7 @@ from typing import Optional, Any, Sequence
 from cyberham.database.types import Item, TableName
 from cyberham.database.backup import write_backup
 
+type PK = tuple[Any, ...]
 
 class SQLiteDB:
     conn: sqlite3.Connection
@@ -91,7 +92,7 @@ class SQLiteDB:
 
     # read
     def get_row(
-        self, table: TableName, pk_names: list[str], pk_values: list[Any]
+        self, table: TableName, pk_names: list[str], pk_values: PK
     ) -> Optional[Item]:
         wheres = self._wheres(pk_names)
         self.cursor.execute(f"SELECT * FROM {table} WHERE {wheres}", pk_values)
@@ -120,7 +121,7 @@ class SQLiteDB:
 
     # delete
     def delete_row(
-        self, table: TableName, pk_names: list[str], pk_values: list[Any]
+        self, table: TableName, pk_names: list[str], pk_values: PK
     ) -> Optional[Item]:
         old = self.get_row(table, pk_names, pk_values)
         if old:
@@ -133,7 +134,7 @@ class SQLiteDB:
         self,
         table: TableName,
         pk_names: list[str],
-        pk_values: list[list[Any]],
+        pk_values: Sequence[PK],
     ) -> Sequence[Optional[Item]]:
         if pk_values == []:
             return []

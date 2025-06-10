@@ -83,5 +83,5 @@ class TestSQLiteCrud:
     def test_get_count(self):
         assert self.sqlite.get_count(table) == 2
 
-    def _pk_values(self, model: dict[str, object]) -> list[Any]:
-        return [model[pk] for pk in pk_names]
+    def _pk_values(self, model: dict[str, object]) -> tuple[Any, ...]:
+        return tuple(model[pk] for pk in pk_names)

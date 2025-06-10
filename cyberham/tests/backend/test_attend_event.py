@@ -27,7 +27,7 @@ class TestAttendEvent(BackendPatcher):
         event = valid_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
-        attendance = attendancedb.get([user["user_id"], event["code"]])
+        attendance = attendancedb.get((user["user_id"], event["code"]))
 
         assert msg, "String should be neither None nor empty"
         assert ev, "Event should not be None"
@@ -39,7 +39,7 @@ class TestAttendEvent(BackendPatcher):
         event = valid_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
-        attendance = attendancedb.get([user["user_id"], event["code"]])
+        attendance = attendancedb.get((user["user_id"], event["code"]))
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"
@@ -50,7 +50,7 @@ class TestAttendEvent(BackendPatcher):
         event = unregistered_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
-        attendance = attendancedb.get([user["user_id"], event["code"]])
+        attendance = attendancedb.get((user["user_id"], event["code"]))
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"
@@ -70,7 +70,7 @@ class TestAttendEvent(BackendPatcher):
         event = past_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
-        attendance = attendancedb.get([user["user_id"], event["code"]])
+        attendance = attendancedb.get((user["user_id"], event["code"]))
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"
@@ -81,7 +81,7 @@ class TestAttendEvent(BackendPatcher):
         event = future_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
-        attendance = attendancedb.get([user["user_id"], event["code"]])
+        attendance = attendancedb.get((user["user_id"], event["code"]))
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"

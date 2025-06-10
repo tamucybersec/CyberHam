@@ -19,7 +19,7 @@ class TestAward(BackendPatcher):
         points = 2000
 
         points_before = pointsdb.get(
-            [user["user_id"], current_semester(), current_year()]
+            (user["user_id"], current_semester(), current_year())
         )
         assert points_before is None
 
@@ -27,7 +27,7 @@ class TestAward(BackendPatcher):
         assert res != ""
 
         points_after = pointsdb.get(
-            [user["user_id"], current_semester(), current_year()]
+            (user["user_id"], current_semester(), current_year())
         )
         assert points_after is not None
         assert points_after["points"] == points
@@ -40,7 +40,7 @@ class TestAward(BackendPatcher):
         assert res != ""
 
         assert (
-            pointsdb.get([user["user_id"], current_semester(), current_year()]) is None
+            pointsdb.get((user["user_id"], current_semester(), current_year())) is None
         )
 
     def test_pointed_user(self):

@@ -108,11 +108,11 @@ class TestRegisterEmail(BackendPatcher):
         return self.google_client.has_pending_email(user["user_id"])
 
     def _no_offenses(self, user: User) -> bool:
-        flagged = flaggeddb.get([user["user_id"]])
+        flagged = flaggeddb.get((user["user_id"],))
         return flagged == None
 
     def _offense_count(self, user: User) -> int:
-        flagged = flaggeddb.get([user["user_id"]])
+        flagged = flaggeddb.get((user["user_id"],))
 
         if flagged is None:
             raise Exception(f"No offenses for user {user['user_id']}")

@@ -15,7 +15,7 @@ class TestCreateEvent(BackendPatcher):
         assert err == ""
         assert code is not None
 
-        created_event = eventsdb.get([code])
+        created_event = eventsdb.get((code,))
         assert created_event is not None
 
         assert created_event["name"] == event["name"]

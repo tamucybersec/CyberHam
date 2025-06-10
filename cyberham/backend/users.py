@@ -40,7 +40,7 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
 
     # get sorted list of ids based on attendance
     attendance = user_attendance_counts_for_events(codes)
-    user_ids = [[user_id] for user_id in attendance.keys()]
+    user_ids = [(user_id,) for user_id in attendance.keys()]
     user_ids.sort(key=lambda user_id: attendance[user_id[0]], reverse=True)
     users = usersdb.get_batch(user_ids)
 
@@ -55,7 +55,7 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
 
 
 def profile(user_id: int) -> tuple[str, MaybeUser]:
-    user = usersdb.get([user_id])
+    user = usersdb.get((user_id,))
 
     if user is None:
         return "Your profile does not exist.", None
@@ -64,7 +64,7 @@ def profile(user_id: int) -> tuple[str, MaybeUser]:
 
 
 def award(user_id: int, user_name: str, points: int) -> str:
-    user = usersdb.get([user_id])
+    user = usersdb.get((user_id,))
     if user is None:
         return "This user has not registered yet!"
 
@@ -81,7 +81,7 @@ def award(user_id: int, user_name: str, points: int) -> str:
             return pts
 
     pointsdb.update(
-        update_points, pk_values=[user_id, current_semester(), current_year()]
+        update_points, pk_values=(user_id, current_semester(), current_year())
     )
 
     return f"Successfully added {points} points to {user_name} {user["name"]}."
