@@ -1,5 +1,7 @@
 import discord
 import cyberham.backend.events as backend_events
+import cyberham.backend.users as backend_users
+from cyberham.database.queries import points_for_user, attendance_for_user
 
 
 async def valid_guild(interaction: discord.Interaction):
@@ -16,18 +18,14 @@ def event_info(
     points: int,
     date: str,
     code: str,
-    resources: str,
-    attendees: str,
+    num_attendees: int,
 ):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
     embed.add_field(name="Points", value=points, inline=False)
     embed.add_field(name="Code", value=code, inline=False)
     embed.add_field(name="Date", value=date, inline=False)
-    if resources:
-        embed.add_field(name="Resources", value=resources, inline=False)
-    if attendees:
-        embed.add_field(name="Attendance count", value=len(attendees), inline=False)
+    embed.add_field(name="Attendance count", value=num_attendees, inline=False)
     return embed
 
 
@@ -59,13 +57,31 @@ def event_list_embed(page: int):
     return embed
 
 
+async def user_profile_embed(interaction: discord.Interaction, user_id: int):
+    msg, user = backend_users.profile(user_id)
+    if user is None:
+        await interaction.response.send_message(msg, ephemeral=True)
+        return
+
+    points = points_for_user(user["user_id"])
+    attendance = attendance_for_user(user["user_id"])
+
+    embed = discord.Embed(title="Profile", color=0xFFFFFF)
+    embed.add_field(name="Name", value=user["name"], inline=False)
+    embed.add_field(name="Points", value=points, inline=False)
+    embed.add_field(name="Attended Events", value=attendance, inline=False)
+    if user["grad_year"] > 0:
+        embed.add_field(name="Graduation Year", value=user["grad_year"], inline=False)
+    if user["email"]:
+        embed.add_field(name="TAMU Email", value=user["email"], inline=False)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
 async def handle_attend_response(interaction: discord.Interaction, code: str):
     msg, event = backend_events.attend_event(code, interaction.user.id)
     if event is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return
 
-    embed = event_info(
-        event["name"], event["points"], event["date"], code, event["resources"], ""
-    )
+    embed = event_info(event["name"], event["points"], event["date"], code, 0)
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)

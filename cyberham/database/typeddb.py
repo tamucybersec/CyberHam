@@ -1,5 +1,13 @@
 from cyberham.database.sqlite import SQLiteDB
-from cyberham.database.types import TableName, User, Event, Flagged, Item
+from cyberham.database.types import (
+    TableName,
+    User,
+    Event,
+    Flagged,
+    Attendance,
+    Points,
+    Item,
+)
 from typing import (
     cast,
     TypeVar,
@@ -10,7 +18,7 @@ from typing import (
     Mapping,
     Any,
     overload,
-    Sequence
+    Sequence,
 )
 from copy import deepcopy
 
@@ -21,7 +29,7 @@ Update: TypeAlias = Callable[[Maybe[T]], Maybe[T]]
 
 # Change pk_values to be strongly typed
 class TypedDB(Generic[T]):
-    db: SQLiteDB
+    _db: SQLiteDB
     table: TableName
     pk_names: list[str]
 
@@ -31,7 +39,7 @@ class TypedDB(Generic[T]):
         table: TableName,
         pk_names: list[str],
     ) -> None:
-        self.db = db
+        self._db = db
         self.table = table
         self.pk_names = pk_names
 
@@ -40,10 +48,10 @@ class TypedDB(Generic[T]):
         Returns None. Item must be new, otherwise the operation will fail.
         """
 
-        self.db.create_row(self.table, item)
+        self._db.create_row(self.table, item)
 
     def get(self, pk_values: list[Any]) -> Maybe[T]:
-        return self._cast(self.db.get_row(self.table, self.pk_names, pk_values))
+        return self._cast(self._db.get_row(self.table, self.pk_names, pk_values))
 
     @overload
     def update(
@@ -91,7 +99,7 @@ class TypedDB(Generic[T]):
             self.create(updated)
             return updated
         else:
-            self.db.update_row(self.table, self.pk_names, original, updated)
+            self._db.update_row(self.table, self.pk_names, original, updated)
             return updated
 
     def delete(self, pk_values: list[Any]) -> Maybe[T]:
@@ -99,13 +107,18 @@ class TypedDB(Generic[T]):
         Returns the item that was deleted.
         """
 
-        return self._cast(self.db.delete_row(self.table, self.pk_names, pk_values))
+        return self._cast(self._db.delete_row(self.table, self.pk_names, pk_values))
+
+    def get_batch(self, pk_values: list[list[Any]]) -> list[Maybe[T]]:
+        return cast(
+            list[Maybe[T]], self._db.get_batch(self.table, self.pk_names, pk_values)
+        )
 
     def get_all(self) -> list[T]:
-        return cast(list[T], self.db.get_all_rows(self.table))
+        return cast(list[T], self._db.get_all_rows(self.table))
 
     def get_count(self) -> int:
-        return self.db.get_count(self.table)
+        return self._db.get_count(self.table)
 
     def replace(self, items: Sequence[Item]):
         """
@@ -113,17 +126,18 @@ class TypedDB(Generic[T]):
         Use under extreme caution.
         """
 
-        return self.db.replace_table(self.table, items)
+        return self._db.replace_table(self.table, items)
 
     def reset(self):
-        self.db.reset_table(self.table)
+        self._db.reset_table(self.table)
 
     def _cast(self, item: Maybe[Item]) -> Maybe[T]:
         return cast(Maybe[T], item)
 
 
-_db = SQLiteDB("cyberham.db")
-testdb = TypedDB[User](_db, "tests", ["user_id"])
-usersdb = TypedDB[User](_db, "users", ["user_id"])
-eventsdb = TypedDB[Event](_db, "events", ["code"])
-flaggeddb = TypedDB[Flagged](_db, "flagged", ["user_id"])
+db = SQLiteDB("cyberham.db")
+usersdb = TypedDB[User](db, "users", ["user_id"])
+eventsdb = TypedDB[Event](db, "events", ["code"])
+flaggeddb = TypedDB[Flagged](db, "flagged", ["user_id"])
+attendancedb = TypedDB[Attendance](db, "attendance", ["user_id", "code"])
+pointsdb = TypedDB[Points](db, "points", ["user_id", "semester", "year"])

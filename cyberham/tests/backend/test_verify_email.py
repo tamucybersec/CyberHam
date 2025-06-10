@@ -12,11 +12,12 @@ from cyberham.tests.models import (
     VERIFICATION_CODE,
     NEW_EMAIL,
 )
+from cyberham.database.typeddb import usersdb
 
 
 class TestVerifyEmail(BackendPatcher):
     def setup_method(self):
-        self.initial_users = users + [flagged_user]
+        self.initial_users = users
         self.initial_flagged = flagged_users
         self.initial_pending = extended_pending_users
         super().setup_method()
@@ -35,7 +36,7 @@ class TestVerifyEmail(BackendPatcher):
             self.google_client.has_pending_email(user["user_id"]) == False
         ), "Should remove pending email"
 
-        u = self.usersdb.get([user["user_id"]])
+        u = usersdb.get([user["user_id"]])
         assert u is not None
         assert u["email"] == NEW_EMAIL
 
@@ -43,7 +44,7 @@ class TestVerifyEmail(BackendPatcher):
         res = verify_email(VERIFICATION_CODE, unregistered_user["user_id"])
         assert res != ""
 
-        user = self.usersdb.get([unregistered_user["user_id"]])
+        user = usersdb.get([unregistered_user["user_id"]])
         assert user is None, "Should not create user"
 
         assert (
@@ -54,7 +55,7 @@ class TestVerifyEmail(BackendPatcher):
         res = verify_email(VERIFICATION_CODE, valid_user_2["user_id"])
         assert res != ""
 
-        user = self.usersdb.get([valid_user_2["user_id"]])
+        user = usersdb.get([valid_user_2["user_id"]])
         assert user is not None
         assert user["email"] == user["email"], "Should not change email"
 
@@ -66,7 +67,7 @@ class TestVerifyEmail(BackendPatcher):
         res = verify_email(VERIFICATION_CODE - 1, valid_user["user_id"])
         assert res != ""
 
-        user = self.usersdb.get([valid_user["user_id"]])
+        user = usersdb.get([valid_user["user_id"]])
         assert user is not None
         assert user["email"] == user["email"], "Should not change email"
 

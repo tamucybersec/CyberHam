@@ -9,6 +9,10 @@ class SQLiteDB:
     cursor: sqlite3.Cursor
 
     def __init__(self, db_path: str) -> None:
+        self.setup(db_path)
+
+    # should only be called in the constructor and during testing
+    def setup(self, db_path: str) -> None:
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
@@ -22,10 +26,9 @@ class SQLiteDB:
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                points INTEGER NOT NULL,
-                attended INTEGER NOT NULL,
                 grad_year INTEGER NOT NULL,
-                email TEXT NOT NULL
+                email TEXT NOT NULL,
+                verified BOOLEAN NOT NULL
             )"""
         )
 
@@ -36,8 +39,8 @@ class SQLiteDB:
                 name TEXT NOT NULL,
                 points INTEGER NOT NULL,
                 date TEXT NOT NULL,
-                resources TEXT NOT NULL,
-                attended_users TEXT NOT NULL
+                semester TEXT NOT NULL,
+                year INTEGER NOT NULL
             )"""
         )
 
@@ -50,16 +53,26 @@ class SQLiteDB:
             )"""
         )
 
-        # exact copy of users
         self.conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS tests (
-                user_id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
+            CREATE TABLE IF NOT EXISTS attendance (
+                user_id INTEGER NOT NULL,
+                code TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE,
+                FOREIGN KEY (code) REFERENCES events(code) ON UPDATE CASCADE,
+                PRIMARY KEY (user_id, code)
+            )"""
+        )
+
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS points (
+                user_id INTEGER,
                 points INTEGER NOT NULL,
-                attended INTEGER NOT NULL,
-                grad_year INTEGER NOT NULL,
-                email TEXT NOT NULL
+                semester TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE,
+                PRIMARY KEY (user_id, semester, year)
             )"""
         )
 
@@ -115,6 +128,43 @@ class SQLiteDB:
             self.cursor.execute(f"DELETE FROM {table} WHERE {wheres}", pk_values)
             self.conn.commit()
         return old
+
+    def get_batch(
+        self,
+        table: TableName,
+        pk_names: list[str],
+        pk_values: list[list[Any]],
+    ) -> Sequence[Optional[Item]]:
+        if pk_values == []:
+            return []
+
+        wheres = " OR ".join(f"({self._wheres(pk_names)})" for _ in pk_values)
+
+        # flatten pk_values
+        values: list[Any] = []
+        for vals in pk_values:
+            values.extend(vals)
+
+        self.cursor.execute(
+            f"SELECT * FROM {table} WHERE {wheres}",
+            values,
+        )
+        rows = self.cursor.fetchall()
+
+        # lookup map of pk values -> row
+        row_map: dict[tuple[Any], Item] = {}
+        for row in rows:
+            key = tuple(row[pk] for pk in pk_names)
+            row_map[key] = dict(row)
+
+        # rebuild list in the same order as pk_values
+        results: list[Optional[Item]] = []
+        for key_values in pk_values:
+            key = tuple(key_values)
+            result = row_map.get(key, None)
+            results.append(result)
+
+        return results
 
     def get_all_rows(self, table: TableName) -> list[Item]:
         self.cursor.execute(f"SELECT * FROM {table}")

@@ -23,16 +23,17 @@ def setup_commands(bot: Bot):
         sort_by: Literal["points", "attended"],
         limit: int = 10,
     ):
+        await interaction.response.defer(thinking=True)
         users = backend_users.leaderboard(sort_by, limit)
         if not users:
-            await interaction.response.send_message("There are no registered users yet")
+            await interaction.response.send_message("No results for this semester yet.")
             return
 
         names_column = ""
         point_column = ""
-        for user in users:
+        for user, criteria in users:
             names_column += f"{user["name"]}\n"
-            point_column += f"{user["points"]}\n"
+            point_column += f"{criteria}\n"
         embed = discord.Embed(
             title=f"{sort_by.capitalize()} Leaderboard", color=0xFFFFFF
         )
@@ -50,7 +51,7 @@ def setup_commands(bot: Bot):
         await interaction.response.defer(thinking=True)
         leaderboard = backend_users.leaderboard_search(activity)
         if not leaderboard:
-            await interaction.response.send_message("There are no registered users yet")
+            await interaction.response.send_message("No results for this semester yet.")
             return
 
         prev, curr = 0, 0

@@ -11,6 +11,7 @@ from cyberham.tests.models import (
     pending_users,
 )
 from datetime import datetime
+from cyberham.database.typeddb import flaggeddb
 
 
 class TestRegisterEmail(BackendPatcher):
@@ -56,9 +57,9 @@ class TestRegisterEmail(BackendPatcher):
         prev_pending: EmailPending | None = None
 
         for i in range(1, 10):
-            res = register_email(flagged_user["user_id"], flagged_user["email"])
+            res = register_email(flagged_user["user_id"], flagged_user["email"] + "new")
             assert res != ""
-            self._assert_valid_pending_email(flagged_user, flagged_user["email"])
+            self._assert_valid_pending_email(flagged_user, flagged_user["email"] + "new")
 
             if i == 0:
                 assert self._no_offenses(flagged_user), "There should be no offenses"
@@ -99,12 +100,12 @@ class TestRegisterEmail(BackendPatcher):
         return self.google_client.has_pending_email(user["user_id"])
 
     def _no_offenses(self, user: User) -> bool:
-        flagged = self.flaggeddb.get([user["user_id"]])
+        flagged = flaggeddb.get([user["user_id"]])
         return flagged == None
 
     def _offense_count(self, user: User) -> int:
-        flagged = self.flaggeddb.get([user["user_id"]])
+        flagged = flaggeddb.get([user["user_id"]])
 
         if flagged is None:
             raise Exception(f"No offenses for user {user['user_id']}")
-        return flagged["offences"]
+        return flagged["offenses"]

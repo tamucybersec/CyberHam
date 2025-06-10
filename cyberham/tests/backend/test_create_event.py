@@ -2,6 +2,7 @@ from copy import deepcopy
 from backend_patcher import BackendPatcher
 from cyberham.backend.events import create_event
 from cyberham.tests.models import valid_event
+from cyberham.database.typeddb import eventsdb
 
 
 class TestCreateEvent(BackendPatcher):
@@ -11,28 +12,22 @@ class TestCreateEvent(BackendPatcher):
     def test_create_event(self):
         event = deepcopy(valid_event)
 
-        code = create_event(
-            event["name"], event["points"], event["date"], event["resources"]
-        )
+        code = create_event(event["name"], event["points"], event["date"])
         assert code is not None
 
-        created_event = self.eventsdb.get([code])
+        created_event = eventsdb.get([code])
         assert created_event is not None
 
         assert created_event["name"] == event["name"]
         assert created_event["points"] == event["points"]
         assert created_event["date"] == event["date"]
-        assert created_event["resources"] == event["resources"]
-        assert created_event["attended_users"] == "", "Nobody attended the event yet"
 
     def test_no_collision(self):
         event = deepcopy(valid_event)
 
         created: dict[str, None] = {}
         for i in range(100_000):
-            code = create_event(
-                event["name"], event["points"], event["date"], event["resources"]
-            )
+            code = create_event(event["name"], event["points"], event["date"])
             assert (
                 code not in created
             ), f"Collision detected on iteration {i} code {code}"

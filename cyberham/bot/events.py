@@ -22,23 +22,21 @@ def setup_commands(bot: Bot):
         name="The name of the event",
         points="The point value reward for attending",
         date="The date of the event",
-        resources="Information to be shared with attendees",
     )
     async def create(
         interaction: discord.Interaction,
         name: str,
         points: int,
         date: str,
-        resources: str = "",
     ):
-        code = backend_events.create_event(name, points, date, resources)
-        embed = event_info(name, points, date, code, resources, "")
+        code = backend_events.create_event(name, points, date)
+        embed = event_info(name, points, date, code, 0)
         await interaction.response.send_message(f"The code is `{code}`", embed=embed)
 
     @app_commands.checks.cooldown(5, 30 * 60)
     @command_tree.command(
         name="attend",
-        description="register at the event you are attending for rewards and resources",
+        description="register at the event you are attending for rewards",
         guilds=guild_id,
     )
     @app_commands.describe(
@@ -56,7 +54,7 @@ def setup_commands(bot: Bot):
     )
     @app_commands.describe(code="Search by event code")
     async def find_event(interaction: discord.Interaction, code: str = ""):
-        msg, event = backend_events.find_event(code)
+        msg, event, attendance = backend_events.find_event(code)
         if event is None:
             await interaction.response.send_message(msg, ephemeral=True)
         else:
@@ -65,8 +63,7 @@ def setup_commands(bot: Bot):
                 event["points"],
                 event["date"],
                 code,
-                event["resources"],
-                event["attended_users"],
+                attendance,
             )
             await interaction.response.send_message(embed=embed)
 

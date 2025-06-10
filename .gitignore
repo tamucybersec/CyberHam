@@ -1,5 +1,5 @@
 # Secrets
-config.toml
+*.toml
 :
 *.db
 cyberham/secrets/*

@@ -2,17 +2,21 @@ import random
 import string
 
 from datetime import datetime
-from pytz import timezone
-
 from cyberham.apis.google_apis import google_client
 from cyberham.apis.types import CalendarEvent
-from cyberham.database.typeddb import usersdb, eventsdb
-from cyberham.database.types import MaybeUser, Event, MaybeEvent
-from cyberham.utils.events import user_attended, add_attendee
+from cyberham.database.queries import user_attendance_counts_for_events
+from cyberham.database.typeddb import usersdb, eventsdb, attendancedb
+from cyberham.database.types import Event, MaybeEvent, Attendance
+from cyberham.utils.date import (
+    cst_tz,
+    current_semester,
+    current_year,
+    datetime_to_datestr,
+)
 
 
 # FIXME should throw error if name is "", as find_event does
-def create_event(name: str, points: int, date: str, resources: str) -> str:
+def create_event(name: str, points: int, date: str) -> str:
     # code generation
     event_code: str = ""
     while True:
@@ -26,15 +30,14 @@ def create_event(name: str, points: int, date: str, resources: str) -> str:
         code=event_code,
         points=points,
         date=date,
-        resources=resources,
-        attended_users="",
+        semester=current_semester(),
+        year=current_year(),
     )
     eventsdb.create(event)
 
     return event_code
 
 
-# FIXME concurrency concerns -- to be fixed with separate attendance table
 def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
     code = code.upper()
 
@@ -43,49 +46,39 @@ def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
     if user is None or user["grad_year"] == 0:
         return "Please use /register to make a profile first!", None
 
+    email_reminder = ""
+    if user["verified"] == False:
+        email_reminder = "Please verify your email address with /verify or request a new code if it timed out using /register."
+
     # event validation
     event = eventsdb.get([code])
-
     if event is None:
         return f"{code} does not exist!", None
 
-    if user_attended(event, user_id):
+    attendance = attendancedb.get([user["user_id"], event["code"]])
+    if attendance is not None:
         return f"You have already redeemed {code}!", None
 
-    cst_tz = timezone("America/Chicago")
-    event_date = datetime.strptime(event["date"], "%m/%d/%Y").date()
-    today = datetime.now(cst_tz).date()
+    today = datetime_to_datestr(datetime.now(cst_tz))
 
-    if event_date != today:
+    if event["date"] != today:
         return "You must redeem an event on the day it occurs!", None
 
     # attend event
-    def update_user(usr: MaybeUser) -> MaybeUser:
-        if usr is not None:
-            usr["points"] += event["points"]
-            usr["attended"] += 1
-        return usr
-
-    def update_event(evt: MaybeEvent) -> MaybeEvent:
-        if evt is not None:
-            add_attendee(evt, user_id)
-        return evt
-
-    usersdb.update(update_user, original=user)
-    updated_event = eventsdb.update(update_event, original=event)
-
-    return f"Successfully registered for {code}!", updated_event
+    attendancedb.create(Attendance(user_id=user_id, code=code))
+    return f"Successfully registered for {code}! {email_reminder}", event
 
 
-def find_event(code: str = "") -> tuple[str, MaybeEvent]:
+def find_event(code: str = "") -> tuple[str, MaybeEvent, int]:
     if code == "":
-        return "Please include an event name or code.", None
+        return "Please include an event name or code.", None, 0
 
     event = eventsdb.get([code])
     if event is None:
-        return "This event does not exist.", None
+        return "This event does not exist.", None, 0
     else:
-        return "", event
+        attendance = user_attendance_counts_for_events([code])
+        return "", event, len(attendance.keys())
 
 
 def event_list() -> list[Event]:

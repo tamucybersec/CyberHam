@@ -1,23 +1,25 @@
 # TODO
 
--   Migrate old data to SQLite
-    -   Write replace and backup functions in sqlite file
--   Make sure SQLite and Bot have no bugs
-    -   Test and run commands for cyberham on the test server (sanity check)
-    -   Test to see if the Dashboard is still working fine
 -   Change to have attendance table (user_id mapped to code)
+
+    -   See about google_client inner variable to remove monkey patching all together
+    -   Remove dreaded deepcopy, replace models with functions
     -   Attend to FIXMEs
-    -   Make a separate Test Object for use in testing so if other objects expand in scope the test objects don't have to constantly be updated
-    -   Make sure Dashboard is still functioning (need to add extra page, change calculations and interfaces)
+    -   Make sure Dashboard is still functioning (need to add extra page, change calculations, interfaces, and schemas)
         -   Make sure to update schemas for events
+
+-   Prune
+
+    -   Go through events and consolidate legacy ones into modern ones (i.e. change their name so the data looks better) (really simple using the dashboard with the tables!)
+    -   Delete obvious test data
+
 -   Change to have better data
-    -   Make legacy compatible, meaning we save old data and can use if it we desire
-    -   Add utils for parsing and formatting dates, it's getting ridiculous
+
     -   Move register to redirect you to the website (easier to create forms for)
     -   Huge revamp to Dashboard once all the new fields are added
     -   For authentication with the dashboard, just use a query parameter
         -   Be able to generate auth tokens and revoke them for sponsors from UI
-    -   Audit logs for admin-level commands
+
 -   Actually run it on the server
     -   Need to generate certificates for https
 -   Document full setup process from scratch
@@ -27,8 +29,8 @@
 class User(TypedDict):
     user_id: int
     name: str
-    points: int
-    attended: int
+-   points: int
+-   attended: int
 +   grad_semester: Literal["spring", "summer", "fall", "winter"]
     grad_year: int
     email: str
@@ -53,3 +55,5 @@ class User(TypedDict):
 -   Unit tests for discord bot
     -   We know the backend works because of unit tests, but discord command can currently only be tested by hand
     -   We need to come up with an effective way to test the commands so we can quickly tell if something breaks
+-   Better error system for backend
+    -   Instead of just returning a str, we should return a str marked as err so we know immediately and easily if something went wrong when running the command

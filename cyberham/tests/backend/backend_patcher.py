@@ -1,43 +1,58 @@
 from pytest import MonkeyPatch
 from cyberham.apis.mock_google_apis import MockGoogleClient
-from cyberham.database.mockdb import MockDB
-from cyberham.database.types import User, Event, Flagged
+from cyberham.database.typeddb import (
+    T,
+    TypedDB,
+    db,
+    usersdb,
+    eventsdb,
+    flaggeddb,
+    attendancedb,
+    pointsdb,
+)
+from cyberham.database.types import User, Event, Flagged, Attendance, Points, TableName
 from cyberham.apis.types import EmailPending
 from pathlib import Path
 
 
 class BackendPatcher:
+    tables: list[TableName] = ["users", "events", "flagged", "attendance", "points"]
+
     initial_users: list[User] = []
     initial_events: list[Event] = []
     initial_flagged: list[Flagged] = []
+    initial_attendance: list[Attendance] = []
+    initial_points: list[Points] = []
     initial_pending: list[EmailPending] = []
 
-    usersdb: MockDB[User]
-    eventsdb: MockDB[Event]
-    flaggeddb: MockDB[Flagged]
     google_client: MockGoogleClient
 
-    # monkey patch the mock implementations over the real ones
-    # some files don't import them, so they are skipped in that case
     def setup_method(self):
-        self.mp = MonkeyPatch()
+        # create a temporary, in-memory database for testing
+        db.setup(":memory:")
+        for table in self.tables:
+            db.reset_table(table)
 
-        self.usersdb = MockDB(self.initial_users, ["user_id"])
-        self.eventsdb = MockDB(self.initial_events, ["code"])
-        self.flaggeddb = MockDB(self.initial_flagged, ["user_id"])
+        self.set_initial(usersdb, self.initial_users)
+        self.set_initial(eventsdb, self.initial_events)
+        self.set_initial(flaggeddb, self.initial_flagged)
+        self.set_initial(attendancedb, self.initial_attendance)
+        self.set_initial(pointsdb, self.initial_points)
+
+        # monkey patch the mock implementations over the real ones
+        # some files don't import them, so they are skipped in that case
+        self.mp = MonkeyPatch()
         self.google_client = MockGoogleClient(self.initial_pending)
 
         files = [f.stem for f in Path("cyberham/backend").iterdir() if f.is_file()]
         for file in files:
-            self._attempt_patch(f"cyberham.backend.{file}.usersdb", self.usersdb)
-            self._attempt_patch(f"cyberham.backend.{file}.eventsdb", self.eventsdb)
-            self._attempt_patch(f"cyberham.backend.{file}.flaggeddb", self.flaggeddb)
-            self._attempt_patch(
-                f"cyberham.backend.{file}.google_client", self.google_client
-            )
+            try:
+                self.mp.setattr(
+                    f"cyberham.backend.{file}.google_client", self.google_client
+                )
+            except:
+                pass
 
-    def _attempt_patch(self, path: str, attr: object):
-        try:
-            self.mp.setattr(path, attr)
-        except:
-            pass
+    def set_initial(self, typeddb: TypedDB[T], initial: list[T]):
+        for init in initial:
+            typeddb.create(init)

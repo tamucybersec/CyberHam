@@ -20,14 +20,16 @@ def register(
     email: str,
     user_id: int,
 ) -> str:
+    year = datetime.now().year
+
     # validate grad year
     try:
         grad_year = int(grad_year_str)
     except ValueError:
-        return "Please set your graduation year in the format YYYY (e.g. 2022)."
+        return f"Please set your graduation year in the format YYYY (e.g. {year})."
 
-    if not datetime.now().year - 100 < grad_year < datetime.now().year + 8:
-        return "Please set your graduation year in the format YYYY (e.g. 2022)."
+    if not year - 100 < grad_year < year + 8:
+        return f"Please set your graduation year in the format YYYY (e.g. {year})."
 
     # validate email
     email = email.lower()
@@ -47,15 +49,16 @@ def register(
             return User(
                 user_id=user_id,
                 name=name,
-                points=0,
-                attended=0,
                 grad_year=grad_year,
                 email=email,
+                verified=True,
             )
         else:
             user["name"] = name
             user["grad_year"] = grad_year
-            user["email"] = email
+            if email != user["email"]:
+                user["email"] = email
+                user["verified"] = False
             return user
 
     usersdb.update(update, pk_values=[user_id])
@@ -74,14 +77,14 @@ def register_email(user_id: int, email: str) -> str:
 
         def update_flagged(flagged: MaybeFlagged) -> MaybeFlagged:
             if flagged is None:
-                flagged = Flagged(user_id=user_id, offences=1)
+                return Flagged(user_id=user_id, offenses=1)
             else:
-                flagged["offences"] += 1
-            return flagged
+                flagged["offenses"] += 1
+                return flagged
 
         flagged = flaggeddb.update(update_flagged, pk_values=[user_id])
 
-        if flagged is not None and flagged["offences"] >= 3:
+        if flagged is not None and flagged["offenses"] >= 3:
             return "Too many failed attempts to email verification, please contact an officer."
 
     # send email
@@ -115,7 +118,8 @@ def verify_email(code: int, user_id: int) -> str:
 
     def update_user(user: MaybeUser) -> MaybeUser:
         if user is not None:
-            user["email"] = pending["email"]
+            user["email"] = pending["email"]  # in case updating email
+            user["verified"] = True
         return user
 
     usersdb.update(update_user, original=user)

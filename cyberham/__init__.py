@@ -5,7 +5,7 @@ import tomllib
 import logging
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 type Config = dict[str, Any]
 
@@ -21,10 +21,30 @@ def load_config(path: Path) -> Config:
         return tomllib.load(f)
 
 
+def merge_configs(base: Config, override: Config) -> Config:
+    for key, value in override.items():
+        if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+            merge_configs(base[key], cast(Config, value))
+        else:
+            base[key] = value
+    return base
+
+
+def load_configs(root: Path) -> Config:
+    base_config_path = root / "config.toml"
+    base_config = load_config(base_config_path)
+    environment = base_config.get("environment", "dev")
+
+    env_config_path = project_path.parent / f"config.{environment}.toml"
+    env_config = load_config(env_config_path)
+    
+    return merge_configs(base_config, env_config)
+
+
 def load_google_paths(project_path: Path, config: Config) -> tuple[Path, Path]:
     secrets_path = project_path / "secrets"
     token_path = secrets_path / "token.json"
-    client_secret_path = secrets_path / config["google"]["google_client"]
+    client_secret_path = secrets_path / config["google"]["client_file_name"]
     return token_path, client_secret_path
 
 
@@ -48,7 +68,7 @@ def setup_module_logging(name: str):
 
 
 project_path = Path(__file__).parent
-config = load_config(project_path.parent / "config.toml")
+config = load_configs(project_path.parent)
 google_token, client_secret = load_google_paths(project_path, config)
 setup_discord_logging()
 setup_module_logging(__name__)

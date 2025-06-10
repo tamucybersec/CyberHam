@@ -40,9 +40,9 @@ class Bot(discord.Client):
         time = event.start_time.astimezone(timezone("US/Central"))
 
         code = backend_events.create_event(
-            event.name, points, time.strftime("%m/%d/%Y"), ""
+            event.name, points, time.strftime("%m/%d/%Y")
         )
-        embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, "", "")
+        embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, 0)
         channel = cast(discord.TextChannel, self.get_channel(admin_channel_id))
         await channel.send(f"The code is `{code}`", embed=embed)
 

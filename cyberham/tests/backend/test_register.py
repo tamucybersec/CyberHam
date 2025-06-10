@@ -9,12 +9,13 @@ from cyberham.tests.models import (
     pending_users,
     flagged_users,
 )
+from cyberham.database.typeddb import usersdb
 
 
 # ignore the response from register email for these tests
 class TestRegister(BackendPatcher):
     def setup_method(self):
-        self.initial_users = users + [flagged_user]
+        self.initial_users = users
         self.initial_flagged = flagged_users
         self.initial_pending = pending_users
         super().setup_method()
@@ -34,7 +35,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        u = self.usersdb.get([user["user_id"]])
+        u = usersdb.get([user["user_id"]])
         assert u is not None
         assert u == user
 
@@ -47,7 +48,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = self.usersdb.get([unregistered_user["user_id"]])
+        user = usersdb.get([unregistered_user["user_id"]])
         assert user is None, "Should not create user"
 
     def test_invalid_date(self):
@@ -59,7 +60,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = self.usersdb.get([unregistered_user["user_id"]])
+        user = usersdb.get([unregistered_user["user_id"]])
         assert user is None, "Should not create user"
 
     def test_invalid_emails(self):
@@ -81,7 +82,7 @@ class TestRegister(BackendPatcher):
             )
             assert res != ""
 
-            user = self.usersdb.get([unregistered_user["user_id"]])
+            user = usersdb.get([unregistered_user["user_id"]])
             assert (
                 user is None
             ), f"Should not create user because email '{email}' is invalid"
@@ -95,7 +96,7 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = self.usersdb.get([valid_user["user_id"]])
+        user = usersdb.get([valid_user["user_id"]])
         assert (
             user == valid_user
         ), "Should not remove attributes like points or attended"
@@ -113,11 +114,9 @@ class TestRegister(BackendPatcher):
         )
         assert res != ""
 
-        user = self.usersdb.get([valid_user["user_id"]])
+        user = usersdb.get([valid_user["user_id"]])
         assert user is not None
         assert user["name"] == new_name
         assert user["grad_year"] == new_grad
         assert user["email"] == new_email
         assert user["user_id"] == valid_user["user_id"]
-        assert user["points"] == valid_user["points"]
-        assert user["attended"] == valid_user["attended"]

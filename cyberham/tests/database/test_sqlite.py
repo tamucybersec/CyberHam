@@ -8,12 +8,10 @@ from cyberham.tests.models import (
 )
 from typing import Any
 
-table: TableName = "tests"
+table: TableName = "users"
 pk_names = ["user_id"]
 
 
-# FIXME create a simple test type to use for testing that way changes to the user
-# type don't require fixing the test models
 class TestSQLiteCrud:
     sqlite: SQLiteDB
 

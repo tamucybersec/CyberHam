@@ -19,18 +19,18 @@ def create_crud_routes(
     router = APIRouter(prefix=f"/{prefix}")
 
     # get
-    @router.post(f"{prefix}/get", dependencies=[require_permission_only(get_perm)])
+    @router.post(f"/get", dependencies=[require_permission_only(get_perm)])
     async def get_all():
         return db.get_all()
 
     # put
-    @router.post(f"{prefix}/create", dependencies=[require_permission(modify_perm)])
+    @router.post(f"/create", dependencies=[require_permission(modify_perm)])
     async def create(item: T):
         db.create(item)
         return {"message": "created"}
 
     # post
-    @router.post(f"{prefix}/update", dependencies=[require_permission(modify_perm)])
+    @router.post(f"/update", dependencies=[require_permission(modify_perm)])
     async def update(original: T, new: T):
         def updater(_: Maybe[T]) -> Maybe[T]:
             return new
@@ -39,13 +39,13 @@ def create_crud_routes(
         return {"message": "updated"}
 
     # delete
-    @router.post(f"{prefix}/delete", dependencies=[require_permission(modify_perm)])
+    @router.post(f"/delete", dependencies=[require_permission(modify_perm)])
     async def delete(item: T):
         pk_values = [item[pk] for pk in pk_names]
         db.delete(pk_values)
         return {"message": "deleted"}
 
-    @router.post(f"{prefix}/replace", dependencies=[require_permission(modify_perm)])
+    @router.post(f"/replace", dependencies=[require_permission(modify_perm)])
     async def replace(replacement: Sequence[T]):
         return db.replace(replacement)
 

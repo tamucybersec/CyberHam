@@ -1,53 +1,55 @@
 from typing import Literal
 
-from cyberham.database.typeddb import usersdb, eventsdb
-from cyberham.database.types import (
-    User,
-    MaybeUser,
+from cyberham.database.typeddb import usersdb, eventsdb, pointsdb
+from cyberham.database.types import User, MaybeUser, Points, MaybePoints
+from cyberham.database.queries import (
+    attendance_for_all_users,
+    points_for_all_users,
+    user_attendance_counts_for_events,
 )
-from cyberham.utils.events import attendees
+from cyberham.utils.date import current_semester, current_year
 
 
-def leaderboard(sort_by: Literal["points", "attended"], lim: int = 10) -> list[User]:
+def leaderboard(
+    sort_by: Literal["points", "attended"], limit: int = 10
+) -> list[tuple[User, int]]:
     users = usersdb.get_all()
 
     if sort_by == "points":
-        users.sort(key=lambda user: user["points"], reverse=True)
+        stats = points_for_all_users()
     else:
-        users.sort(key=lambda user: user["attended"], reverse=True)
+        stats = attendance_for_all_users()
 
-    return users[:lim]
+    filtered_users = [user for user in users if stats.get(user["user_id"], 0) > 0]
+    filtered_users.sort(key=lambda user: stats.get(user["user_id"], 0), reverse=True)
+    return [(user, stats.get(user["user_id"], 0)) for user in filtered_users[:limit]]
 
 
-# FIXME inefficient
-# fetch all users at once or individually? implement a batch get
 def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     """
     Gets a ranked list of users' names who attended the most meetings that contain the string activity
     """
 
     events = eventsdb.get_all()
-    counts: dict[int, int] = {}
+    codes: list[str] = []
 
-    # sum frequencies
+    # get codes
     for event in events:
-        if activity.lower() not in event["name"].lower():
-            continue
-        for user_id in attendees(event):
-            if user_id in counts:
-                counts[user_id] += 1
-            else:
-                counts[user_id] = 1
+        if activity.lower() in event["name"].lower():
+            codes.append(event["code"])
+
+    # get sorted list of ids based on attendance
+    attendance = user_attendance_counts_for_events(codes)
+    user_ids = [[user_id] for user_id in attendance.keys()]
+    user_ids.sort(key=lambda user_id: attendance[user_id[0]], reverse=True)
+    users = usersdb.get_batch(user_ids)
 
     # map ids to names
     leaderboard: list[tuple[str, int]] = []
-    for user_id, count in counts.items():
-        user = usersdb.get([user_id])
-
+    for user in users:
         if user is not None:
-            leaderboard.append((user["name"], count))
-
-        # raise Exception(f"User {user_id} is in events but not in users.")
+            entry = (user["name"], attendance[user["user_id"]])
+            leaderboard.append(entry)
 
     return leaderboard
 
@@ -62,13 +64,24 @@ def profile(user_id: int) -> tuple[str, MaybeUser]:
 
 
 def award(user_id: int, user_name: str, points: int) -> str:
-    def update_user(user: MaybeUser) -> MaybeUser:
-        if user is not None:
-            user["points"] += points
-        return user
-
-    user = usersdb.update(update_user, pk_values=[user_id])
-
+    user = usersdb.get([user_id])
     if user is None:
         return "This user has not registered yet!"
+
+    def update_points(pts: MaybePoints) -> MaybePoints:
+        if pts is None:
+            return Points(
+                user_id=user_id,
+                points=points,
+                semester=current_semester(),
+                year=current_year(),
+            )
+        else:
+            pts["points"] += points
+            return pts
+
+    pointsdb.update(
+        update_points, pk_values=[user_id, current_semester(), current_year()]
+    )
+
     return f"Successfully added {points} points to {user_name} {user["name"]}."

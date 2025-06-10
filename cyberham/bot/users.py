@@ -1,11 +1,10 @@
 import discord
 from discord import app_commands
 import cyberham.backend.register as backend_register
-import cyberham.backend.users as backend_users
 from cyberham import guild_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.ui import RegisterModal
-from cyberham.bot.utils import valid_guild
+from cyberham.bot.utils import valid_guild, user_profile_embed
 from typing import Any
 
 
@@ -116,20 +115,3 @@ def setup_commands(bot: Bot):
         size,
         list_of_commands,
     ]
-
-
-async def user_profile_embed(interaction: discord.Interaction, user_id: int):
-    msg, user = backend_users.profile(user_id)
-    if user is None:
-        await interaction.response.send_message(msg, ephemeral=True)
-        return
-
-    embed = discord.Embed(title="Profile", color=0xFFFFFF)
-    embed.add_field(name="Name", value=user["name"], inline=False)
-    embed.add_field(name="Points", value=user["points"], inline=False)
-    embed.add_field(name="Attended Events", value=user["attended"], inline=False)
-    if user["grad_year"] > 0:
-        embed.add_field(name="Graduation Year", value=user["grad_year"], inline=False)
-    if user["email"]:
-        embed.add_field(name="TAMU Email", value=user["email"], inline=False)
-    await interaction.response.send_message(embed=embed, ephemeral=True)

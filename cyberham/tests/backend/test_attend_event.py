@@ -4,57 +4,58 @@ from cyberham.backend.events import attend_event
 from cyberham.tests.models import (
     valid_user,
     unregistered_user,
+    users,
     valid_event,
     past_event,
     future_event,
     attended_event,
     unregistered_event,
-    events
+    events,
+    attendance
 )
-from cyberham.utils.events import add_attendee
+from cyberham.database.typeddb import attendancedb
 
 
 class TestAttendEvent(BackendPatcher):
     def setup_method(self):
-        self.initial_users = [valid_user]
+        self.initial_users = users
         self.initial_events = events
+        self.initial_attendance = attendance
         super().setup_method()
 
     def test_successful(self):
         user = deepcopy(valid_user)
         event = deepcopy(valid_event)
 
-        user["points"] += event["points"]
-        user["attended"] += 1
-        add_attendee(event, user["user_id"])
-
         msg, ev = attend_event(event["code"], user["user_id"])
-        db_user = self.usersdb.get([user["user_id"]])
-        db_event = self.eventsdb.get([event["code"]])
+        attendance = attendancedb.get([user["user_id"], event["code"]])
 
         assert msg, "String should be neither None nor empty"
         assert ev, "Event should not be None"
-        assert ev == db_event, "Returned event should be the same as stored event"
-        assert event == db_event, "Event attributes should be correctly updated"
-        assert user == db_user, "User attributes should be correctly updated"
+        assert ev == event, "Returned event should be the same as original event"
+        assert attendance is not None
 
     def test_unregistered_user(self):
         user = deepcopy(unregistered_user)
         event = deepcopy(valid_event)
 
         msg, ev = attend_event(event["code"], user["user_id"])
+        attendance = attendancedb.get([user["user_id"], event["code"]])
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"
+        assert attendance is None
 
     def test_non_existent_event(self):
         user = deepcopy(valid_user)
         event = deepcopy(unregistered_event)
 
         msg, ev = attend_event(event["code"], user["user_id"])
+        attendance = attendancedb.get([user["user_id"], event["code"]])
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"
+        assert attendance is None
 
     def test_already_redeemed(self):
         user = deepcopy(valid_user)
@@ -70,15 +71,19 @@ class TestAttendEvent(BackendPatcher):
         event = deepcopy(past_event)
 
         msg, ev = attend_event(event["code"], user["user_id"])
+        attendance = attendancedb.get([user["user_id"], event["code"]])
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"
+        assert attendance is None
 
     def test_not_same_day_future(self):
         user = deepcopy(valid_user)
         event = deepcopy(future_event)
 
         msg, ev = attend_event(event["code"], user["user_id"])
+        attendance = attendancedb.get([user["user_id"], event["code"]])
 
         assert msg, "String should be neither None nor empty"
         assert ev is None, "No event should be returned"
+        assert attendance is None
