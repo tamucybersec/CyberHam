@@ -7,20 +7,20 @@ from cyberham.utils.date import current_semester, current_year
 
 class TestLeaderboard(BackendPatcher):
     def setup_method(self):
-        self.initial_users = users
-        self.initial_events = events
-        self.initial_attendance = attendance
-        self.initial_points = points
+        self.initial_users = users()
+        self.initial_events = events()
+        self.initial_attendance = attendance()
+        self.initial_points = points()
         super().setup_method()
 
     def test_points(self):
-        got = leaderboard("points", len(users))
+        got = leaderboard("points", len(users()))
         expected = self._get_expected_points()
 
         assert got == expected, "Attended users should be correctly sorted"
 
     def test_attended(self):
-        got = leaderboard("attended", len(users))
+        got = leaderboard("attended", len(users()))
         expected = self._get_expected_attendance()
 
         assert got == expected, "Attended users should be correctly sorted"
@@ -44,12 +44,12 @@ class TestLeaderboard(BackendPatcher):
         # Index points from attendance for the relevant semester/year
         event_map = {
             event["code"]: event
-            for event in events
+            for event in events()
             if event["semester"] == semester and event["year"] == year
         }
 
         attendance_points: dict[int, int] = {}
-        for record in attendance:
+        for record in attendance():
             code = record["code"]
             if code in event_map:
                 user_id = record["user_id"]
@@ -58,12 +58,12 @@ class TestLeaderboard(BackendPatcher):
                 )
 
         expected: list[tuple[User, int]] = []
-        for user in users:
+        for user in users():
             uid = user["user_id"]
             base_points = next(
                 (
                     p["points"]
-                    for p in points
+                    for p in points()
                     if p["user_id"] == uid
                     and p["semester"] == semester
                     and p["year"] == year
@@ -85,19 +85,19 @@ class TestLeaderboard(BackendPatcher):
         # Get valid event codes for this semester/year
         valid_codes = {
             event["code"]
-            for event in events
+            for event in events()
             if event["semester"] == semester and event["year"] == year
         }
 
         # Count attendance for each user, filtering by valid event codes
         attendance_count: dict[int, int] = {}
-        for record in attendance:
+        for record in attendance():
             if record["code"] in valid_codes:
                 uid = record["user_id"]
                 attendance_count[uid] = attendance_count.get(uid, 0) + 1
 
         expected: list[tuple[User, int]] = []
-        for user in users:
+        for user in users():
             count = attendance_count.get(user["user_id"], 0)
             if count > 0:
                 expected.append((user, count))

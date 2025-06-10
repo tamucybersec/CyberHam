@@ -22,47 +22,49 @@ class TestSQLiteCrud:
     @pytest.fixture(autouse=True)
     def setup_database(self):
         self.sqlite.reset_table(table)
-        self.sqlite.create_row(table, valid_user_item)
-        self.sqlite.create_row(table, valid_user_2_item)
+        self.sqlite.create_row(table, valid_user_item())
+        self.sqlite.create_row(table, valid_user_2_item())
 
     def test_create_item(self):
-        pk_values = self._pk_values(unregistered_user_item)
-        self.sqlite.create_row(table, unregistered_user_item)
+        pk_values = self._pk_values(unregistered_user_item())
+        self.sqlite.create_row(table, unregistered_user_item())
         after = self.sqlite.get_row(table, pk_names, pk_values)
-        assert after == unregistered_user_item
+        assert after == unregistered_user_item()
 
     def test_create_item_fails_overwrite(self):
         with pytest.raises(Exception):
-            self.sqlite.create_row(table, valid_user_item)
+            self.sqlite.create_row(table, valid_user_item())
 
     def test_get_item(self):
-        pk_values = self._pk_values(valid_user_item)
+        pk_values = self._pk_values(valid_user_item())
         item = self.sqlite.get_row(table, pk_names, pk_values)
-        assert item and valid_user_item == item
+        assert item and valid_user_item() == item
 
     def test_get_non_existent_item(self):
-        pk_values = self._pk_values(unregistered_user_item)
+        pk_values = self._pk_values(unregistered_user_item())
         item = self.sqlite.get_row(table, pk_names, pk_values)
         assert item is None
 
     def test_update_item(self):
-        self.sqlite.update_row(table, pk_names, valid_user_item, unregistered_user_item)
+        self.sqlite.update_row(
+            table, pk_names, valid_user_item(), unregistered_user_item()
+        )
 
-        pk_values = self._pk_values(valid_user_item)
+        pk_values = self._pk_values(valid_user_item())
         old_item = self.sqlite.get_row(table, pk_names, pk_values)
         assert old_item is None
 
-        pk_values = self._pk_values(unregistered_user_item)
+        pk_values = self._pk_values(unregistered_user_item())
         new_item = self.sqlite.get_row(table, pk_names, pk_values)
-        assert new_item == unregistered_user_item
+        assert new_item == unregistered_user_item()
 
     def test_delete_item(self):
-        pk_values = self._pk_values(valid_user_item)
+        pk_values = self._pk_values(valid_user_item())
         old_item = self.sqlite.delete_row(table, pk_names, pk_values)
-        assert old_item == valid_user_item
+        assert old_item == valid_user_item()
 
     def test_delete_non_existent_item(self):
-        pk_values = self._pk_values(unregistered_user_item)
+        pk_values = self._pk_values(unregistered_user_item())
         old_item = self.sqlite.delete_row(table, pk_names, pk_values)
         assert old_item is None
 
@@ -71,8 +73,8 @@ class TestSQLiteCrud:
         got = sorted(items, key=lambda item: item[pk_names[0]])
         expected = sorted(
             [
-                valid_user_item,
-                valid_user_2_item,
+                valid_user_item(),
+                valid_user_2_item(),
             ],
             key=lambda item: str(item[pk_names[0]]),
         )

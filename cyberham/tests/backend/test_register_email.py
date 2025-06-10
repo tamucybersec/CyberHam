@@ -16,67 +16,75 @@ from cyberham.database.typeddb import flaggeddb
 
 class TestRegisterEmail(BackendPatcher):
     def setup_method(self):
-        self.initial_users = users
-        self.initial_pending = pending_users
+        self.initial_users = users()
+        self.initial_pending = pending_users()
         super().setup_method()
         self.now = datetime.now()
 
     def test_already_registered(self):
-        res = register_email(valid_user["user_id"], valid_user["email"])
+        res = register_email(valid_user()["user_id"], valid_user()["email"])
 
         assert (
             res == ""
         ), "Should return no status for already registered users not changing their email"
         assert (
-            self._has_pending_email(valid_user) == False
+            self._has_pending_email(valid_user()) == False
         ), "Should not send a verification code to users not changing their email"
         assert self._no_offenses(
-            valid_user
+            valid_user()
         ), "No offense should be created for users not changing their email"
 
     def test_register_email(self):
-        res = register_email(unregistered_user["user_id"], unregistered_user["email"])
+        res = register_email(
+            unregistered_user()["user_id"], unregistered_user()["email"]
+        )
 
         assert res != ""
-        self._assert_valid_pending_email(unregistered_user, unregistered_user["email"])
+        self._assert_valid_pending_email(
+            unregistered_user(), unregistered_user()["email"]
+        )
         assert self._no_offenses(
-            unregistered_user
+            unregistered_user()
         ), "There should no offenses for one attempt"
 
     def test_registered_new_email(self):
         email = "new_email@tamu.edu"
-        res = register_email(no_email_user["user_id"], email)
+        res = register_email(no_email_user()["user_id"], email)
 
         assert res != ""
-        self._assert_valid_pending_email(no_email_user, email)
+        self._assert_valid_pending_email(no_email_user(), email)
         assert self._no_offenses(
-            no_email_user
+            no_email_user()
         ), "There should be no offenses for one attempt"
 
     def test_register_offense(self):
         prev_pending: EmailPending | None = None
 
         for i in range(1, 10):
-            res = register_email(flagged_user["user_id"], flagged_user["email"] + "new")
+            res = register_email(
+                flagged_user()["user_id"], flagged_user()["email"] + "new"
+            )
             assert res != ""
-            self._assert_valid_pending_email(flagged_user, flagged_user["email"] + "new")
+            self._assert_valid_pending_email(
+                flagged_user(), flagged_user()["email"] + "new"
+            )
 
             if i == 0:
-                assert self._no_offenses(flagged_user), "There should be no offenses"
+                assert self._no_offenses(flagged_user()), "There should be no offenses"
             else:
                 assert (
-                    self._offense_count(flagged_user) == i
+                    self._offense_count(flagged_user()) == i
                 ), "Should have expected offense count"
 
             if i < 3:
                 prev_pending = self.google_client.get_pending_email(
-                    flagged_user["user_id"]
+                    flagged_user()["user_id"]
                 )
             elif i > 3:
                 assert prev_pending is not None
                 assert (
                     prev_pending["code"]
-                    == self.google_client.get_pending_email(flagged_user["user_id"])[
+                    == self.google_client.get_pending_email(flagged_user()["user_id"])[
                         "code"
                     ]
                 ), "Should retain the same pending email"

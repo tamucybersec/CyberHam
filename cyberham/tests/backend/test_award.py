@@ -1,5 +1,4 @@
 from backend_patcher import BackendPatcher
-from copy import deepcopy
 from cyberham.backend.users import award
 from cyberham.tests.models import (
     users,
@@ -12,11 +11,11 @@ from cyberham.database.typeddb import pointsdb
 
 class TestAward(BackendPatcher):
     def setup_method(self):
-        self.initial_users = users
+        self.initial_users = users()
         super().setup_method()
 
     def test_valid_user(self):
-        user = deepcopy(valid_user)
+        user = valid_user()
         points = 2000
 
         points_before = pointsdb.get(
@@ -34,17 +33,16 @@ class TestAward(BackendPatcher):
         assert points_after["points"] == points
 
     def test_invalid_user(self):
-        user = deepcopy(unregistered_user)
+        user = unregistered_user()
         points = 2000
 
         res = award(user["user_id"], user["name"], points)
         assert res != ""
 
         assert (
-            pointsdb.get([user["user_id"], current_semester(), current_year()])
-            is None
+            pointsdb.get([user["user_id"], current_semester(), current_year()]) is None
         )
 
     def test_pointed_user(self):
-        # TODO 
+        # TODO
         pass

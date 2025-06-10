@@ -1,4 +1,3 @@
-from copy import deepcopy
 from backend_patcher import BackendPatcher
 from cyberham.backend.events import create_event
 from cyberham.tests.models import valid_event
@@ -10,7 +9,7 @@ class TestCreateEvent(BackendPatcher):
         super().setup_method()
 
     def test_create_event(self):
-        event = deepcopy(valid_event)
+        event = valid_event()
 
         code = create_event(event["name"], event["points"], event["date"])
         assert code is not None
@@ -23,7 +22,7 @@ class TestCreateEvent(BackendPatcher):
         assert created_event["date"] == event["date"]
 
     def test_no_collision(self):
-        event = deepcopy(valid_event)
+        event = valid_event()
 
         created: dict[str, None] = {}
         for i in range(100_000):

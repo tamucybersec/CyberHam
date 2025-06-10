@@ -1,4 +1,3 @@
-from copy import deepcopy
 from backend_patcher import BackendPatcher
 from cyberham.backend.events import attend_event
 from cyberham.tests.models import (
@@ -11,21 +10,21 @@ from cyberham.tests.models import (
     attended_event,
     unregistered_event,
     events,
-    attendance
+    attendance,
 )
 from cyberham.database.typeddb import attendancedb
 
 
 class TestAttendEvent(BackendPatcher):
     def setup_method(self):
-        self.initial_users = users
-        self.initial_events = events
-        self.initial_attendance = attendance
+        self.initial_users = users()
+        self.initial_events = events()
+        self.initial_attendance = attendance()
         super().setup_method()
 
     def test_successful(self):
-        user = deepcopy(valid_user)
-        event = deepcopy(valid_event)
+        user = valid_user()
+        event = valid_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
         attendance = attendancedb.get([user["user_id"], event["code"]])
@@ -36,8 +35,8 @@ class TestAttendEvent(BackendPatcher):
         assert attendance is not None
 
     def test_unregistered_user(self):
-        user = deepcopy(unregistered_user)
-        event = deepcopy(valid_event)
+        user = unregistered_user()
+        event = valid_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
         attendance = attendancedb.get([user["user_id"], event["code"]])
@@ -47,8 +46,8 @@ class TestAttendEvent(BackendPatcher):
         assert attendance is None
 
     def test_non_existent_event(self):
-        user = deepcopy(valid_user)
-        event = deepcopy(unregistered_event)
+        user = valid_user()
+        event = unregistered_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
         attendance = attendancedb.get([user["user_id"], event["code"]])
@@ -58,8 +57,8 @@ class TestAttendEvent(BackendPatcher):
         assert attendance is None
 
     def test_already_redeemed(self):
-        user = deepcopy(valid_user)
-        event = deepcopy(attended_event)
+        user = valid_user()
+        event = attended_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
 
@@ -67,8 +66,8 @@ class TestAttendEvent(BackendPatcher):
         assert ev is None, "No event should be returned"
 
     def test_not_same_day_past(self):
-        user = deepcopy(valid_user)
-        event = deepcopy(past_event)
+        user = valid_user()
+        event = past_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
         attendance = attendancedb.get([user["user_id"], event["code"]])
@@ -78,8 +77,8 @@ class TestAttendEvent(BackendPatcher):
         assert attendance is None
 
     def test_not_same_day_future(self):
-        user = deepcopy(valid_user)
-        event = deepcopy(future_event)
+        user = valid_user()
+        event = future_event()
 
         msg, ev = attend_event(event["code"], user["user_id"])
         attendance = attendancedb.get([user["user_id"], event["code"]])

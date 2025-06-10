@@ -3,7 +3,6 @@
 -   Change to have attendance table (user_id mapped to code)
 
     -   See about google_client inner variable to remove monkey patching all together
-    -   Remove dreaded deepcopy, replace models with functions
     -   Attend to FIXMEs
     -   Make sure Dashboard is still functioning (need to add extra page, change calculations, interfaces, and schemas)
         -   Make sure to update schemas for events
