@@ -12,6 +12,7 @@ from cyberham.utils.date import (
     current_semester,
     current_year,
     datetime_to_datestr,
+    sort_events_by_date,
 )
 
 
@@ -63,7 +64,11 @@ def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
 
     today = datetime_to_datestr(datetime.now(cst_tz))
 
-    if event["date"] != today:
+    if (
+        event["date"] != today
+        or event["semester"] != current_semester()
+        or event["year"] != current_year()
+    ):
         return "You must redeem an event on the day it occurs!", None
 
     # attend event
@@ -84,7 +89,9 @@ def find_event(code: str = "") -> tuple[str, MaybeEvent, int]:
 
 
 def event_list() -> list[Event]:
-    return eventsdb.get_all()
+    all = eventsdb.get_all()
+    sort_events_by_date(all, True)
+    return all
 
 
 def event_count() -> int:

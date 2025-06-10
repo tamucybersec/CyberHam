@@ -2,8 +2,6 @@
 
 -   Change to have attendance table (user_id mapped to code)
 
-    -   Create last 2 tests
-    -   Double check functions respect the semester and year when it makes sense to
     -   Make sure Dashboard is still functioning (need to add extra page, change calculations, interfaces, and schemas)
         -   Make sure to update schemas for events
 
@@ -56,6 +54,7 @@ class User(TypedDict):
     -   We need to come up with an effective way to test the commands so we can quickly tell if something breaks
 -   Better error system for backend
     -   Instead of just returning a str, we should return a str marked as err so we know immediately and easily if something went wrong when running the command
-    - Off the top of my head, a wrapper class or something would get the job done
+    -   Off the top of my head, a wrapper class or something would get the job done
 -   Fix the final 6 warnings from GoogleClient
     -   Refactor GoogleClient to have helper functions with clear intentions
+-   Clean up some test cases by storing the model in a variable instead of calling the function a million times

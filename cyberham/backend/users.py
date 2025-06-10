@@ -84,4 +84,4 @@ def award(user_id: int, user_name: str, points: int) -> str:
         update_points, pk_values=(user_id, current_semester(), current_year())
     )
 
-    return f"Successfully added {points} points to {user_name} {user["name"]}."
+    return f"Successfully added {points} points to {user_name} ({user["name"]})."

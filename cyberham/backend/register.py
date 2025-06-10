@@ -118,7 +118,7 @@ def verify_email(code: int, user_id: int) -> str:
 
     def update_user(user: MaybeUser) -> MaybeUser:
         if user is not None:
-            user["email"] = pending["email"]  # in case updating email
+            user["email"] = pending["email"]  # in case the email is being updated
             user["verified"] = True
         return user
 

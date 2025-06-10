@@ -33,10 +33,6 @@ class TestLeaderboard(BackendPatcher):
 
         assert got == expected[:limit], "List should be correctly truncated"
 
-    def test_only_current_semester(self):
-        # TODO
-        pass
-
     def _get_expected_points(self):
         semester = current_semester()
         year = current_year()

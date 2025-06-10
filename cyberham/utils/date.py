@@ -1,10 +1,11 @@
 from datetime import datetime
 from pytz import timezone
-from cyberham.database.types import Semester
+from cyberham.database.types import Event, Semester
 
 
 # central timezone
 cst_tz = timezone("US/Central")
+
 
 def to_central_time(dt: datetime) -> datetime:
     return dt.astimezone(cst_tz)
@@ -30,3 +31,11 @@ def current_semester() -> Semester:
 
 def current_year() -> int:
     return datetime.now().year
+
+
+def sort_events_by_date(events: list[Event], reverse: bool = False):
+    def key(event: Event) -> str:
+        month, day, year = event["date"].split("/")
+        return f"{year}/${month}/${day}"
+
+    events.sort(key=key, reverse=reverse)

@@ -14,10 +14,13 @@ now = datetime.now(cst_tz)
 today = datetime_to_datestr(now)
 yesterday = datetime_to_datestr(now - timedelta(days=1))
 tomorrow = datetime_to_datestr(now + timedelta(days=1))
+last_year = datetime_to_datestr(now - timedelta(weeks=52))
 
 
 # all models are functions to promote immutability between test cases
 # this was an issue in the past, causing ugly deepcopy()s on every test
+# (in python with pytest, if one field of the model was accidentally
+# changed the variable for every subsequent test)
 
 
 def valid_user() -> User:
@@ -219,6 +222,19 @@ def attended_event_2() -> Event:
     )
 
 
+def attended_past_event() -> Event:
+    return deepcopy(
+        Event(
+            name="Policy",
+            code="PLICY",
+            points=50,
+            date=last_year,
+            semester=current_semester(),
+            year=current_year() - 1,
+        )
+    )
+
+
 def unregistered_event() -> Event:
     return deepcopy(
         Event(
@@ -241,6 +257,7 @@ def events() -> list[Event]:
             future_event(),
             attended_event(),
             attended_event_2(),
+            attended_past_event(),
         ]
     )
 
@@ -264,9 +281,21 @@ VERIFICATION_CODE = 1234
 def attendance() -> list[Attendance]:
     return deepcopy(
         [
-            Attendance(user_id=valid_user()["user_id"], code=attended_event()["code"]),
             Attendance(
-                user_id=valid_user_2()["user_id"], code=attended_event()["code"]
+                user_id=valid_user()["user_id"],
+                code=attended_event()["code"],
+            ),
+            Attendance(
+                user_id=valid_user_2()["user_id"],
+                code=attended_event()["code"],
+            ),
+            Attendance(
+                user_id=valid_user()["user_id"],
+                code=attended_past_event()["code"],
+            ),
+            Attendance(
+                user_id=valid_user_2()["user_id"],
+                code=attended_past_event()["code"],
             ),
         ]
     )
