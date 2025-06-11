@@ -38,8 +38,8 @@ def create_crud_routes(
     # delete
     @router.post(f"/delete", dependencies=[require_permission(modify_perm)])
     async def delete(item: T):
-        pk_values = [item[pk] for pk in pk_names]
-        db.delete(cast(PK, pk_values))
+        pk_values: PK = cast(PK, tuple(item[pk] for pk in pk_names))
+        db.delete(pk_values)
         return {"message": "deleted"}
 
     @router.post(f"/replace", dependencies=[require_permission(modify_perm)])

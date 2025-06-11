@@ -1,9 +1,12 @@
 # TODO
 
--   Change to have attendance table (user_id mapped to code)
+-   Updating dashboard
 
-    -   Make sure Dashboard is still functioning (need to add extra page, change calculations, interfaces, and schemas)
-        -   Make sure to update schemas for events
+    -   Expedite the process of migrating to the new auth version
+        -   First implement feature working, hardcode strings
+        -   Then create table where we can manage and create auth strings
+    -   Make sure dashboard is only calculating from current semester
+    -   Add extra pages to edit points and attendance to dashboard
 
 -   Prune
 
@@ -14,13 +17,16 @@
 
     -   Move register to redirect you to the website (easier to create forms for)
     -   Huge revamp to Dashboard once all the new fields are added
-    -   For authentication with the dashboard, just use a query parameter
-        -   Be able to generate auth tokens and revoke them for sponsors from UI
 
 -   Actually run it on the server
+
     -   Need to generate certificates for https
+
 -   Document full setup process from scratch
+
     -   Important for onboarding
+
+-   Add individual user profile viewer so you can see all points, attendance, and other stats all in one spot
 
 ```python
 class User(TypedDict):

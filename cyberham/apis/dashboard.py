@@ -6,7 +6,7 @@ from cyberham.apis.auth import (
 )
 from cyberham import dashboard_credentials
 from cyberham.apis.types import Permissions, ValidateBody
-from cyberham.database.typeddb import usersdb, eventsdb, flaggeddb
+from cyberham.database.typeddb import usersdb, eventsdb, flaggeddb, attendancedb, pointsdb
 from cyberham.apis.crud_factory import create_crud_routes
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,6 +64,20 @@ routers = [
         db=flaggeddb,
         pk_names=["user_id"],
         get_perm=Permissions.ADMIN,
+        modify_perm=Permissions.ADMIN,
+    ),
+    create_crud_routes(
+        prefix="attendance",
+        db=attendancedb,
+        pk_names=["user_id", "code"],
+        get_perm=Permissions.SPONSOR,
+        modify_perm=Permissions.ADMIN,
+    ),
+    create_crud_routes(
+        prefix="points",
+        db=pointsdb,
+        pk_names=["user_id", "semester", "year"],
+        get_perm=Permissions.SPONSOR,
         modify_perm=Permissions.ADMIN,
     ),
 ]
