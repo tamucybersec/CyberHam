@@ -139,13 +139,13 @@ class TypedDB(Generic[T, PK]):
 
 
 db = SQLiteDB("cyberham.db")
-usersdb = TypedDB[User, tuple[int]](db, "users", ["user_id"])
+usersdb = TypedDB[User, tuple[str]](db, "users", ["user_id"])
 eventsdb = TypedDB[Event, tuple[str]](db, "events", ["code"])
-flaggeddb = TypedDB[Flagged, tuple[int]](db, "flagged", ["user_id"])
-attendancedb = TypedDB[Attendance, tuple[int, str]](
+flaggeddb = TypedDB[Flagged, tuple[str]](db, "flagged", ["user_id"])
+attendancedb = TypedDB[Attendance, tuple[str, str]](
     db, "attendance", ["user_id", "code"]
 )
-pointsdb = TypedDB[Points, tuple[int, Semester, int]](
+pointsdb = TypedDB[Points, tuple[str, Semester, int]](
     db, "points", ["user_id", "semester", "year"]
 )
 tokensdb = TypedDB[Tokens, tuple[str]](db, "tokens", ["token"])

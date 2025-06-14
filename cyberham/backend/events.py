@@ -41,7 +41,7 @@ def create_event(name: str, points: int, date: str) -> tuple[str, str]:
     return event_code, ""
 
 
-def attend_event(code: str, user_id: int) -> tuple[str, MaybeEvent]:
+def attend_event(code: str, user_id: str) -> tuple[str, MaybeEvent]:
     code = code.upper()
 
     # user validation

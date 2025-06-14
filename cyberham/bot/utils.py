@@ -57,7 +57,7 @@ def event_list_embed(page: int):
     return embed
 
 
-async def user_profile_embed(interaction: discord.Interaction, user_id: int):
+async def user_profile_embed(interaction: discord.Interaction, user_id: str):
     msg, user = backend_users.profile(user_id)
     if user is None:
         await interaction.response.send_message(msg, ephemeral=True)
@@ -78,7 +78,7 @@ async def user_profile_embed(interaction: discord.Interaction, user_id: int):
 
 
 async def handle_attend_response(interaction: discord.Interaction, code: str):
-    msg, event = backend_events.attend_event(code, interaction.user.id)
+    msg, event = backend_events.attend_event(code, str(interaction.user.id))
     if event is None:
         await interaction.response.send_message(msg, ephemeral=True)
         return

@@ -21,7 +21,7 @@ def setup_commands(bot: Bot):
     )
     @app_commands.describe(code="Please enter the code sent to your TAMU email")
     async def verify(interaction: discord.Interaction, code: int):
-        msg: str = backend_register.verify_email(code, interaction.user.id)
+        msg: str = backend_register.verify_email(code, str(interaction.user.id))
         if "verified!" in msg and interaction.guild_id == 631254092332662805:
             assert interaction.guild is not None
             member = interaction.guild.get_member(interaction.user.id)
@@ -38,7 +38,7 @@ def setup_commands(bot: Bot):
         interaction: discord.Interaction, error: app_commands.AppCommandError
     ):
         if isinstance(error, app_commands.CommandOnCooldown):
-            backend_register.remove_pending(interaction.user.id)
+            backend_register.remove_pending(str(interaction.user.id))
             await interaction.response.send_message(
                 "You have verified too many times! Please contact an officer",
                 ephemeral=True,
@@ -48,7 +48,7 @@ def setup_commands(bot: Bot):
         name="profile", description="get your current attendance info!", guilds=guild_id
     )
     async def profile(interaction: discord.Interaction):
-        await user_profile_embed(interaction, interaction.user.id)
+        await user_profile_embed(interaction, str(interaction.user.id))
 
     @command_tree.command(
         name="profile_member",
@@ -58,7 +58,7 @@ def setup_commands(bot: Bot):
     @app_commands.default_permissions(manage_events=True)
     @app_commands.describe(member="The profile for which member")
     async def profile_member(interaction: discord.Interaction, member: discord.Member):
-        await user_profile_embed(interaction, member.id)
+        await user_profile_embed(interaction, str(member.id))
 
     @command_tree.command(
         name="size", description="find the number of human members", guilds=guild_id

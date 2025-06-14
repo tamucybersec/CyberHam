@@ -70,7 +70,7 @@ routers = [
         prefix="flagged",
         db=flaggeddb,
         pk_names=["user_id"],
-        get_perm=Permissions.ADMIN,
+        get_perm=Permissions.COMMITTEE,
         modify_perm=Permissions.ADMIN,
     ),
     create_crud_routes(

@@ -4,7 +4,7 @@ from copy import deepcopy
 
 
 class MockGoogleClient(GoogleClientProtocol):
-    pending_emails: dict[int, EmailPending] = {}
+    pending_emails: dict[str, EmailPending] = {}
 
     def __init__(self, initial_pending: list[EmailPending]):
         self.pending_emails.clear()
@@ -19,14 +19,14 @@ class MockGoogleClient(GoogleClientProtocol):
         # implement when testing discord bot commands
         pass
 
-    def has_pending_email(self, user_id: int):
+    def has_pending_email(self, user_id: str):
         return user_id in self.pending_emails
 
-    def get_pending_email(self, user_id: int):
+    def get_pending_email(self, user_id: str):
         return deepcopy(self.pending_emails[user_id])
 
-    def set_pending_email(self, user_id: int, verification: EmailPending):
+    def set_pending_email(self, user_id: str, verification: EmailPending):
         self.pending_emails[user_id] = deepcopy(verification)
 
-    def remove_pending_email(self, user_id: int):
+    def remove_pending_email(self, user_id: str):
         del self.pending_emails[user_id]

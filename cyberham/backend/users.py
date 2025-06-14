@@ -54,7 +54,7 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     return leaderboard
 
 
-def profile(user_id: int) -> tuple[str, MaybeUser]:
+def profile(user_id: str) -> tuple[str, MaybeUser]:
     user = usersdb.get((user_id,))
 
     if user is None:
@@ -63,7 +63,7 @@ def profile(user_id: int) -> tuple[str, MaybeUser]:
     return "", user
 
 
-def award(user_id: int, user_name: str, points: int) -> str:
+def award(user_id: str, user_name: str, points: int) -> str:
     user = usersdb.get((user_id,))
     if user is None:
         return "This user has not registered yet!"

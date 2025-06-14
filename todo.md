@@ -2,10 +2,10 @@
 
 -   Updating dashboard
 
-    -   zod booleans don't work?
     -   Add categories to events using description of google calendar
         -   Add categories to existing events
     -   Make sure dashboard is only calculating from current semester
+    -   automatic backups
 
 -   Prune
 
@@ -31,7 +31,7 @@
 
 ```python
 class User(TypedDict):
-    user_id: int
+    user_id: str
     name: str
 -   points: int
 -   attended: int

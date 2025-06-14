@@ -18,7 +18,7 @@ def register(
     name: str,
     grad_year_str: str,
     email: str,
-    user_id: int,
+    user_id: str,
 ) -> str:
     year = datetime.now().year
 
@@ -67,7 +67,7 @@ def register(
 
 
 # NOTE update's a user's email if it differs from their original email
-def register_email(user_id: int, email: str) -> str:
+def register_email(user_id: str, email: str) -> str:
     user = usersdb.get((user_id,))
     if user is not None and user["email"] == email:
         return ""
@@ -105,7 +105,7 @@ def register_email(user_id: int, email: str) -> str:
     return "Please use /verify with the code you received in your email. Be sure the check your spam folder as well."
 
 
-def verify_email(code: int, user_id: int) -> str:
+def verify_email(code: int, user_id: str) -> str:
     user = usersdb.get((user_id,))
     if user is None:
         return "Please use /register first."
@@ -128,5 +128,5 @@ def verify_email(code: int, user_id: int) -> str:
     return "Email verified! It is now visible using /profile."
 
 
-def remove_pending(user_id: int = 0) -> None:
+def remove_pending(user_id: str) -> None:
     google.client.remove_pending_email(user_id)

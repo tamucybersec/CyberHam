@@ -26,11 +26,11 @@ class SQLiteDB:
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY,
+                user_id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 grad_year INTEGER NOT NULL,
                 email TEXT NOT NULL,
-                verified BOOLEAN NOT NULL
+                verified INTEGER NOT NULL CHECK(verified IN (0, 1))
             )"""
         )
 
@@ -49,7 +49,7 @@ class SQLiteDB:
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS flagged (
-                user_id INTEGER PRIMARY KEY,
+                user_id TEXT PRIMARY KEY,
                 offenses INTEGER NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE
             )"""
@@ -58,7 +58,7 @@ class SQLiteDB:
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS attendance (
-                user_id INTEGER NOT NULL,
+                user_id TEXT NOT NULL,
                 code TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE,
                 FOREIGN KEY (code) REFERENCES events(code) ON UPDATE CASCADE,
@@ -69,7 +69,7 @@ class SQLiteDB:
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS points (
-                user_id INTEGER,
+                user_id TEXT,
                 points INTEGER NOT NULL,
                 semester TEXT NOT NULL,
                 year INTEGER NOT NULL,
@@ -86,7 +86,7 @@ class SQLiteDB:
                 created TEXT NOT NULL,
                 expires_after TEXT NOT NULL,
                 last_accessed TEXT NOT NULL,
-                revoked BOOLEAN NOT NULL,
+                revoked INTEGER NOT NULL CHECK(revoked IN (0, 1)),
                 permission INTEGER NOT NULL
             )"""
         )

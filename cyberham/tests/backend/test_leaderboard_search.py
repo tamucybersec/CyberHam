@@ -27,7 +27,7 @@ class TestLeaderboardSearch(BackendPatcher):
         ]
 
         # Count how many matching events each user attended
-        user_counts: dict[int, int] = {}
+        user_counts: dict[str, int] = {}
         for record in attendance():
             if record["code"] in matching_codes:
                 user_id = record["user_id"]

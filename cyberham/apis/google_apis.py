@@ -39,15 +39,15 @@ logger = logging.getLogger(__name__)
 class GoogleClientProtocol(Protocol):
     def send_email(self, address: str, code: str, org: str) -> Any | None: ...
     def get_events(self) -> list[CalendarEvent] | None: ...
-    def has_pending_email(self, user_id: int) -> bool: ...
-    def get_pending_email(self, user_id: int) -> EmailPending: ...
-    def set_pending_email(self, user_id: int, verification: EmailPending) -> None: ...
-    def remove_pending_email(self, user_id: int) -> None: ...
+    def has_pending_email(self, user_id: str) -> bool: ...
+    def get_pending_email(self, user_id: str) -> EmailPending: ...
+    def set_pending_email(self, user_id: str, verification: EmailPending) -> None: ...
+    def remove_pending_email(self, user_id: str) -> None: ...
 
 
 class _Client(GoogleClientProtocol):
     # dict[user_id, EmailPending]
-    pending_emails: dict[int, EmailPending] = {}
+    pending_emails: dict[str, EmailPending] = {}
     creds: Credentials | ExCredentials | None = None
 
     def __init__(self):
@@ -202,16 +202,16 @@ class _Client(GoogleClientProtocol):
 
         return result
 
-    def has_pending_email(self, user_id: int):
+    def has_pending_email(self, user_id: str):
         return user_id in self.pending_emails
 
-    def get_pending_email(self, user_id: int):
+    def get_pending_email(self, user_id: str):
         return self.pending_emails[user_id]
 
-    def set_pending_email(self, user_id: int, verification: EmailPending):
+    def set_pending_email(self, user_id: str, verification: EmailPending):
         self.pending_emails[user_id] = verification
 
-    def remove_pending_email(self, user_id: int):
+    def remove_pending_email(self, user_id: str):
         del self.pending_emails[user_id]
 
 

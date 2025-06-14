@@ -44,7 +44,7 @@ class TestLeaderboard(BackendPatcher):
             if event["semester"] == semester and event["year"] == year
         }
 
-        attendance_points: dict[int, int] = {}
+        attendance_points: dict[str, int] = {}
         for record in attendance():
             code = record["code"]
             if code in event_map:
@@ -86,7 +86,7 @@ class TestLeaderboard(BackendPatcher):
         }
 
         # Count attendance for each user, filtering by valid event codes
-        attendance_count: dict[int, int] = {}
+        attendance_count: dict[str, int] = {}
         for record in attendance():
             if record["code"] in valid_codes:
                 uid = record["user_id"]

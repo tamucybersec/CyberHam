@@ -8,7 +8,7 @@ from cyberham.utils.date import current_semester, current_year
 
 
 def attendance_for_user(
-    user_id: int,
+    user_id: str,
     semester: Semester = current_semester(),
     year: int = current_year(),
 ) -> int:
@@ -29,7 +29,7 @@ def attendance_for_user(
 def attendance_for_all_users(
     semester: Semester = current_semester(),
     year: int = current_year(),
-) -> dict[int, int]:
+) -> dict[str, int]:
     db.cursor.execute(
         """
         SELECT attendance.user_id, COUNT(*) AS attendance
@@ -46,7 +46,7 @@ def attendance_for_all_users(
 
 
 def points_for_user(
-    user_id: int,
+    user_id: str,
     semester: Semester = current_semester(),
     year: int = current_year(),
 ) -> int:
@@ -87,8 +87,8 @@ def points_for_user(
 def points_for_all_users(
     semester: Semester = current_semester(),
     year: int = current_year(),
-) -> dict[int, int]:
-    points: dict[int, int] = defaultdict(int)
+) -> dict[str, int]:
+    points: dict[str, int] = defaultdict(int)
 
     db.cursor.execute(
         """
@@ -119,7 +119,7 @@ def points_for_all_users(
     return points
 
 
-def user_attendance_counts_for_events(codes: list[str]) -> dict[int, int]:
+def user_attendance_counts_for_events(codes: list[str]) -> dict[str, int]:
     placeholders = ", ".join("?" for _ in codes)
     db.cursor.execute(
         f"""

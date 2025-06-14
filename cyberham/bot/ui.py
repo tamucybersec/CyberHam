@@ -75,7 +75,7 @@ class RegisterModal(ui.Modal, title="Register"):
                 name,
                 grad_year,
                 email,
-                interaction.user.id,
+                str(interaction.user.id),
             )
         except:
             channel = cast(discord.TextChannel, self.bot.get_channel(admin_channel_id))

@@ -27,7 +27,7 @@ def setup_commands(bot: Bot):
     async def award(
         interaction: discord.Interaction, user: discord.Member, points: int
     ):
-        msg: str = backend_users.award(user.id, user.name, points)
+        msg: str = backend_users.award(str(user.id), user.name, points)
         await interaction.response.send_message(msg)
 
     @app_commands.default_permissions(manage_events=True)

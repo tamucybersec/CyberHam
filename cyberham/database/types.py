@@ -26,7 +26,7 @@ T = TypeVar("T")
 
 
 class User(TypedDict):
-    user_id: int
+    user_id: str
     name: str
     grad_year: int
     email: str
@@ -49,7 +49,7 @@ MaybeEvent: TypeAlias = Optional[Event]
 
 
 class Flagged(TypedDict):
-    user_id: int
+    user_id: str
     offenses: int
 
 
@@ -57,7 +57,7 @@ MaybeFlagged: TypeAlias = Optional[Flagged]
 
 
 class Attendance(TypedDict):
-    user_id: int
+    user_id: str
     code: str
 
 
@@ -65,7 +65,7 @@ MaybeAttendance: TypeAlias = Optional[Attendance]
 
 
 class Points(TypedDict):
-    user_id: int
+    user_id: str
     points: int
     semester: Semester
     year: int

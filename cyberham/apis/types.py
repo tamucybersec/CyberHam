@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class EmailPending(TypedDict):
-    user_id: int
+    user_id: str
     email: str
     code: int
     time: datetime

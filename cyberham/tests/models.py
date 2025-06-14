@@ -26,7 +26,7 @@ last_year = datetime_to_datestr(now - timedelta(weeks=52))
 def valid_user() -> User:
     return deepcopy(
         User(
-            user_id=0,
+            user_id="0",
             name="Lane",
             grad_year=2024,
             email="lane@tamu.edu",
@@ -38,7 +38,7 @@ def valid_user() -> User:
 def valid_user_2() -> User:
     return deepcopy(
         User(
-            user_id=1,
+            user_id="1",
             name="Stella",
             grad_year=2025,
             email="stella@tamu.edu",
@@ -50,7 +50,7 @@ def valid_user_2() -> User:
 def updated_user() -> User:
     return deepcopy(
         User(
-            user_id=2,
+            user_id="2",
             name="Emma",
             grad_year=2027,
             email="emma@tamu.edu",
@@ -62,7 +62,7 @@ def updated_user() -> User:
 def updated_user_2() -> User:
     return deepcopy(
         User(
-            user_id=3,
+            user_id="3",
             name="Colby",
             grad_year=0,
             email="colby@tamu.edu",
@@ -74,7 +74,7 @@ def updated_user_2() -> User:
 def flagged_user() -> User:
     return deepcopy(
         User(
-            user_id=4,
+            user_id="4",
             name="Damian",
             grad_year=2026,
             email="",
@@ -86,7 +86,7 @@ def flagged_user() -> User:
 def no_email_user() -> User:
     return deepcopy(
         User(
-            user_id=5,
+            user_id="5",
             name="Javi",
             grad_year=2027,
             email="",
@@ -98,7 +98,7 @@ def no_email_user() -> User:
 def unregistered_user() -> User:
     return deepcopy(
         User(
-            user_id=9,
+            user_id="9",
             name="Owen",
             grad_year=2027,
             email="owen@tamu.edu",
@@ -110,7 +110,7 @@ def unregistered_user() -> User:
 def unregistered_user_2() -> User:
     return deepcopy(
         User(
-            user_id=10,
+            user_id="10",
             name="Zach",
             grad_year=2027,
             email="zach@tamu.edu",
