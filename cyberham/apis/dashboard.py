@@ -1,47 +1,54 @@
-from typing import cast, Annotated
-from cyberham.apis.auth import (
-    public_key,
-    authenticate_only,
-    decrypt,
-)
+from typing import cast
 from cyberham import dashboard_credentials
-from cyberham.apis.types import Permissions, ValidateBody
-from cyberham.database.typeddb import usersdb, eventsdb, flaggeddb, attendancedb, pointsdb
+from cyberham.apis.auth import token_status
+from cyberham.database.types import Permissions
+from cyberham.database.typeddb import (
+    usersdb,
+    eventsdb,
+    flaggeddb,
+    attendancedb,
+    pointsdb,
+    tokensdb,
+)
 from cyberham.apis.crud_factory import create_crud_routes
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import traceback
 import uvicorn
-
-PermsOnly = Annotated[Permissions, Depends(authenticate_only)]
 
 app = FastAPI(root_path="/api")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4321"], # astro default port
+    allow_origins=["http://localhost:4321"],  # astro default port
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
 
+@app.exception_handler(Exception)
+async def catch_exceptions(request: Request, exc: Exception):
+    print("Unhandled exception:", exc)
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"details": str(exc), "error": "Internal Server Error"},
+        headers={"Access-Control-Allow-Origin": "http://localhost:4321"},
+    )
+
+
 @app.get("/")
-async def health_check():
+async def health_check() -> str:
     return "healthy"
 
 
-@app.get("/key")
-async def get_public_key():
-    return {"key": public_key}
-
-
-@app.post("/login")
-async def login(perms: PermsOnly):
-    return {"perms": perms}
-
-
-@app.post("/validate")
-async def validate(validation: ValidateBody):
-    return decrypt(validation.password) == decrypt(validation.credentials.password)
+@app.get("/login")
+async def login(token: str) -> Permissions:
+    permission, _ = token_status(token)
+    return permission
 
 
 routers = [
@@ -79,6 +86,13 @@ routers = [
         pk_names=["user_id", "semester", "year"],
         get_perm=Permissions.SPONSOR,
         modify_perm=Permissions.ADMIN,
+    ),
+    create_crud_routes(
+        prefix="tokens",
+        db=tokensdb,
+        pk_names=["token"],
+        get_perm=Permissions.SUPER_ADMIN,
+        modify_perm=Permissions.SUPER_ADMIN,
     ),
 ]
 

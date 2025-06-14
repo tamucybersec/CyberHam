@@ -6,6 +6,7 @@ from cyberham.database.types import (
     Flagged,
     Attendance,
     Points,
+    Tokens,
     Item,
     Semester,
 )
@@ -147,3 +148,4 @@ attendancedb = TypedDB[Attendance, tuple[int, str]](
 pointsdb = TypedDB[Points, tuple[int, Semester, int]](
     db, "points", ["user_id", "semester", "year"]
 )
+tokensdb = TypedDB[Tokens, tuple[str]](db, "tokens", ["token"])

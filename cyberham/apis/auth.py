@@ -1,76 +1,51 @@
-from typing import cast
-from cyberham import dashboard_credentials, encryption_keys
-from cyberham.apis.types import Credentials, Permissions, AuthenticationRequest
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.backends import default_backend
+from datetime import datetime
 from fastapi import HTTPException, Depends
-import base64
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from cyberham.database.types import Permissions
+from cyberham.database.types import MaybeTokens
+from cyberham.database.typeddb import tokensdb
+from cyberham.utils.date import datetime_to_datestr, compare_datestrs
+
+security = HTTPBearer()
 
 
-_private_key = cast(RSAPrivateKey, serialization.load_pem_private_key(
-    encryption_keys["private"].encode("utf-8"),
-    password=None,
-    backend=default_backend(),
-))
+def token_status(token: str) -> tuple[Permissions, bool]:
+    tokens = tokensdb.get((token,))
+    if tokens is None:
+        return Permissions.NONE, False
 
-public_key = encryption_keys["public"]
+    now = datetime_to_datestr(datetime.now())
 
+    def update_token(tok: MaybeTokens) -> MaybeTokens:
+        if tok is not None:
+            tok["last_accessed"] = now
+        return tok
 
-def decrypt(s: str) -> str:
-    decrypted_message = _private_key.decrypt(
-        base64.b64decode(s),
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
-    )
+    tokensdb.update(update_token, original=tokens)
 
-    return decrypted_message.decode("utf-8")
+    if compare_datestrs(tokens["expires_after"], now) < 0 or tokens["revoked"]:
+        return Permissions.NONE, False
+
+    return tokens["permission"], tokens["permission"] != Permissions.NONE
 
 
-def authenticate(credentials: Credentials) -> Permissions:
-    try:
-        username = decrypt(credentials.username)
-        password = decrypt(credentials.password)
-    except:
-        return Permissions.DENIED
+async def get_permission_level(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> Permissions:
+    if credentials.scheme != "Bearer":
+        raise HTTPException(status_code=403, detail="Invalid auth scheme")
 
-    if (
-        username == dashboard_credentials["admin_username"]
-        and password == dashboard_credentials["admin_password"]
-    ):
-        return Permissions.ADMIN
-    elif (
-        username == dashboard_credentials["sponsor_username"]
-        and password == dashboard_credentials["sponsor_password"]
-    ):
-        return Permissions.SPONSOR
+    token = credentials.credentials
+    permission, valid = token_status(token)
+    if not valid:
+        raise HTTPException(status_code=403, detail="Invalid or revoked token")
 
-    return Permissions.DENIED
-
-# FIXME phase out these functions in favor of a bearer token
-
-def authenticate_only(req: AuthenticationRequest):
-    return authenticate(req.credentials)
+    return permission
 
 
-def req_perm(level: Permissions, perms: Permissions):
-    if perms != Permissions.NONE and perms < level:
-        raise HTTPException(status_code=403, detail="Insufficient Permissions")
+def require_permission(min_permission: Permissions):
+    async def guard(permission: Permissions = Depends(get_permission_level)) -> None:
+        if permission < min_permission:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-
-def require_permission(level: Permissions):
-    async def dependency(perms: Permissions = Depends(authenticate)):
-        req_perm(level, perms)
-
-    return Depends(dependency)
-
-
-def require_permission_only(level: Permissions):
-    async def dependency(perms: Permissions = Depends(authenticate_only)):
-        req_perm(level, perms)
-
-    return Depends(dependency)
+    return guard

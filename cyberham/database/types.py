@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import (
     Any,
     Callable,
@@ -11,6 +12,15 @@ from typing import (
 )
 
 type Semester = Literal["spring", "fall"]
+
+
+class Permissions(IntEnum):
+    NONE = 0
+    SPONSOR = 1
+    COMMITTEE = 2
+    ADMIN = 3
+    SUPER_ADMIN = 4
+
 
 T = TypeVar("T")
 
@@ -64,7 +74,20 @@ class Points(TypedDict):
 MaybePoints: TypeAlias = Optional[Points]
 
 
-type TableName = Literal["users", "events", "flagged", "attendance", "points"]
+class Tokens(TypedDict):
+    name: str
+    token: str
+    created: str
+    expires_after: str
+    last_accessed: str
+    revoked: bool
+    permission: Permissions
+
+
+MaybeTokens: TypeAlias = Optional[Tokens]
+
+
+type TableName = Literal["users", "events", "flagged", "attendance", "points", "tokens"]
 
 Item: TypeAlias = Mapping[str, Any]
 MaybeItem: TypeAlias = Optional[Item]

@@ -2,6 +2,7 @@
 *.toml
 :
 *.db
+*.db-journal
 cyberham/secrets/*
 *.pem
 

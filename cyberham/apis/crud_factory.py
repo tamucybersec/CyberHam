@@ -1,8 +1,23 @@
-from cyberham.database.typeddb import TypedDB, T, Maybe, PK
-from fastapi import APIRouter
-from cyberham.apis.types import Permissions
-from cyberham.apis.auth import require_permission, require_permission_only
+from cyberham.database.typeddb import TypedDB, T, PK
+from fastapi import APIRouter, Depends
+from cyberham.database.types import Permissions
+from cyberham.apis.auth import require_permission
 from typing import Any, Sequence, cast
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+
+
+class CreateDeletePayload[T](BaseModel):
+    item: T
+
+
+class UpdatePayload[T](BaseModel):
+    original: T
+    updated: T
+
+
+class ReplacePayload[T](BaseModel):
+    replacement: Sequence[T]
 
 
 def create_crud_routes(
@@ -15,36 +30,35 @@ def create_crud_routes(
 ):
     router = APIRouter(prefix=f"/{prefix}")
 
-    # get
-    @router.post(f"/get", dependencies=[require_permission_only(get_perm)])
+    @router.get("", dependencies=[Depends(require_permission(get_perm))])
     async def get_all():
         return db.get_all()
 
-    # put
-    @router.post(f"/create", dependencies=[require_permission(modify_perm)])
-    async def create(item: T):
-        db.create(item)
+    @router.post("/create", dependencies=[Depends(require_permission(modify_perm))])
+    async def create(body: CreateDeletePayload[T]):
+        db.create(body.item)
         return {"message": "created"}
 
-    # post
-    @router.post(f"/update", dependencies=[require_permission(modify_perm)])
-    async def update(original: T, new: T):
-        def updater(_: Maybe[T]) -> Maybe[T]:
-            return new
-
-        db.update(updater, original=original)
+    @router.post("/update", dependencies=[Depends(require_permission(modify_perm))])
+    async def update(body: UpdatePayload[T]):
+        db.update(lambda _: body.updated, original=body.original)
         return {"message": "updated"}
 
-    # delete
-    @router.post(f"/delete", dependencies=[require_permission(modify_perm)])
-    async def delete(item: T):
-        pk_values: PK = cast(PK, tuple(item[pk] for pk in pk_names))
+    @router.post("/delete", dependencies=[Depends(require_permission(modify_perm))])
+    async def delete(body: CreateDeletePayload[T]):
+        pk_values: PK = cast(PK, tuple(body.item[pk] for pk in pk_names))
         db.delete(pk_values)
         return {"message": "deleted"}
 
-    @router.post(f"/replace", dependencies=[require_permission(modify_perm)])
-    async def replace(replacement: Sequence[T]):
-        return db.replace(replacement)
+    @router.post(f"/replace", dependencies=[Depends(require_permission(modify_perm))])
+    async def replace(body: ReplacePayload[T]):
+        res = db.replace(body.replacement)
+        if "error" in res:
+            return JSONResponse(
+                status_code=500,
+                content={"details": res["details"], "error": res["error"]},
+            )
+        return {"message": "replaced"}
 
     # satisfy type checker
     _: list[Any] = [get_all, create, update, delete, replace]

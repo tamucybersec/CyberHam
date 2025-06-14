@@ -2,21 +2,15 @@
 
 -   Updating dashboard
 
-    -   Expedite the process of migrating to the new auth version
-        -   First implement feature working, hardcode strings
-        -   Then create table where we can manage and create auth strings
+    -   zod booleans don't work?
+    -   Add categories to events using description of google calendar
+        -   Add categories to existing events
     -   Make sure dashboard is only calculating from current semester
-    -   Add extra pages to edit points and attendance to dashboard
 
 -   Prune
 
     -   Go through events and consolidate legacy ones into modern ones (i.e. change their name so the data looks better) (really simple using the dashboard with the tables!)
     -   Delete obvious test data
-
--   Change to have better data
-
-    -   Move register to redirect you to the website (easier to create forms for)
-    -   Huge revamp to Dashboard once all the new fields are added
 
 -   Actually run it on the server
 
@@ -26,7 +20,14 @@
 
     -   Important for onboarding
 
+-   Change to have better data
+
+    -   Move register to redirect you to the website (easier to create forms for)
+    -   Huge revamp to Dashboard once all the new fields are added
+
 -   Add individual user profile viewer so you can see all points, attendance, and other stats all in one spot
+
+    -   In tables, for the cell on user_id, make it so that hovering on it shows their name like a little card and some quick info about them, and clicking the user_id brings you to the profile page
 
 ```python
 class User(TypedDict):
@@ -64,3 +65,5 @@ class User(TypedDict):
 -   Fix the final 6 warnings from GoogleClient
     -   Refactor GoogleClient to have helper functions with clear intentions
 -   Clean up some test cases by storing the model in a variable instead of calling the function a million times
+-   Download db button
+    -   Make a modal appear when attempting to download a table to either download the table or download the entire database as a db file

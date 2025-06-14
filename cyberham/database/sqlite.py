@@ -5,6 +5,7 @@ from cyberham.database.backup import write_backup
 
 type PK = tuple[Any, ...]
 
+
 class SQLiteDB:
     conn: sqlite3.Connection
     cursor: sqlite3.Cursor
@@ -74,6 +75,19 @@ class SQLiteDB:
                 year INTEGER NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE,
                 PRIMARY KEY (user_id, semester, year)
+            )"""
+        )
+
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS tokens (
+                token TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                created TEXT NOT NULL,
+                expires_after TEXT NOT NULL,
+                last_accessed TEXT NOT NULL,
+                revoked BOOLEAN NOT NULL,
+                permission INTEGER NOT NULL
             )"""
         )
 

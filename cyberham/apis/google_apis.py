@@ -174,6 +174,7 @@ class _Client(GoogleClientProtocol):
                 elif not "summary" in event:
                     raise TypeError(f"Summary not found for event {id}")
 
+                # FIXME read description and compare it to a list of approved categories
                 event_id = event["id"]
                 start = str(event["start"].get("dateTime", event["start"].get("date")))
                 start = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S%z")

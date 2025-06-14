@@ -33,9 +33,23 @@ def current_year() -> int:
     return datetime.now().year
 
 
-def sort_events_by_date(events: list[Event], reverse: bool = False):
-    def key(event: Event) -> str:
-        month, day, year = event["date"].split("/")
-        return f"{year}/${month}/${day}"
+def comparable_datestr(datestr: str) -> str:
+    month, day, year = datestr.split("/")
+    return f"{year}/${month}/${day}"
 
-    events.sort(key=key, reverse=reverse)
+
+def sort_events_by_date(events: list[Event], reverse: bool = False):
+    events.sort(key=lambda event: comparable_datestr(event["date"]), reverse=reverse)
+
+
+def compare_datestrs(a: str, b: str) -> int:
+    monthA, dayA, yearA = a.split("/")
+    monthB, dayB, yearB = b.split("/")
+
+    if yearA == yearB:
+        if monthA == monthB:
+            if dayA == dayB:
+                return 0
+            return -1 if dayA < dayB else 1
+        return -1 if monthA < monthB else 1
+    return -1 if yearA < yearB else 1
