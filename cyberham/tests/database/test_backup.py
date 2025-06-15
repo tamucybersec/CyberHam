@@ -10,8 +10,17 @@ from cyberham.database.typeddb import (
 from cyberham.database.backup import write_backup, load_latest_backup
 
 
+# these tests are useful when updating the schema:
+# just backup the current data to json
+# drop the current table so it gets remade
+# then reupload it, making any changes to the data when necessary
+
+
 class TestBackup:
     def test_backup_all(self):
+        assert True, "only backup when needed"
+        return
+
         write_backup("users", usersdb.get_all())
         write_backup("events", eventsdb.get_all())
         write_backup("flagged", flaggeddb.get_all())
@@ -35,18 +44,12 @@ class TestRecovery:
         eventsdb.replace(events)
 
         flagged = load_latest_backup("flagged")
-        for flag in flagged:
-            flag["user_id"] = str(flag["user_id"])
         flaggeddb.replace(flagged)
 
         attendance = load_latest_backup("attendance")
-        for att in attendance:
-            att["user_id"] = str(att["user_id"])
         attendancedb.replace(attendance)
 
         points = load_latest_backup("points")
-        for point in points:
-            point["user_id"] = str(point["user_id"])
         pointsdb.replace(points)
 
         tokens = load_latest_backup("tokens")
@@ -56,4 +59,3 @@ class TestRecovery:
         db.conn.commit()
 
         assert False
-

@@ -11,22 +11,14 @@ from typing import (
 
 
 class Error:
-    def __init__(self, message: str | None = None, err: str | None = None):
-        self.msg = message
+    def __init__(self, message: str, err: str | None = None):
+        self.message = message
         self.err = err
-
-    def is_err(self) -> bool:
-        return self.msg is not None
-
-    def message(self) -> str:
-        if self.msg is not None:
-            return self.msg
-        return ""
 
     def json(self) -> dict[str, str]:
         json: dict[str, str] = {}
-        if self.msg:
-            json["details"] = self.msg
+        if self.message:
+            json["details"] = self.message
         if self.err:
             json["error"] = self.err
         return json
@@ -41,6 +33,50 @@ class Permissions(IntEnum):
     COMMITTEE = 2
     ADMIN = 3
     SUPER_ADMIN = 4
+
+
+VALID_CATEGORIES = [
+    "policy",
+    "red hat",
+    "cyber ops",
+    "hardware hacking",
+    "aws",
+    "cisco networking",
+    "palo alto",
+    "ctf (legacy)",
+    "hack the box (legacy)",
+    "tech committee",
+    "pr committee",
+    "competition committee",
+    "informational",
+    "bannering",
+    "competition",
+    "speaker",
+    "social",
+    "panel",
+    "beginner meetings",
+]
+type Category = Literal[
+    "policy",
+    "red hat",
+    "cyber ops",
+    "hardware hacking",
+    "aws",
+    "cisco networking",
+    "palo alto",
+    "ctf (legacy)",
+    "hack the box (legacy)",
+    "tech committee",
+    "pr committee",
+    "competition committee",
+    "informational",
+    "bannering",
+    "competition",
+    "speaker",
+    "social",
+    "panel",
+    "beginner meetings",
+]
 
 
 class EmailPending(TypedDict):
@@ -79,6 +115,7 @@ MaybeUser: TypeAlias = Optional[User]
 class Event(TypedDict):
     name: str
     code: str
+    category: Category
     points: int
     date: str
     semester: Semester

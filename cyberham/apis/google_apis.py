@@ -16,7 +16,13 @@ from googleapiclient.errors import HttpError
 from email.message import EmailMessage
 
 from cyberham import google_token, client_secret
-from cyberham.types import  Error, MaybeError, EmailPending, CalendarEvent
+from cyberham.types import (
+    Error,
+    MaybeError,
+    EmailPending,
+    CalendarEvent,
+    VALID_CATEGORIES,
+)
 
 
 # force the type checker to populate the structure to prevent type errors
@@ -181,8 +187,12 @@ class _Client(GoogleClientProtocol):
                 end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
                 name = event["summary"]
                 location = event["location"] if ("location" in event) else "TBD"
-                category = event["description"] if ("description" in event) else ""
-                # FIXME validate category
+                category = event["description"] if ("description" in event) else "NONE"
+
+                if not (category in VALID_CATEGORIES):
+                    return [], Error(
+                        f"Event '{name}' does not have a valid category ({category}). Valid categories: {VALID_CATEGORIES}. Assign the category using the event description."
+                    )
 
                 result.append(
                     CalendarEvent(
@@ -191,7 +201,7 @@ class _Client(GoogleClientProtocol):
                         start=start,
                         end=end,
                         location=location,
-                        category=category
+                        category=category,
                     )
                 )
 

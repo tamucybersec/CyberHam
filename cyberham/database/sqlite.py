@@ -39,6 +39,7 @@ class SQLiteDB:
             CREATE TABLE IF NOT EXISTS events (
                 code TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
+                category TEXT NOT NULL,
                 points INTEGER NOT NULL,
                 date TEXT NOT NULL,
                 semester TEXT NOT NULL,

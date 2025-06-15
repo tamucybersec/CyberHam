@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, cast
 
 import discord
 from discord import app_commands
 import cyberham.backend.events as backend_events
 from cyberham import guild_id
+from cyberham.types import Category
 from cyberham.bot.bot import Bot
 from cyberham.bot.ui import AttendModal, PageDisplay
 from cyberham.bot.utils import event_info, event_list_embed, handle_attend_response
@@ -22,16 +23,20 @@ def setup_commands(bot: Bot):
         name="The name of the event",
         points="The point value reward for attending",
         date="The date of the event",
+        category=f"The category of the event (used for analysis)",
     )
     async def create(
         interaction: discord.Interaction,
         name: str,
         points: int,
         date: str,
+        category: str,
     ):
-        code, err = backend_events.create_event(name, points, date)
-        if err != "":
-            await interaction.response.send_message(err)
+        code, err = backend_events.create_event(
+            name, points, date, cast(Category, category)
+        )
+        if err is not None:
+            await interaction.response.send_message(err.message)
         else:
             embed = event_info(name, points, date, code, 0)
             await interaction.response.send_message(

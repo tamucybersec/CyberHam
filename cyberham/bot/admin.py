@@ -110,6 +110,7 @@ def setup_commands(bot: Bot):
                         privacy_level=PrivacyLevel.guild_only,
                         entity_type=EntityType.external,
                         location=event["location"],
+                        description=event["category"]
                     )
                     count += 1
 

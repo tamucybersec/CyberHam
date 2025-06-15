@@ -5,7 +5,16 @@ from datetime import datetime
 from cyberham.apis.google_apis import google
 from cyberham.database.queries import user_attendance_counts_for_events
 from cyberham.database.typeddb import usersdb, eventsdb, attendancedb
-from cyberham.types import MaybeError, CalendarEvent, Event, MaybeEvent, Attendance
+from cyberham.types import (
+    Error,
+    MaybeError,
+    CalendarEvent,
+    Event,
+    MaybeEvent,
+    Attendance,
+    Category,
+    VALID_CATEGORIES,
+)
 from cyberham.utils.date import (
     cst_tz,
     current_semester,
@@ -15,9 +24,16 @@ from cyberham.utils.date import (
 )
 
 
-def create_event(name: str, points: int, date: str) -> tuple[str, str]:
+def create_event(
+    name: str, points: int, date: str, category: Category
+) -> tuple[str, MaybeError]:
     if name == "":
-        return "", "Event name cannot be empty."
+        return "", Error("Event name cannot be empty.")
+
+    if not (category in VALID_CATEGORIES):
+        return "", Error(
+            f"Event '{name}' does not have a valid category ({category}). Valid categories: {VALID_CATEGORIES}"
+        )
 
     # code generation
     event_code: str = ""
@@ -34,10 +50,11 @@ def create_event(name: str, points: int, date: str) -> tuple[str, str]:
         date=date,
         semester=current_semester(),
         year=current_year(),
+        category=category,
     )
     eventsdb.create(event)
 
-    return event_code, ""
+    return event_code, None
 
 
 def attend_event(code: str, user_id: str) -> tuple[str, MaybeEvent]:

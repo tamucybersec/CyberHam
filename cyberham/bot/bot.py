@@ -8,8 +8,8 @@ from discord import ScheduledEvent
 
 import cyberham.backend.events as backend_events
 from cyberham import guild_id, discord_token, admin_channel_id
-
 from cyberham.bot.utils import event_info
+from cyberham.types import Category
 
 
 class Bot(discord.Client):
@@ -38,13 +38,14 @@ class Bot(discord.Client):
         # voice channel events do not trigger this
         points = 50
         time = event.start_time.astimezone(timezone("US/Central"))
+        category = event.description or ""
 
         code, err = backend_events.create_event(
-            event.name, points, time.strftime("%m/%d/%Y")
+            event.name, points, time.strftime("%m/%d/%Y"), cast(Category, category)
         )
         channel = cast(discord.TextChannel, self.get_channel(admin_channel_id))
-        if err != "":
-            await channel.send(err)
+        if err is not None:
+            await channel.send(err.message)
         else:
             embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, 0)
             await channel.send(f"The code is `{code}`", embed=embed)
