@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Optional, Any, Sequence
-from cyberham.database.types import Item, TableName
+from cyberham.types import Item, TableName
 from cyberham.database.backup import write_backup
 
 type PK = tuple[Any, ...]

@@ -3,7 +3,7 @@
 
 from collections import defaultdict
 from cyberham.database.typeddb import db
-from cyberham.database.types import Semester
+from cyberham.types import Semester
 from cyberham.utils.date import current_semester, current_year
 
 

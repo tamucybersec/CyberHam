@@ -3,10 +3,9 @@ import string
 
 from datetime import datetime
 from cyberham.apis.google_apis import google
-from cyberham.apis.types import CalendarEvent
 from cyberham.database.queries import user_attendance_counts_for_events
 from cyberham.database.typeddb import usersdb, eventsdb, attendancedb
-from cyberham.database.types import Event, MaybeEvent, Attendance
+from cyberham.types import MaybeError, CalendarEvent, Event, MaybeEvent, Attendance
 from cyberham.utils.date import (
     cst_tz,
     current_semester,
@@ -98,5 +97,5 @@ def event_count() -> int:
     return eventsdb.get_count()
 
 
-def calendar_events() -> list[CalendarEvent] | None:
+def calendar_events() -> tuple[list[CalendarEvent], MaybeError]:
     return google.client.get_events()

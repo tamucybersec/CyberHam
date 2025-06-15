@@ -1,6 +1,6 @@
 from cyberham.database.typeddb import TypedDB, T, PK
 from fastapi import APIRouter, Depends
-from cyberham.database.types import Permissions
+from cyberham.types import Permissions
 from cyberham.apis.auth import require_permission
 from typing import Any, Sequence, cast
 from pydantic import BaseModel

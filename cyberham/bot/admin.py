@@ -76,15 +76,18 @@ def setup_commands(bot: Bot):
             return
         assert interaction.guild is not None
 
-        events = backend_events.calendar_events()
+        events, err = backend_events.calendar_events()
+        if err is not None:
+            await interaction.response.send_message(err.message, ephemeral=True)
+            return
+        if not events:
+            await interaction.response.send_message("No events found", ephemeral=True)
+            return
+
         discord_events: list[dict[str, str | dt | None]] = [
             {"name": event.name, "start": event.start_time, "end": event.end_time}
             for event in interaction.guild.scheduled_events
         ]
-
-        if events is None:
-            await interaction.response.send_message("No events found", ephemeral=True)
-            return
 
         msg = f"Imported {len(events)} events from calendar."
         await interaction.response.send_message(msg)

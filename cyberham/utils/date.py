@@ -1,6 +1,6 @@
 from datetime import datetime
 from pytz import timezone
-from cyberham.database.types import Event, Semester
+from cyberham.types import Event, Semester
 
 
 # central timezone

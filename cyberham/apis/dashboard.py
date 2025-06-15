@@ -1,7 +1,7 @@
 from typing import cast
 from cyberham import dashboard_credentials
 from cyberham.apis.auth import token_status
-from cyberham.database.types import Permissions
+from cyberham.types import Permissions
 from cyberham.database.typeddb import (
     usersdb,
     eventsdb,

@@ -3,9 +3,9 @@ import random
 from datetime import datetime
 
 from cyberham.apis.google_apis import google
-from cyberham.apis.types import EmailPending
 from cyberham.database.typeddb import usersdb, flaggeddb
-from cyberham.database.types import (
+from cyberham.types import (
+    EmailPending,
     User,
     MaybeUser,
     Flagged,

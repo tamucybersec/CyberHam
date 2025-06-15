@@ -1,5 +1,5 @@
 import pytest
-from cyberham.database.types import MaybeUser
+from cyberham.types import MaybeUser
 from cyberham.tests.models import (
     valid_user,
     valid_user_2,

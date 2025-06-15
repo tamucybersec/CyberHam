@@ -1,7 +1,7 @@
 from typing import Literal
 
 from cyberham.database.typeddb import usersdb, eventsdb, pointsdb
-from cyberham.database.types import User, MaybeUser, Points, MaybePoints
+from cyberham.types import User, MaybeUser, Points, MaybePoints
 from cyberham.database.queries import (
     attendance_for_all_users,
     points_for_all_users,

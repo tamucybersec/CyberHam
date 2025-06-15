@@ -1,8 +1,7 @@
 from copy import deepcopy
 from typing import Any
 from datetime import datetime, timedelta
-from cyberham.database.types import User, Event, Flagged, Attendance, Points
-from cyberham.apis.types import EmailPending
+from cyberham.types import EmailPending, User, Event, Flagged, Attendance, Points
 from cyberham.utils.date import (
     current_semester,
     current_year,

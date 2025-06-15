@@ -1,5 +1,5 @@
 from cyberham.database.sqlite import SQLiteDB
-from cyberham.database.types import (
+from cyberham.types import (
     TableName,
     User,
     Event,

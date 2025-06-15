@@ -4,7 +4,6 @@ import base64
 
 from typing import TYPE_CHECKING, Protocol, runtime_checkable, Any
 
-from cyberham.apis.types import EmailPending, CalendarEvent
 from datetime import datetime, timedelta, time
 from pytz import timezone
 
@@ -17,6 +16,7 @@ from googleapiclient.errors import HttpError
 from email.message import EmailMessage
 
 from cyberham import google_token, client_secret
+from cyberham.types import  Error, MaybeError, EmailPending, CalendarEvent
 
 
 # force the type checker to populate the structure to prevent type errors
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 @runtime_checkable
 class GoogleClientProtocol(Protocol):
     def send_email(self, address: str, code: str, org: str) -> Any | None: ...
-    def get_events(self) -> list[CalendarEvent] | None: ...
+    def get_events(self) -> tuple[list[CalendarEvent], MaybeError]: ...
     def has_pending_email(self, user_id: str) -> bool: ...
     def get_pending_email(self, user_id: str) -> EmailPending: ...
     def set_pending_email(self, user_id: str, verification: EmailPending) -> None: ...
@@ -124,8 +124,8 @@ class _Client(GoogleClientProtocol):
 
         return send_message
 
-    def get_events(self):
-        result: list[CalendarEvent] | None = None
+    def get_events(self) -> tuple[list[CalendarEvent], MaybeError]:
+        result: list[CalendarEvent] = []
 
         try:
             service = build("calendar", "v3", credentials=self.creds)
@@ -159,12 +159,12 @@ class _Client(GoogleClientProtocol):
             events = events_result.get("items", [])
 
             if not events:
-                logger.info("No upcoming events found.")
-                return
+                return [], None
 
             # Moves result of the start, end, and name of the events in the next week
             result = []
             for event in events:
+                print(event)
                 if not "id" in event:
                     raise TypeError("ID not found for event")
                 elif not "start" in event:
@@ -174,33 +174,33 @@ class _Client(GoogleClientProtocol):
                 elif not "summary" in event:
                     raise TypeError(f"Summary not found for event {id}")
 
-                # FIXME read description and compare it to a list of approved categories
                 event_id = event["id"]
                 start = str(event["start"].get("dateTime", event["start"].get("date")))
                 start = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S%z")
                 end = str(event["end"].get("dateTime", event["end"].get("date")))
                 end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
-                summary = event["summary"]
+                name = event["summary"]
                 location = event["location"] if ("location" in event) else "TBD"
+                category = event["description"] if ("description" in event) else ""
+                # FIXME validate category
 
                 result.append(
                     CalendarEvent(
                         id=event_id,
-                        name=summary,
+                        name=name,
                         start=start,
                         end=end,
                         location=location,
+                        category=category
                     )
                 )
 
         except HttpError as error:
-            logger.error(f"An error occurred: {error}")
-            result = None
+            return [], Error(str(error))
         except TypeError as error:
-            logger.error(f"An error occurred: {error}")
-            result = None
+            return [], Error(str(error))
 
-        return result
+        return result, None
 
     def has_pending_email(self, user_id: str):
         return user_id in self.pending_emails

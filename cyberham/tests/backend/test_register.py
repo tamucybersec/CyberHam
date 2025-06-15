@@ -1,6 +1,6 @@
 from backend_patcher import BackendPatcher
 from cyberham.backend.register import register
-from cyberham.database.types import User
+from cyberham.types import User
 from cyberham.tests.models import (
     users,
     valid_user,

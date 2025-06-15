@@ -3,7 +3,7 @@ import re
 import json
 from typing import Sequence
 from datetime import datetime
-from cyberham.database.types import TableName, Item
+from cyberham.types import TableName, Item
 
 path = "backups"
 timestamp_re = re.compile(r"^(?P<table>\w+)_(?P<ts>\d{8}_\d{6})\.json$")

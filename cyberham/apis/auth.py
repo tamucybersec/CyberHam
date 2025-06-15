@@ -1,8 +1,7 @@
 from datetime import datetime
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from cyberham.database.types import Permissions
-from cyberham.database.types import MaybeTokens
+from cyberham.types import Permissions, MaybeTokens
 from cyberham.database.typeddb import tokensdb
 from cyberham.utils.date import datetime_to_datestr, compare_datestrs
 

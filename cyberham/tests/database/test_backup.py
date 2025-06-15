@@ -56,3 +56,4 @@ class TestRecovery:
         db.conn.commit()
 
         assert False
+

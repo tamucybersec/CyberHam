@@ -1,7 +1,6 @@
 from backend_patcher import BackendPatcher
-from cyberham.apis.types import EmailPending
 from cyberham.backend.register import register_email
-from cyberham.database.types import User
+from cyberham.types import EmailPending, User
 from cyberham.tests.models import (
     users,
     valid_user,

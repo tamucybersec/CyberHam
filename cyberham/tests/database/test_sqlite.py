@@ -1,6 +1,6 @@
 import pytest
 from cyberham.database.sqlite import SQLiteDB
-from cyberham.database.types import TableName
+from cyberham.types import TableName
 from cyberham.tests.models import (
     valid_user_item,
     valid_user_2_item,

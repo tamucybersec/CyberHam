@@ -11,8 +11,7 @@ from cyberham.database.typeddb import (
     attendancedb,
     pointsdb,
 )
-from cyberham.database.types import User, Event, Flagged, Attendance, Points, TableName
-from cyberham.apis.types import EmailPending
+from cyberham.types import EmailPending, User, Event, Flagged, Attendance, Points, TableName
 
 
 class BackendPatcher:
