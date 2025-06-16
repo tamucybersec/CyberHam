@@ -19,6 +19,24 @@ def write_backup(table: TableName, data: Item | Sequence[Item]):
         file.write(json.dumps(data))
 
 
+def write_full_backup():
+    # prevent circular import
+    from cyberham.database.sqlite import SQLiteDB
+
+    tables: list[TableName] = [
+        "users",
+        "events",
+        "flagged",
+        "attendance",
+        "points",
+        "tokens",
+    ]
+
+    db = SQLiteDB("cyberham.db")
+    for table in tables:
+        write_backup(table, db.get_all_rows(table))
+
+
 def load_latest_backup(table: TableName) -> list[Item]:
     """
     Load latest backup file matching table_YYYYMMDD_HHMMSS.json in `path`.

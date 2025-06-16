@@ -1,9 +1,11 @@
 # TODO
 
--   Updating dashboard
+-   Security
 
-    -   Make sure dashboard is only calculating from current semester
-    -   automatic backups
+    -   Make a quick modal input for the token instead of url bar
+    -   Store a secure cookie using fastapi (1 hour)
+    -   Read the cookie to see if we can bypass login
+    -   Logout button on sidebar to delete cookie and redirect to login
 
 -   Actually run it on the server
 
@@ -13,6 +15,10 @@
 
     -   Important for onboarding
 
+-   Option to set the data range for dashboard
+
+-   Edit line chart to have tooltip with event.name
+
 -   Change to have better data
 
     -   Move register to redirect you to the website (easier to create forms for)
@@ -21,8 +27,11 @@
 -   Add individual user profile viewer so you can see all points, attendance, and other stats all in one spot
 
     -   In tables, for the cell on user_id, make it so that hovering on it shows their name like a little card and some quick info about them, and clicking the user_id brings you to the profile page
+    -   individual attendance per category stats
 
 -   Add individual event analysis (same line as individual profile page, just so it's easy to see stats for a specific event)
+
+-   Automatically distribute tokens to officers by dming people
 
 ```python
 class User(TypedDict):
@@ -35,6 +44,7 @@ class User(TypedDict):
     email: str
 +   join_date: str
 +   active_date: str
++   notes: str
 ```
 
 # Future Projects
@@ -71,3 +81,4 @@ class User(TypedDict):
     -   With the addition of the dashboard, some commands have become obsolete (create event)
     -   We don't want to maintain the same logic in multiple places (especially in discord where it's much harder to create forms) so we should reduce the number of places that have duplicate functionality when possible
     -   Ideally, the dashboard is the go-to place for management and the discord bot is only used by users or for discord-specific commands (list importing events)
+-   More secure token storage

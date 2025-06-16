@@ -152,7 +152,7 @@ def valid_event() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="aws"
+            category="AWS Academy"
         )
     )
 
@@ -166,7 +166,7 @@ def valid_event_2() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="hardware hacking"
+            category="Hardware Hacking"
         )
     )
 
@@ -180,7 +180,7 @@ def past_event() -> Event:
             date=yesterday,
             semester=current_semester(),
             year=current_year(),
-            category="red hat"
+            category="Red Hat Academy"
         )
     )
 
@@ -194,7 +194,7 @@ def future_event() -> Event:
             date=tomorrow,
             semester=current_semester(),
             year=current_year(),
-            category="palo alto"
+            category="Palo Alto Academy"
         )
     )
 
@@ -208,7 +208,7 @@ def attended_event() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="cisco networking"
+            category="Cisco Networking Academy"
         )
     )
 
@@ -222,7 +222,7 @@ def attended_event_2() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="cisco networking"
+            category="Cisco Networking Academy"
         )
     )
 
@@ -236,7 +236,7 @@ def attended_past_event() -> Event:
             date=last_year,
             semester=current_semester(),
             year=current_year() - 1,
-            category="policy"
+            category="Cyber Policy"
         )
     )
 
@@ -250,7 +250,7 @@ def unregistered_event() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="cyber ops"
+            category="Hack the Box (legacy)"
         )
     )
 

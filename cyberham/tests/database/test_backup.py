@@ -9,7 +9,6 @@ from cyberham.database.typeddb import (
 )
 from cyberham.database.backup import write_backup, load_latest_backup
 
-
 # these tests are useful when updating the schema:
 # just backup the current data to json
 # drop the current table so it gets remade

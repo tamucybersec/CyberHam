@@ -74,8 +74,9 @@ setup_discord_logging()
 setup_module_logging(__name__)
 
 # load various configs for export
+environment = config["environment"]
+cross_origin = config["cross_origin"]
+dashboard_config = config["dashboard"]
 discord_token: Any = config["discord"]["token"]
-encryption_keys: Any = config["encryption"]
-dashboard_credentials: Any = config["dashboard"]
 guild_id = [Guild(id=x) for x in config["discord"]["test_guild_ids"]]
 admin_channel_id: Any = config["discord"]["admin_channel_id"]

@@ -1,5 +1,5 @@
 from typing import cast
-from cyberham import dashboard_credentials
+from cyberham import cross_origin, dashboard_config
 from cyberham.apis.auth import token_status
 from cyberham.types import Permissions
 from cyberham.database.typeddb import (
@@ -22,7 +22,7 @@ app = FastAPI(root_path="/api")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4321"],  # astro default port
+    allow_origins=[cross_origin],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
     allow_credentials=True,
@@ -104,6 +104,6 @@ for router in routers:
 def run_api():
     uvicorn.run(
         app,
-        host=cast(str, dashboard_credentials["host"]),
-        port=int(dashboard_credentials["port"]),
+        host=cast(str, dashboard_config["host"]),
+        port=int(dashboard_config["port"]),
     )
