@@ -91,7 +91,7 @@ def generate_registration_url(user_id: str) -> str:
         time=datetime.now().isoformat(),
     )
     insert_registration(registration)
-    return f"{website_url}/register?ticket={ticket}"
+    return f"{website_url}/register/?ticket={ticket}"
 
 
 # NOTE register can also update a user's information
