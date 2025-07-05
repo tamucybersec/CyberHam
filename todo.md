@@ -1,15 +1,16 @@
 # TODO
 
--   Security
+-   Make login page vertical
 
-    -   Make a quick modal input for the token instead of url bar
-    -   Store a secure cookie using fastapi (1 hour)
-    -   Read the cookie to see if we can bypass login
-    -   Logout button on sidebar to delete cookie and redirect to login
+- Touchups to dashboard data
+    -   Change total members should be verified members
+    -   change total members to be people who are "active" (at least 1 meeting this semester besides the informational)
+    -   "how many people have attended an event in the last year"
+    -   total members in top vs total members by grad year distinction not clear
+    -   info tooltips explaining how numbers are calculated
+    -   active date calculation: get all events from database in the "active range" (2 semesters including current), exclude informationals and bannering, then check if their eventsByUserId has any results (if so, they're active!)
 
--   Actually run it on the server
-
-    -   Need to generate certificates for https
+-   Upload join date list from discord
 
 -   Document full setup process from scratch
 
@@ -17,35 +18,11 @@
 
 -   Option to set the data range for dashboard
 
+-   subtract attendance points from points table for spring 25
+
 -   Edit line chart to have tooltip with event.name
 
--   Change to have better data
-
-    -   Move register to redirect you to the website (easier to create forms for)
-    -   Huge revamp to Dashboard once all the new fields are added
-
--   Add individual user profile viewer so you can see all points, attendance, and other stats all in one spot
-
-    -   In tables, for the cell on user_id, make it so that hovering on it shows their name like a little card and some quick info about them, and clicking the user_id brings you to the profile page
-    -   individual attendance per category stats
-
--   Add individual event analysis (same line as individual profile page, just so it's easy to see stats for a specific event)
-
--   Automatically distribute tokens to officers by dming people
-
-```python
-class User(TypedDict):
-    user_id: str
-    name: str
--   points: int
--   attended: int
-+   grad_semester: Literal["spring", "summer", "fall", "winter"]
-    grad_year: int
-    email: str
-+   join_date: str
-+   active_date: str
-+   notes: str
-```
+-   Make it obvious that register also updates your information
 
 # Future Projects
 
@@ -82,3 +59,33 @@ class User(TypedDict):
     -   We don't want to maintain the same logic in multiple places (especially in discord where it's much harder to create forms) so we should reduce the number of places that have duplicate functionality when possible
     -   Ideally, the dashboard is the go-to place for management and the discord bot is only used by users or for discord-specific commands (list importing events)
 -   More secure token storage
+-   Make dates more precise like exact times so we can triangulate when and why a person registered, etc. (red hat academy, informational?)
+-   Security
+    -   Make a quick modal input for the token instead of url bar
+    -   Store a secure cookie using fastapi (1 hour)
+    -   Read the cookie to see if we can bypass login
+    -   Logout button on sidebar to delete cookie and redirect to login
+-   Automatically distribute tokens to officers by dming people
+-   Integrate [TAMU SSO](https://it.tamu.edu/services/accounts-and-id-management/authentication-authorization/netid-integration/)
+-   Move the registration validation to a better location, it was chosen in haste
+-   Make it so that officers can upload photos to some place (folder? google drive? dashboard?) and then they show up on the website home page
+-   Integrate old data for [Fall 2023](https://drive.google.com/drive/u/1/folders/1OcKWpQhGeNXsxUbvmfBrgTJcGy5fYCvH) and [Spring 2024](https://drive.google.com/drive/u/1/folders/1J-eDLJycZk1csvFQt2TjY9m5mAFsEN1-)
+-   RSVP table for events:
+    -   code, user_id, response (yes, no, maybe)
+-   Schema super admin page
+    -   Outlines current database schema and marks whether they have an interface on the frontend or not
+    -   Maybe also explanation of what the tables do
+    -   Has a download db button
+-   Joins over time by year or month graph
+-   Resume verification page
+    -   Shows log of resumes that have been uploaded, sorted by time
+    -   Have a button to view, approved, and reject (reject will delete the file)
+    -   See which resumes have already been approved
+    -   If we really don't want make a separate table for resumes and since we use the modified metadata for upload date, we can set a flag or something like \* in the front of the resume_format in the users table to denote approved
+-   Add individual user profile viewer so you can see all points, attendance, and other stats all in one spot
+    -   In tables, for the cell on user_id, make it so that hovering on it shows their name like a little card and some quick info about them, and clicking the user_id brings you to the profile page
+    -   individual attendance per category stats
+    -   easily add notes here
+        -   on conflict "this has been updated, please refresh"
+    -   view resume with click
+-   Add individual event analysis (same line as individual profile page, just so it's easy to see stats for a specific event)

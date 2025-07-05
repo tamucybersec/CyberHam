@@ -28,9 +28,14 @@ class SQLiteDB:
             CREATE TABLE IF NOT EXISTS users (
                 user_id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
+                grad_semester TEXT NOT NULL,
                 grad_year INTEGER NOT NULL,
+                major TEXT NOT NULL,
                 email TEXT NOT NULL,
-                verified INTEGER NOT NULL CHECK(verified IN (0, 1))
+                verified INTEGER NOT NULL CHECK(verified IN (0, 1)),
+                join_date TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                resume_format TEXT NOT NULL
             )"""
         )
 
@@ -89,6 +94,23 @@ class SQLiteDB:
                 last_accessed TEXT NOT NULL,
                 revoked INTEGER NOT NULL CHECK(revoked IN (0, 1)),
                 permission INTEGER NOT NULL
+            )"""
+        )
+
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS register (
+                ticket TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                time TEXT NOT NULL
+            )"""
+        )
+
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS verify (
+                user_id TEXT PRIMARY KEY,
+                code INTEGER
             )"""
         )
 

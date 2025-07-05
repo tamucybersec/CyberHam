@@ -1,16 +1,8 @@
 from cyberham.apis.google_apis import GoogleClientProtocol
-from cyberham.types import EmailPending, CalendarEvent, MaybeError
-from copy import deepcopy
+from cyberham.types import CalendarEvent, MaybeError
 
 
 class MockGoogleClient(GoogleClientProtocol):
-    pending_emails: dict[str, EmailPending] = {}
-
-    def __init__(self, initial_pending: list[EmailPending]):
-        self.pending_emails.clear()
-        for pending in initial_pending:
-            self.pending_emails[pending["user_id"]] = deepcopy(pending)
-
     def send_email(self, address: str, code: str, org: str):
         # unnecessary for mock implementation
         pass
@@ -18,15 +10,3 @@ class MockGoogleClient(GoogleClientProtocol):
     def get_events(self) -> tuple[list[CalendarEvent], MaybeError]:
         # implement when testing discord bot commands
         return [], None
-
-    def has_pending_email(self, user_id: str):
-        return user_id in self.pending_emails
-
-    def get_pending_email(self, user_id: str):
-        return deepcopy(self.pending_emails[user_id])
-
-    def set_pending_email(self, user_id: str, verification: EmailPending):
-        self.pending_emails[user_id] = deepcopy(verification)
-
-    def remove_pending_email(self, user_id: str):
-        del self.pending_emails[user_id]

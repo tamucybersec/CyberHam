@@ -75,7 +75,7 @@ setup_module_logging(__name__)
 
 # load various configs for export
 environment = config["environment"]
-cross_origin = config["cross_origin"]
+website_url = config["website_url"]
 dashboard_config = config["dashboard"]
 discord_token: Any = config["discord"]["token"]
 guild_id = [Guild(id=x) for x in config["discord"]["test_guild_ids"]]

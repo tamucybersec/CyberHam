@@ -1,20 +1,101 @@
 import random
-
+from uuid import uuid4
 from datetime import datetime
 
+from cyberham import website_url
 from cyberham.apis.google_apis import google
-from cyberham.database.typeddb import usersdb, flaggeddb
+from cyberham.database.typeddb import usersdb, flaggeddb, registerdb, verifydb
+from cyberham.database.queries import insert_registration
 from cyberham.types import (
-    EmailPending,
     User,
     MaybeUser,
     Flagged,
     MaybeFlagged,
+    Error,
+    MaybeError,
+    Register,
+    Verify,
 )
+from cyberham.utils.date import (
+    current_semester,
+    datetime_to_datestr,
+    valid_registration_time,
+)
+from fastapi import UploadFile
+import os
+import aiofiles
+
+
+async def upload_resume(user_id: str, resume: UploadFile) -> tuple[str, bool]:
+    try:
+        os.makedirs("resumes", exist_ok=True)
+
+        filename = resume.filename
+        if filename is None:
+            return "", False
+        format = os.path.splitext(filename)[-1].lstrip(".").lower()
+        if not format:
+            return "", False
+
+        # Write the file to disk at resumes/{user_id}
+        path = os.path.join("resumes", user_id)
+        async with aiofiles.open(path, "wb") as out_file:
+            content = await resume.read()
+            await out_file.write(content)
+
+        return format, True
+
+    except Exception as e:
+        print(f"Upload failed for user {user_id}: {e}")
+        return "", False
+
+
+def register(ticket: str, user: User) -> tuple[str, MaybeError]:
+    registration = registerdb.get((ticket,))
+    if registration is None:
+        return "", Error(
+            "You have no registration pending. Use /register to get a link first."
+        )
+    if registration["user_id"] != user["user_id"]:
+        return "", Error(
+            "Your registration link is invalid. Get a new link with /register."
+        )
+    if not valid_registration_time(registration["time"]):
+        return "", Error(
+            "Your registration has expired. Get a new link with /register."
+        )
+
+    def update_user(u: MaybeUser) -> MaybeUser:
+        if u is None:
+            return user
+
+        # shouldn't change on register
+        user["notes"] = u["notes"]
+        if not u["join_date"]:
+            user["join_date"] = datetime_to_datestr(datetime.now())
+
+        verified = u["email"] == user["email"] and user["verified"]
+        user["verified"] = 1 if verified else 0
+        return user
+
+    usersdb.update(update_user, pk_values=(user["user_id"],))
+    registerdb.delete((registration["ticket"],))
+    return register_email(user["user_id"], user["email"])
+
+
+def generate_registration_url(user_id: str) -> str:
+    ticket = uuid4()
+    registration = Register(
+        user_id=user_id,
+        ticket=str(ticket),
+        time=datetime.now().isoformat(),
+    )
+    insert_registration(registration)
+    return f"{website_url}/register?ticket={ticket}"
 
 
 # NOTE register can also update a user's information
-def register(
+def legacy_register(
     name: str,
     grad_year_str: str,
     email: str,
@@ -28,7 +109,7 @@ def register(
     except ValueError:
         return f"Please set your graduation year in the format YYYY (e.g. {year})."
 
-    if not year - 100 < grad_year < year + 8:
+    if not year - 100 <= grad_year <= year + 8:
         return f"Please set your graduation year in the format YYYY (e.g. {year})."
 
     # validate email
@@ -41,17 +122,23 @@ def register(
     ):
         return "Please use a proper TAMU email address."
 
-    ask_to_verify: str = register_email(user_id, email)
+    email_message, err = register_email(user_id, email)
 
+    # FIXME if not deprecated
     # update user information
     def update(user: MaybeUser) -> MaybeUser:
         if user is None:
             return User(
                 user_id=user_id,
                 name=name,
+                grad_semester=current_semester(),
                 grad_year=grad_year,
+                major="",
                 email=email,
                 verified=True,
+                join_date=datetime_to_datestr(datetime.now()),
+                notes="",
+                resume_format="",
             )
         else:
             user["name"] = name
@@ -63,17 +150,17 @@ def register(
 
     usersdb.update(update, pk_values=(user_id,))
 
-    return f"You have successfully updated your profile! {ask_to_verify}"
+    return f"You have successfully updated your profile! {email_message or (err and err.message)}"
 
 
 # NOTE update's a user's email if it differs from their original email
-def register_email(user_id: str, email: str) -> str:
+def register_email(user_id: str, email: str) -> tuple[str, MaybeError]:
     user = usersdb.get((user_id,))
-    if user is not None and user["email"] == email:
-        return ""
+    if user is not None and user["email"] == email and user["verified"]:
+        return "", None
 
     # check offenses
-    if google.client.has_pending_email(user_id):
+    if verifydb.get((user_id,)) is not None:
 
         def update_flagged(flagged: MaybeFlagged) -> MaybeFlagged:
             if flagged is None:
@@ -85,16 +172,16 @@ def register_email(user_id: str, email: str) -> str:
         flagged = flaggeddb.update(update_flagged, pk_values=(user_id,))
 
         if flagged is not None and flagged["offenses"] >= 3:
-            return "Too many failed attempts to email verification, please contact an officer."
+            return "", Error(
+                "Too many failed attempts for/without email verification, please contact an officer."
+            )
 
     # send email
-    verification = EmailPending(
+    verification = Verify(
         user_id=user_id,
-        email=email,
         code=random.randint(1000, 10000),
-        time=datetime.now(),
     )
-    google.client.set_pending_email(user_id, verification)
+    verifydb.update(lambda _: verification, pk_values=(user_id,))
 
     google.client.send_email(
         email,
@@ -102,31 +189,33 @@ def register_email(user_id: str, email: str) -> str:
         "Texas A&M Cybersecurity Club",
     )
 
-    return "Please use /verify with the code you received in your email. Be sure the check your spam folder as well."
+    return (
+        "Please use /verify with the code you received in your email. Be sure the check your spam folder as well. Subject: CyberHam Verification Code",
+        None,
+    )
 
 
 def verify_email(code: int, user_id: str) -> str:
     user = usersdb.get((user_id,))
     if user is None:
         return "Please use /register first."
-    elif not google.client.has_pending_email(user_id):
+    verification = verifydb.get((user_id,))
+    if not verification:
         return "Please use /register to set your email first."
 
-    pending = google.client.get_pending_email(user_id)
-    if pending["code"] != code:
+    if verification["code"] != code:
         return "This code is not correct!"
 
     def update_user(user: MaybeUser) -> MaybeUser:
         if user is not None:
-            user["email"] = pending["email"]  # in case the email is being updated
             user["verified"] = True
         return user
 
     usersdb.update(update_user, original=user)
-
-    google.client.remove_pending_email(user_id)
+    flaggeddb.delete((verification["user_id"],))
+    verifydb.delete((verification["user_id"],))
     return "Email verified! It is now visible using /profile."
 
 
 def remove_pending(user_id: str) -> None:
-    google.client.remove_pending_email(user_id)
+    verifydb.delete((user_id,))

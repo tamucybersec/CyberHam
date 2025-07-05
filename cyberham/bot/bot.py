@@ -30,9 +30,9 @@ class Bot(discord.Client):
         await self.wait_until_ready()
         for g in guild_id:
             await self.command_tree.sync(guild=g)
-            self.logger.info("synced server ", g.id)
+            print("synced server", g.id)
         self.synced = True
-        self.logger.info("bot online")
+        print("bot online")
 
     async def on_scheduled_event_create(self, event: ScheduledEvent):
         # voice channel events do not trigger this

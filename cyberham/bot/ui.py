@@ -71,7 +71,7 @@ class RegisterModal(ui.Modal, title="Register"):
         grad_year = self.grad_year.value
         email = self.email.value
         try:
-            msg: str = backend_register.register(
+            msg: str = backend_register.legacy_register(
                 name,
                 grad_year,
                 email,

@@ -17,3 +17,5 @@ notes/
 backups/
 .coverage
 htmlcov/
+majors.*
+resumes/

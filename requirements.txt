@@ -8,3 +8,7 @@ pytest~=8.3.3
 uvicorn~=0.34.0
 fastapi~=0.115.11
 cryptography~=44.0.2
+beautifulsoup4~=4.13.4
+lxml~=5.4.0
+aiofiles~=24.1.0
+python-multipart~=0.0.20

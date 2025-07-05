@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 from cyberham.types import Event, Semester
 
@@ -53,3 +53,8 @@ def compare_datestrs(a: str, b: str) -> int:
             return -1 if dayA < dayB else 1
         return -1 if monthA < monthB else 1
     return -1 if yearA < yearB else 1
+
+def valid_registration_time(time: str) -> bool:
+    now = datetime.now()
+    expiry = datetime.fromisoformat(time) + timedelta(hours=1)
+    return now <= expiry

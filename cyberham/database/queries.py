@@ -2,8 +2,8 @@
 # this way if the schema changes, we know where to look for fixes
 
 from collections import defaultdict
-from cyberham.database.typeddb import db
-from cyberham.types import Semester
+from cyberham.database.typeddb import db, registerdb
+from cyberham.types import Semester, Register
 from cyberham.utils.date import current_semester, current_year
 
 
@@ -133,3 +133,17 @@ def user_attendance_counts_for_events(codes: list[str]) -> dict[str, int]:
 
     rows = db.cursor.fetchall()
     return {row["user_id"]: row["count"] for row in rows}
+
+
+# deletes any outstanding registration attempts from the user
+# before inserting the new entry
+def insert_registration(registration: Register):
+    db.conn.execute(
+        """
+        DELETE FROM register
+        WHERE user_id = ?
+        """,
+        (registration["user_id"],),
+    )
+    db.conn.commit()
+    registerdb.create(registration)

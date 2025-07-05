@@ -1,13 +1,7 @@
+from copy import deepcopy
 from enum import IntEnum
 from datetime import datetime
-from typing import (
-    Any,
-    Literal,
-    Optional,
-    TypeAlias,
-    Mapping,
-    TypedDict,
-)
+from typing import Any, Literal, Optional, TypeAlias, Mapping, TypedDict, cast
 
 
 class Error:
@@ -79,13 +73,6 @@ type Category = Literal[
 ]
 
 
-class EmailPending(TypedDict):
-    user_id: str
-    email: str
-    code: int
-    time: datetime
-
-
 class CalendarEvent(TypedDict):
     id: str
     name: str
@@ -96,7 +83,10 @@ class CalendarEvent(TypedDict):
 
 
 type Semester = Literal["spring", "fall"]
-type TableName = Literal["users", "events", "flagged", "attendance", "points", "tokens"]
+type GradSemester = Literal["spring", "summer", "fall", "winter"]
+type TableName = Literal[
+    "users", "events", "flagged", "attendance", "points", "tokens", "register", "verify"
+]
 
 Item: TypeAlias = Mapping[str, Any]
 
@@ -104,9 +94,14 @@ Item: TypeAlias = Mapping[str, Any]
 class User(TypedDict):
     user_id: str
     name: str
+    grad_semester: GradSemester
     grad_year: int
+    major: str
     email: str
-    verified: bool
+    verified: int  # bool
+    join_date: str
+    notes: str
+    resume_format: str
 
 
 MaybeUser: TypeAlias = Optional[User]
@@ -157,8 +152,36 @@ class Tokens(TypedDict):
     created: str
     expires_after: str
     last_accessed: str
-    revoked: bool
+    revoked: int  # bool
     permission: Permissions
 
 
 MaybeTokens: TypeAlias = Optional[Tokens]
+
+
+class Register(TypedDict):
+    user_id: str
+    ticket: str  # uuid
+    time: str  # datetime.isoformat
+
+
+class Verify(TypedDict):
+    user_id: str
+    code: int
+
+
+def default_user(user_id: str):
+    return deepcopy(
+        User(
+            user_id=user_id,
+            name="",
+            grad_semester=cast(GradSemester, ""),
+            grad_year=cast(int, ""),
+            major="",
+            email="",
+            verified=0,
+            join_date="",
+            notes="",
+            resume_format="",
+        )
+    )

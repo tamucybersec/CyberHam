@@ -19,7 +19,6 @@ from cyberham import google_token, client_secret
 from cyberham.types import (
     Error,
     MaybeError,
-    EmailPending,
     CalendarEvent,
     VALID_CATEGORIES,
 )
@@ -45,15 +44,9 @@ logger = logging.getLogger(__name__)
 class GoogleClientProtocol(Protocol):
     def send_email(self, address: str, code: str, org: str) -> Any | None: ...
     def get_events(self) -> tuple[list[CalendarEvent], MaybeError]: ...
-    def has_pending_email(self, user_id: str) -> bool: ...
-    def get_pending_email(self, user_id: str) -> EmailPending: ...
-    def set_pending_email(self, user_id: str, verification: EmailPending) -> None: ...
-    def remove_pending_email(self, user_id: str) -> None: ...
 
 
 class _Client(GoogleClientProtocol):
-    # dict[user_id, EmailPending]
-    pending_emails: dict[str, EmailPending] = {}
     creds: Credentials | ExCredentials | None = None
 
     def __init__(self):
@@ -100,7 +93,7 @@ class _Client(GoogleClientProtocol):
 
             message["To"] = address
             message["From"] = "CyberHam<tamucybersec@gmail.com>"
-            message["Subject"] = "CyberHam verification code"
+            message["Subject"] = "CyberHam Verification Code"
 
             # encoded message
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
@@ -118,14 +111,14 @@ class _Client(GoogleClientProtocol):
             )
 
             if "id" in send_message:
-                logger.info(f'Message Id: {send_message["id"]}')
-                logger.info(f"[{code}] -> {address}")
+                print(f'Message Id: {send_message["id"]}')
+                print(f"[{code}] -> {address}")
             else:
-                logger.info(f"Error: sent message missing id")
-                logger.info(f"[{code}] -> {address}")
+                print(f"Error: sent message missing id")
+                print(f"[{code}] -> {address}")
 
         except HttpError as error:
-            logger.error(f"An error occurred: {error}")
+            print(f"An error occurred in GoogleClient/send_email: {error}")
             return None
 
         return send_message
@@ -211,18 +204,6 @@ class _Client(GoogleClientProtocol):
             return [], Error(str(error))
 
         return result, None
-
-    def has_pending_email(self, user_id: str):
-        return user_id in self.pending_emails
-
-    def get_pending_email(self, user_id: str):
-        return self.pending_emails[user_id]
-
-    def set_pending_email(self, user_id: str, verification: EmailPending):
-        self.pending_emails[user_id] = verification
-
-    def remove_pending_email(self, user_id: str):
-        del self.pending_emails[user_id]
 
 
 # wrapper Google class to make testing easy

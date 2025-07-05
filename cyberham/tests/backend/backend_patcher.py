@@ -10,8 +10,9 @@ from cyberham.database.typeddb import (
     flaggeddb,
     attendancedb,
     pointsdb,
+    verifydb,
 )
-from cyberham.types import EmailPending, User, Event, Flagged, Attendance, Points, TableName
+from cyberham.types import User, Event, Flagged, Attendance, Points, Verify, TableName
 
 
 class BackendPatcher:
@@ -20,7 +21,7 @@ class BackendPatcher:
     initial_flagged: list[Flagged] = []
     initial_attendance: list[Attendance] = []
     initial_points: list[Points] = []
-    initial_pending: list[EmailPending] = []
+    initial_verify: list[Verify] = []
 
     google_client: MockGoogleClient
 
@@ -37,8 +38,9 @@ class BackendPatcher:
         self.set_initial(flaggeddb, self.initial_flagged)
         self.set_initial(attendancedb, self.initial_attendance)
         self.set_initial(pointsdb, self.initial_points)
+        self.set_initial(verifydb, self.initial_verify)
 
-        self.google_client = MockGoogleClient(self.initial_pending)
+        self.google_client = MockGoogleClient()
         google.client = self.google_client
 
     def set_initial(self, typeddb: TypedDB[T, PK], initial: list[T]):

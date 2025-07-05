@@ -8,18 +8,17 @@ from cyberham.tests.models import (
     flagged_user,
     unregistered_user,
     flagged_users,
-    extended_pending_users,
+    extended_pending_verifies,
     VERIFICATION_CODE,
-    NEW_EMAIL,
 )
-from cyberham.database.typeddb import usersdb
+from cyberham.database.typeddb import usersdb, verifydb
 
 
 class TestVerifyEmail(BackendPatcher):
     def setup_method(self):
         self.initial_users = users()
         self.initial_flagged = flagged_users()
-        self.initial_pending = extended_pending_users()
+        self.initial_verify = extended_pending_verifies()
         super().setup_method()
 
     def test_verify_email(self):
@@ -32,13 +31,11 @@ class TestVerifyEmail(BackendPatcher):
         res = verify_email(VERIFICATION_CODE, user["user_id"])
         assert res != ""
 
-        assert (
-            self.google_client.has_pending_email(user["user_id"]) == False
-        ), "Should remove pending email"
+        assert not self._has_pending_verify(user), "Should remove pending email"
 
         u = usersdb.get((user["user_id"],))
         assert u is not None
-        assert u["email"] == NEW_EMAIL
+        assert u["verified"]
 
     def test_unregistered_user(self):
         res = verify_email(VERIFICATION_CODE, unregistered_user()["user_id"])
@@ -47,9 +44,8 @@ class TestVerifyEmail(BackendPatcher):
         user = usersdb.get((unregistered_user()["user_id"],))
         assert user is None, "Should not create user"
 
-        assert (
-            self.google_client.has_pending_email(unregistered_user()["user_id"])
-            == False
+        assert not self._has_pending_verify(
+            unregistered_user()
         ), "Should not create pending email"
 
     def test_no_pending(self):
@@ -60,8 +56,8 @@ class TestVerifyEmail(BackendPatcher):
         assert user is not None
         assert user["email"] == user["email"], "Should not change email"
 
-        assert (
-            self.google_client.has_pending_email(valid_user_2()["user_id"]) == False
+        assert not self._has_pending_verify(
+            valid_user_2()
         ), "Should not create pending email"
 
     def test_verify_incorrect_code(self):
@@ -72,6 +68,9 @@ class TestVerifyEmail(BackendPatcher):
         assert user is not None
         assert user["email"] == user["email"], "Should not change email"
 
-        assert self.google_client.has_pending_email(
-            valid_user()["user_id"]
+        assert self._has_pending_verify(
+            valid_user()
         ), "Should not remove pending email"
+
+    def _has_pending_verify(self, user: User):
+        return verifydb.get((user["user_id"],)) is not None

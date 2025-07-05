@@ -41,3 +41,27 @@ Because this is a Python project, we need to take extra precaution to
 # Port Forwarding
 
 Since the api runs on localhost in the cyber range, we need to forward the port to reach outside targets. We accomplish this using nginx
+
+# Server
+
+- Set an A name DNS record for api.cybr.club to the ip address on cloudflare
+    - Set to run as proxy through cloudflare (so we use their certs)
+    - Set SSL/TLS mode to full so it only operates over https 
+- Run nginx, with config files found at /etc/nginx/sites-available and /etc/nginx/sites-enabled 
+    - The one under sites-enabled is a symlink to sites-available
+    - Has the following contents
+
+```
+server {
+    listen 443 ssl;
+    server_name api.cybr.club;
+    include snippets/snakeoil.conf;
+
+    location / {
+        proxy_pass http://127.0.0.1:PORT/;
+    }
+}
+```
+
+- The server is a VM on the cyber range named "Nginx/Website/API"
+- Just run the bot in terminal, no need to set up screens and such

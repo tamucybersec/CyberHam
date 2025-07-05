@@ -7,6 +7,8 @@ from cyberham.types import (
     Attendance,
     Points,
     Tokens,
+    Register,
+    Verify,
     Item,
     Semester,
 )
@@ -82,6 +84,7 @@ class TypedDB(Generic[T, PK]):
         """
         Access an item, change its contents, and the upload the change.
         The accessed item can be None (the item doesn't exist) and you can return None (delete the item).
+        NOTE: Accessing an item using original will NOT reach out the database, instead assuming you have done so very recently.
         Returns the updated item.
         """
 
@@ -149,3 +152,5 @@ pointsdb = TypedDB[Points, tuple[str, Semester, int]](
     db, "points", ["user_id", "semester", "year"]
 )
 tokensdb = TypedDB[Tokens, tuple[str]](db, "tokens", ["token"])
+registerdb = TypedDB[Register, tuple[str]](db, "register", ["ticket"])
+verifydb = TypedDB[Verify, tuple[str]](db, "verify", ["user_id"])

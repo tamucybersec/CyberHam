@@ -3,7 +3,6 @@ from discord import app_commands
 import cyberham.backend.register as backend_register
 from cyberham import guild_id
 from cyberham.bot.bot import Bot
-from cyberham.bot.ui import RegisterModal
 from cyberham.bot.utils import valid_guild, user_profile_embed
 from typing import Any
 
@@ -11,9 +10,22 @@ from typing import Any
 def setup_commands(bot: Bot):
     command_tree = bot.command_tree
 
-    @command_tree.command(name="register", description="register your information here")
+    @command_tree.command(
+        name="register",
+        description="register or update your information here",
+        guilds=guild_id,
+    )
     async def register(interaction: discord.Interaction):
-        await interaction.response.send_modal(RegisterModal(bot))
+        user_id = str(interaction.user.id)
+        url = backend_register.generate_registration_url(user_id)
+        button = discord.ui.Button[discord.ui.View](label="Register", url=url)
+        view = discord.ui.View()
+        view.add_item(button)
+        await interaction.response.send_message(
+            "Below is your personal registration link. Do not share this with others! It is valid for the next hour.",
+            view=view,
+            ephemeral=True,
+        )
 
     @app_commands.checks.cooldown(3, 5 * 60)
     @command_tree.command(

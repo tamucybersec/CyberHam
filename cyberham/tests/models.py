@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Any
 from datetime import datetime, timedelta
-from cyberham.types import EmailPending, User, Event, Flagged, Attendance, Points
+from cyberham.types import User, Event, Flagged, Attendance, Points, Verify
 from cyberham.utils.date import (
     current_semester,
     current_year,
@@ -27,9 +27,14 @@ def valid_user() -> User:
         User(
             user_id="0",
             name="Lane",
+            grad_semester="spring",
             grad_year=2024,
+            major="",
             email="lane@tamu.edu",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -39,9 +44,14 @@ def valid_user_2() -> User:
         User(
             user_id="1",
             name="Stella",
+            grad_semester="spring",
             grad_year=2025,
+            major="",
             email="stella@tamu.edu",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -51,9 +61,14 @@ def updated_user() -> User:
         User(
             user_id="2",
             name="Emma",
+            grad_semester="spring",
             grad_year=2027,
+            major="",
             email="emma@tamu.edu",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -63,9 +78,14 @@ def updated_user_2() -> User:
         User(
             user_id="3",
             name="Colby",
+            grad_semester="spring",
             grad_year=0,
+            major="",
             email="colby@tamu.edu",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -75,9 +95,14 @@ def flagged_user() -> User:
         User(
             user_id="4",
             name="Damian",
+            grad_semester="spring",
             grad_year=2026,
+            major="",
             email="",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -87,9 +112,14 @@ def no_email_user() -> User:
         User(
             user_id="5",
             name="Javi",
+            grad_semester="spring",
             grad_year=2027,
+            major="",
             email="",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -99,9 +129,14 @@ def unregistered_user() -> User:
         User(
             user_id="9",
             name="Owen",
+            grad_semester="spring",
             grad_year=2027,
+            major="",
             email="owen@tamu.edu",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -111,9 +146,14 @@ def unregistered_user_2() -> User:
         User(
             user_id="10",
             name="Zach",
+            grad_semester="spring",
             grad_year=2027,
+            major="",
             email="zach@tamu.edu",
             verified=True,
+            join_date=today,
+            notes="",
+            resume_format="",
         )
     )
 
@@ -152,7 +192,7 @@ def valid_event() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="AWS Academy"
+            category="AWS Academy",
         )
     )
 
@@ -166,7 +206,7 @@ def valid_event_2() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="Hardware Hacking"
+            category="Hardware Hacking",
         )
     )
 
@@ -180,7 +220,7 @@ def past_event() -> Event:
             date=yesterday,
             semester=current_semester(),
             year=current_year(),
-            category="Red Hat Academy"
+            category="Red Hat Academy",
         )
     )
 
@@ -194,7 +234,7 @@ def future_event() -> Event:
             date=tomorrow,
             semester=current_semester(),
             year=current_year(),
-            category="Palo Alto Academy"
+            category="Palo Alto Academy",
         )
     )
 
@@ -208,7 +248,7 @@ def attended_event() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="Cisco Networking Academy"
+            category="Cisco Networking Academy",
         )
     )
 
@@ -222,7 +262,7 @@ def attended_event_2() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="Cisco Networking Academy"
+            category="Cisco Networking Academy",
         )
     )
 
@@ -236,7 +276,7 @@ def attended_past_event() -> Event:
             date=last_year,
             semester=current_semester(),
             year=current_year() - 1,
-            category="Cyber Policy"
+            category="Cyber Policy",
         )
     )
 
@@ -250,7 +290,7 @@ def unregistered_event() -> Event:
             date=today,
             semester=current_semester(),
             year=current_year(),
-            category="Hack the Box (legacy)"
+            category="Hack the Box (legacy)",
         )
     )
 
@@ -281,7 +321,6 @@ def flagged_users() -> list[Flagged]:
 
 
 # caps are marked as constants
-NEW_EMAIL = "NEW_EMAIL@tamu.edu"
 VERIFICATION_CODE = 1234
 
 
@@ -340,28 +379,24 @@ def points() -> list[Points]:
     )
 
 
-def pending_users() -> list[EmailPending]:
+def pending_verifies() -> list[Verify]:
     return deepcopy(
         [
-            EmailPending(
+            Verify(
                 user_id=flagged_user()["user_id"],
-                email=NEW_EMAIL,
                 code=VERIFICATION_CODE,
-                time=now,
             )
         ]
     )
 
 
-def extended_pending_users() -> list[EmailPending]:
+def extended_pending_verifies() -> list[Verify]:
     return deepcopy(
-        pending_users()
+        pending_verifies()
         + [
-            EmailPending(
+            Verify(
                 user_id=valid_user()["user_id"],
-                email=NEW_EMAIL,
                 code=VERIFICATION_CODE,
-                time=now,
             )
         ]
     )
