@@ -1,8 +1,9 @@
-from typing import cast, Optional
+from typing import cast, Optional, Any, Mapping
 from cyberham import website_url, dashboard_config
 from cyberham.apis.auth import token_status
 from cyberham.types import Permissions, User, default_user
 from cyberham.backend.register import register, upload_resume
+from cyberham.utils.transform import pretty_semester
 from cyberham.database.typeddb import (
     usersdb,
     eventsdb,
@@ -56,7 +57,7 @@ async def login(token: str) -> Permissions:
 
 
 @app.get("/self/{ticket}")
-async def get_self(ticket: str):
+async def get_self(ticket: str) -> Mapping[str, Any]:
     registration = registerdb.get((ticket,))
     if registration is None:
         raise HTTPException(400, "Invalid registration link.")
@@ -65,7 +66,11 @@ async def get_self(ticket: str):
     user = usersdb.get((registration["user_id"],))
     if user is None:
         return default_user(registration["user_id"])
-    return user
+
+    return {
+        **dict(user),
+        "grad_semester": pretty_semester(user["grad_semester"]),
+    }
 
 
 @app.post("/register/{ticket}")
