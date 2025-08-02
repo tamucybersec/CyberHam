@@ -13,8 +13,6 @@ git clone https://github.com/tamucybersec/CyberHam
 cd CyberHam
 ```
 
--   Switch to branch CyberHam-SQLite (soon to be changed to the main branch)
-
 ## Setup the Environment
 
 -   Regardless of your system, you'll need to install python3.12
