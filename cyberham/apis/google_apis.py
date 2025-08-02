@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 # If modifying these scopes, delete the file token.json.
 SCOPES: list[str] = [
-    "https://mail.google.com/",
+    "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/calendar.readonly",
 ]
 logger = logging.getLogger(__name__)

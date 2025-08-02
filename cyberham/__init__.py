@@ -42,7 +42,7 @@ def load_configs(root: Path) -> Config:
 
 
 def load_google_paths(project_path: Path, config: Config) -> tuple[Path, Path]:
-    secrets_path = project_path / "secrets"
+    secrets_path = project_path / "../secrets"
     token_path = secrets_path / "token.json"
     client_secret_path = secrets_path / config["google"]["client_file_name"]
     return token_path, client_secret_path

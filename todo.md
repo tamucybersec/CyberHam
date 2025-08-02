@@ -1,10 +1,8 @@
 # TODO
 
--   Better UX if register completes and your session expires
+- Add access control in nginx configs to restrict access to only cloudflare's ips
 
--   Document full setup process from scratch
-
-    -   Important for onboarding
+- Create scripts to automate deployment of CyberHam and cybr.club 
 
 # Up Next
 
@@ -85,3 +83,10 @@
 -   Any idea on how to clean up the imports for python?
     -   I don't main python so I don't know the best practices
 -   Make it obvious that register also updates your information
+- Form builder system
+    - Officers have the ability to create a form using a predetermined structure
+        - They will have to learn some ts syntax and zod to use it effectively
+        - Will allow them to create dropdowns and checkboxes and other stuff
+    - Allows them to create a private table in the database with an assigned schema 
+- Convert sqlite to postgres or something more powerful
+    - SQLite doesn't even have boolean types

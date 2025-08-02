@@ -3,7 +3,7 @@
 :
 *.db
 *.db-journal
-cyberham/secrets/*
+**/secrets/*
 *.pem
 
 # Settings and Caches

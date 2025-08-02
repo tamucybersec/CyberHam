@@ -34,10 +34,6 @@ The guild/server id can be located in the widget tab in the server settings.
 
 This is the guild id you include into the `test_guild_ids` parameter in the config.toml
 
-# Environment
-
-Because this is a Python project, we need to take extra precaution to  
-
 # Port Forwarding
 
 Since the api runs on localhost in the cyber range, we need to forward the port to reach outside targets. We accomplish this using nginx
