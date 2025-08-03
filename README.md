@@ -117,7 +117,7 @@ python3 -m cyberham
 
 ### Unix / WSL
 
--   `sqlite3` usually install it via your package manager
+-   `sqlite3` usually can be installed via your package manager
 
 ### sqlite
 
@@ -141,7 +141,7 @@ sqlite3 cyberham.db
 -   Below are some required settings you'll need when developing to ensure you're aligning with proper type safety (as python doesn't naturally come with these safeties)
 -   Add the following your `settings.json` in vscode (`ctrl+shift+p` > Preferences: Open User Settings (JSON))
 
-```json
+```jsonc
 "python.analysis.diagnosticMode": "workspace",
 "python.analysis.typeCheckingMode": "strict",
 "python.analysis.diagnosticSeverityOverrides": {
