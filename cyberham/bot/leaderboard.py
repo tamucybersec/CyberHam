@@ -26,20 +26,20 @@ def setup_commands(bot: Bot):
         await interaction.response.defer(thinking=True)
         users = backend_users.leaderboard(sort_by, limit)
         if not users:
-            await interaction.response.send_message("No results for this semester yet.")
+            await interaction.followup.send("No results for this semester yet.")
             return
 
         names_column = ""
         point_column = ""
         for user, criteria in users:
-            names_column += f"{user["name"]}\n"
+            names_column += f"{user['name']}\n"
             point_column += f"{criteria}\n"
         embed = discord.Embed(
             title=f"{sort_by.capitalize()} Leaderboard", color=0xFFFFFF
         )
         embed.add_field(name="Name", value=names_column, inline=True)
         embed.add_field(name=f"{sort_by.capitalize()}", value=point_column, inline=True)
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @command_tree.command(
         name="leaderboard_search",
@@ -51,7 +51,7 @@ def setup_commands(bot: Bot):
         await interaction.response.defer(thinking=True)
         leaderboard = backend_users.leaderboard_search(activity)
         if not leaderboard:
-            await interaction.response.send_message("No results for this semester yet.")
+            await interaction.followup.send("No results for this semester yet.")
             return
 
         prev, curr = 0, 0
