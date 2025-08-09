@@ -32,7 +32,7 @@ def setup_commands(bot: Bot):
         names_column = ""
         point_column = ""
         for user, criteria in users:
-            names_column += f"{user['name']}\n"
+            names_column += f"{user["name"]}\n"
             point_column += f"{criteria}\n"
         embed = discord.Embed(
             title=f"{sort_by.capitalize()} Leaderboard", color=0xFFFFFF
