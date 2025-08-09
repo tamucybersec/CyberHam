@@ -33,9 +33,15 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
     events = eventsdb.get_all()
     codes: list[str] = []
 
+    # get codes for events in current semester/year only
+    current_sem = current_semester()
+    current_yr = current_year()
+
     # get codes
     for event in events:
-        if activity.lower() in event["name"].lower():
+        if (activity.lower() in event["name"].lower() and 
+            event["semester"] == current_sem and 
+            event["year"] == current_yr):
             codes.append(event["code"])
 
     # get sorted list of ids based on attendance
