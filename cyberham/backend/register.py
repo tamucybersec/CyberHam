@@ -67,6 +67,7 @@ def register(ticket: str, user: User) -> tuple[str, MaybeError]:
 
     def update_user(u: MaybeUser) -> MaybeUser:
         if u is None:
+            user["join_date"] = datetime_to_datestr(datetime.now())
             return user
 
         # shouldn't change on register
