@@ -52,8 +52,11 @@ def setup_commands(bot: Bot):
 
 def get_current_week_range() -> tuple[date, date]:
     """Returns the start (Monday) and end (Friday) of the current week."""
-    today = dt.today()
-    monday = (today - timedelta(days=today.weekday())).date()
+    today = dt.today().date()
+    if today.weekday() == 6:  # count Sunday as next week
+        monday = today + timedelta(days=1)
+    else:
+        monday = today - timedelta(days=today.weekday())
     friday = monday + timedelta(days=4)
     return monday, friday
 
