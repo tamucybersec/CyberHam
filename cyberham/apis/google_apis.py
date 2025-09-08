@@ -163,7 +163,6 @@ class _Client(GoogleClientProtocol):
             # Moves result of the start, end, and name of the events in the next week
             result = []
             for event in events:
-                print(event)
                 if not "id" in event:
                     raise TypeError("ID not found for event")
                 elif not "start" in event:

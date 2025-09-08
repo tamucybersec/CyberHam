@@ -2,17 +2,13 @@
 
 -   Add access control in nginx configs to restrict access to only cloudflare's ips
 
--   Create scripts to automate deployment of CyberHam
-
 -   Extra field in database for bool to opt into mailing list from employers
 
     -   make this a checkbox in the register form
 
--   Need calendar page
-
 -   DON'T add newsletter for monthly
 
--   Check cyberham not announcing when it automatically generates an event from the calendar
+-   Scroll gets eaten on the dashboard
 
 # Up Next
 

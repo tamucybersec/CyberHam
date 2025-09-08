@@ -89,7 +89,7 @@ def setup_commands(bot: Bot):
             for event in interaction.guild.scheduled_events
         ]
 
-        msg = f"Imported {len(events)} events from calendar."
+        msg = f"Imported {len(events)} events from calendar. Creating discord scheduled events..."
         await interaction.response.send_message(msg)
 
         count = 0

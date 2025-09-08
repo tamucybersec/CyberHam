@@ -99,7 +99,9 @@ def generate_event_markdown(events: Events) -> str:
             for event in scheduled_events:
                 start = format_central_time(event.start_time)
                 end = format_central_time(event.end_time) if event.end_time else "TBD"
-                channel = get_activity_group_channel(event.name.lower())
+                channel = get_activity_group_channel(
+                    event.description if event.description else ""
+                )
                 boilerplate += (
                     f"- **[{event.name}](<{event.url}>)** | {channel}{start} - {end}\n"
                 )
