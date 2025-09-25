@@ -90,12 +90,16 @@ python3 -m cyberham
 
 -   After running, you'll be prompted to log into a gmail account
     -   In prod, it's running under the club's account, but during development you'll be using your own account
--   You'll be warned **Google hasn’t verified this app**, you'll have to acknowledge this warning and click continue
+-   You'll be warned **Google hasn’t verified this app**
+    -   Click `Go to CyberHam (unsafe)` because you trust the developer
+-   Next, you'll be prompted that **CyberHam wants additional access to your Google Account**
+    -   See below for precisely what permissions are used, then click `continue` because you trust CyberHam
 -   You should see a `token.json` file in your `secrets` folder if you successfully authenticate
--   **Why do you need these permissions?**
-    -   The permissions are used in two parts of the app
-        -   Email verification during registration where we send an email to people that register
-        -   Event generation where we automatically generate the week's events in discord from a google calendar
+
+### What are these permissions used for?
+-   The permissions are used in two parts of the app
+    -   Email verification during registration where we send an email to people that register
+    -   Event generation where we automatically generate the week's events in discord from google calendar
 
 ## Testing
 
