@@ -3,10 +3,7 @@ from typing import cast, Optional
 import discord
 from discord import ui
 import cyberham.backend.events as backend_events
-import cyberham.backend.register as backend_register
-from cyberham import admin_channel_id
-from cyberham.bot.bot import Bot
-from cyberham.bot.utils import valid_guild, event_list_embed, handle_attend_response
+from cyberham.bot.utils import event_list_embed, handle_attend_response
 
 
 class PageDisplay(discord.ui.View):
@@ -47,44 +44,6 @@ class PageDisplay(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-class RegisterModal(ui.Modal, title="Register"):
-    name = ui.TextInput["RegisterModal"](
-        label="name", placeholder="please enter your full name/names you go by"
-    )
-    grad_year = ui.TextInput["RegisterModal"](
-        label="grad_year", placeholder="your graduation year (yyyy), e.g. 2024"
-    )
-    email = ui.TextInput["RegisterModal"](label="email", placeholder="TAMU email")
-
-    bot: Bot
-
-    def __init__(self, bot: Bot):
-        super().__init__()
-        self.bot = bot
-
-    async def on_submit(self, interaction: discord.Interaction):
-        if not await valid_guild(interaction):
-            return
-        assert interaction.guild is not None
-
-        name = self.name.value
-        grad_year = self.grad_year.value
-        email = self.email.value
-        try:
-            msg: str = backend_register.legacy_register(
-                name,
-                grad_year,
-                email,
-                str(interaction.user.id),
-            )
-        except:
-            channel = cast(discord.TextChannel, self.bot.get_channel(admin_channel_id))
-            await channel.send(
-                f"{interaction.user.mention} registration attempt, update token"
-            )
-            self.bot.logger.debug(name, grad_year, email, interaction.user.name)
-            msg = "The verification code failed to send, an officer has been notified and will contact you soon"
-        await interaction.response.send_message(msg, ephemeral=True)
 
 
 class AttendModal(ui.Modal, title="Attend"):

@@ -17,7 +17,6 @@ from cyberham.types import (
     Verify,
 )
 from cyberham.utils.date import (
-    current_semester,
     datetime_to_datestr,
     valid_registration_time,
 )
@@ -94,64 +93,6 @@ def generate_registration_url(user_id: str) -> str:
     insert_registration(registration)
     return f"{website_url}/register?ticket={ticket}"
 
-
-# NOTE register can also update a user's information
-def legacy_register(
-    name: str,
-    grad_year_str: str,
-    email: str,
-    user_id: str,
-) -> str:
-    year = datetime.now().year
-
-    # validate grad year
-    try:
-        grad_year = int(grad_year_str)
-    except ValueError:
-        return f"Please set your graduation year in the format YYYY (e.g. {year})."
-
-    if not year - 100 <= grad_year <= year + 8:
-        return f"Please set your graduation year in the format YYYY (e.g. {year})."
-
-    # validate email
-    email = email.lower()
-    if (
-        "," in email
-        or ";" in email
-        or email.count("@") != 1
-        or not email.endswith("tamu.edu")
-    ):
-        return "Please use a proper TAMU email address."
-
-    email_message, err = register_email(user_id, email)
-
-    # FIXME if not deprecated
-    # update user information
-    def update(user: MaybeUser) -> MaybeUser:
-        if user is None:
-            return User(
-                user_id=user_id,
-                name=name,
-                grad_semester=current_semester(),
-                grad_year=grad_year,
-                major="",
-                email=email,
-                verified=True,
-                join_date=datetime_to_datestr(datetime.now()),
-                notes="",
-                resume_format="",
-            )
-        else:
-            user["name"] = name
-            user["grad_year"] = grad_year
-            if email != user["email"]:
-                user["email"] = email
-                user["verified"] = False
-            return user
-
-    usersdb.update(update, pk_values=(user_id,))
-
-    return f"You have successfully updated your profile! {email_message or (err and err.message)}"
 
 
 # NOTE update's a user's email if it differs from their original email
