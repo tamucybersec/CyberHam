@@ -25,16 +25,19 @@ import os
 import aiofiles
 
 
-async def upload_resume(user_id: str, resume: UploadFile) -> tuple[str, bool]:
+async def upload_resume(user_id: str, resume: UploadFile) -> tuple[str, str, bool]:
     try:
         os.makedirs("resumes", exist_ok=True)
 
+        # get original filename
         filename = resume.filename
         if filename is None:
-            return "", False
+            return "", "", False
+        filename = os.path.basename(filename) # to prevent unwanted path traversal
+        # get file format
         format = os.path.splitext(filename)[-1].lstrip(".").lower()
         if not format:
-            return "", False
+            return "", "", False
 
         # Write the file to disk at resumes/{user_id}
         path = os.path.join("resumes", user_id)
@@ -42,11 +45,11 @@ async def upload_resume(user_id: str, resume: UploadFile) -> tuple[str, bool]:
             content = await resume.read()
             await out_file.write(content)
 
-        return format, True
+        return filename, format, True
 
     except Exception as e:
         print(f"Upload failed for user {user_id}: {e}")
-        return "", False
+        return "", "", False
 
 
 def register(ticket: str, user: User) -> tuple[str, MaybeError]:
@@ -78,6 +81,8 @@ def register(ticket: str, user: User) -> tuple[str, MaybeError]:
         user["verified"] = 1 if verified else 0
         return user
 
+    if "resume_uploaded_at" in user:
+        del user["resume_uploaded_at"]
     usersdb.update(update_user, pk_values=(user["user_id"],))
     registerdb.delete((registration["ticket"],))
     return register_email(user["user_id"], user["email"])
