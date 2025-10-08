@@ -154,10 +154,3 @@ sqlite3 cyberham.db
 "python.analysis.inlayHints.functionReturnTypes": true, // optional, but helpful
 "python.analysis.inlayHints.variableTypes": true, // optional, but helpful
 ```
-
-# Contributing
-
--   Coordinate with team to decide on tasks to do
--   Make a new branch named your feature
--   Make a PR once you are done
--   Someone else will review and merge your PR
