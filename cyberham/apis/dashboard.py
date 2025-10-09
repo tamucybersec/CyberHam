@@ -4,7 +4,7 @@ from cyberham import website_url, dashboard_config
 from cyberham.apis.auth import token_status
 from cyberham.types import Permissions, User, default_user
 from cyberham.backend.register import register, upload_resume
-from cyberham.utils.transform import pretty_semester, GradSemester
+from cyberham.utils.transform import pretty_semester
 from cyberham.database.typeddb import (
     usersdb,
     eventsdb,
@@ -26,8 +26,8 @@ import uvicorn
 import os
 
 def get_file_mtime_iso_utc(file_path: str) -> str:
-    # Get the last modified time of a resume file (which should be when it was uploaded),
-    # in UTC ISO 8601 format.
+    # Get the last modified time of a resume file (which should be when it was uploaded).
+    # gets it in UTC ISO 8601 format.
     try:
         timestamp = os.path.getmtime(file_path)
         dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
@@ -81,15 +81,10 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
     elif not valid_registration_time(registration["time"]):
         raise HTTPException(400, "Registration link has expired")
     
-    user = usersdb.get((registration["user_id"],))
-    if user is None:
-        # no user in db yet, return default user with just user_id set
-        return_user = default_user(registration["user_id"])
-    else:
-        return_user = dict(user) # copy of it so we don't modify db
-
-    # get resume uploaded time from the file on disk (if any)
-    resume_filename = str(return_user.get("resume_filename")) or "" # make sure its a str
+    user = usersdb.get((registration["user_id"],)) or default_user(registration["user_id"])
+    
+    # get resume upload time from the file on disk (if any)
+    resume_filename = str(user.get("resume_filename")) or "" # make sure its a str
     resume_uploaded_at = ""
     if resume_filename != "":
         # user exists and has a resume
@@ -97,22 +92,23 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
         resume_uploaded_at = get_file_mtime_iso_utc(resume_path)
 
     return {
-        **return_user,
-        "grad_semester": pretty_semester(cast(GradSemester, return_user["grad_semester"])),
+        **dict(user),
+        "grad_semester": pretty_semester(user["grad_semester"]),
         "resume_uploaded_at": resume_uploaded_at,
     }
 
+
 class PostResponse(TypedDict):
+        # for updating the indicator as soon as the resume is uploaded 
         message: str
         user: User
         resume_uploaded_at: str
 
 @app.post("/register/{ticket}")
-async def register_user(
-    ticket: str,
-    user_json: str = Form(...),
-    resume: Optional[UploadFile] = File(None),
-):
+async def register_user(ticket: str,
+                        user_json: str = Form(...),
+                        resume: Optional[UploadFile] = File(None),
+)-> PostResponse:
     try:
         user_dict = json.loads(user_json)
         user = User(**user_dict)
@@ -126,33 +122,22 @@ async def register_user(
         resume_filename, resume_format, success = await upload_resume(user["user_id"], resume)
         if not success:
             raise HTTPException(status_code=500, detail="Resume upload failed")
-
+        # override user with uploaded resume info
         user["resume_filename"] = resume_filename
         user["resume_format"] = resume_format
-
         # get upload time for server response
         saved_resume_path = os.path.join("resumes", user["user_id"])
         resume_uploaded_at = get_file_mtime_iso_utc(saved_resume_path)
     
     msg, err = register(ticket, user)
     if err is not None:
-        return JSONResponse(err.json(), status_code=400)
-    
-    # Read user row to return to client
-    db_user = usersdb.get((user["user_id"],))
-    if db_user is None:
-        return_user: User = default_user(user["user_id"])
-    else:
-        return_user: User =  cast(User, dict(db_user))  # ensure it's a real copy
-
-    #return_user["resume_filename"] = resume_filename # set above if uploaded. but if not ill uncomment this
-
+        return JSONResponse(err.json(), status_code=400) # type: ignore[return-value]
     # respond with the usual message, the user object, and the resume upload time (if any)
-    return PostResponse({
+    return {
         "message": msg,
-        "user": return_user,
+        "user": user,
         "resume_uploaded_at": resume_uploaded_at,
-    })
+    }
 
 
 routers = [
