@@ -92,8 +92,7 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
         resume_uploaded_at = get_file_mtime_iso_utc(resume_path)
 
     return {
-        **dict(user),
-        "grad_semester": pretty_semester(user["grad_semester"]),
+        "user": {**dict(user),"grad_semester": pretty_semester(user["grad_semester"])},
         "resume_uploaded_at": resume_uploaded_at,
     }
 
