@@ -108,11 +108,11 @@ class PostResponse(TypedDict):
         resume_uploaded_at: str
 
 @app.post("/register/{ticket}")
-async def register_user( # type: ignore[return-value]
+async def register_user(
     ticket: str,
     user_json: str = Form(...),
     resume: Optional[UploadFile] = File(None),
-) -> JSONResponse | PostResponse:
+):
     try:
         user_dict = json.loads(user_json)
         user = User(**user_dict)
