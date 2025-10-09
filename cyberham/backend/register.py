@@ -81,8 +81,6 @@ def register(ticket: str, user: User) -> tuple[str, MaybeError]:
         user["verified"] = 1 if verified else 0
         return user
 
-    if "resume_uploaded_at" in user:
-        del user["resume_uploaded_at"]
     usersdb.update(update_user, pk_values=(user["user_id"],))
     registerdb.delete((registration["ticket"],))
     return register_email(user["user_id"], user["email"])
