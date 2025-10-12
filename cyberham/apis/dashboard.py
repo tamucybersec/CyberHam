@@ -1,4 +1,4 @@
-from typing import TypedDict, cast, Optional, Any, Mapping
+from typing import cast, Optional, Any, Mapping
 from datetime import datetime, timezone
 from cyberham import website_url, dashboard_config
 from cyberham.apis.auth import token_status
@@ -96,18 +96,11 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
         "resume_uploaded_at": resume_uploaded_at,
     }
 
-
-class PostResponse(TypedDict):
-        # for updating the indicator as soon as the resume is uploaded 
-        message: str
-        user: User
-        resume_uploaded_at: str
-
 @app.post("/register/{ticket}")
 async def register_user(ticket: str,
                         user_json: str = Form(...),
                         resume: Optional[UploadFile] = File(None),
-)-> PostResponse:
+):
     try:
         user_dict = json.loads(user_json)
         user = User(**user_dict)
@@ -116,7 +109,6 @@ async def register_user(ticket: str,
 
     resume_filename = ""
     resume_format = ""
-    resume_uploaded_at = ""
     if resume is not None:
         resume_filename, resume_format, success = await upload_resume(user["user_id"], resume)
         if not success:
@@ -125,18 +117,12 @@ async def register_user(ticket: str,
         user["resume_filename"] = resume_filename
         user["resume_format"] = resume_format
         # get upload time for server response
-        saved_resume_path = os.path.join("resumes", user["user_id"])
-        resume_uploaded_at = get_file_mtime_iso_utc(saved_resume_path)
     
     msg, err = register(ticket, user)
     if err is not None:
         return JSONResponse(err.json(), status_code=400) # type: ignore[return-value]
-    # respond with the usual message, the user object, and the resume upload time (if any)
-    return {
-        "message": msg,
-        "user": user,
-        "resume_uploaded_at": resume_uploaded_at,
-    }
+    
+    return {"message": msg}
 
 
 routers = [
