@@ -107,8 +107,6 @@ async def register_user(ticket: str,
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid user JSON")
 
-    resume_filename = ""
-    resume_format = ""
     if resume is not None:
         resume_filename, resume_format, success = await upload_resume(user["user_id"], resume)
         if not success:
@@ -116,7 +114,6 @@ async def register_user(ticket: str,
         # override user with uploaded resume info
         user["resume_filename"] = resume_filename
         user["resume_format"] = resume_format
-        # get upload time for server response
     
     msg, err = register(ticket, user)
     if err is not None:
