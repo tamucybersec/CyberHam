@@ -19,3 +19,6 @@ backups/
 htmlcov/
 majors.*
 resumes/
+
+# Mac Specific Files
+.DS_Store

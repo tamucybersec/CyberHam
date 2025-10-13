@@ -2,6 +2,7 @@ import discord
 import cyberham.backend.events as backend_events
 import cyberham.backend.users as backend_users
 from cyberham.database.queries import points_for_user, attendance_for_user, attendance_for_user_specific_category
+from cyberham.utils.date import current_semester, current_year
 
 
 async def valid_guild(interaction: discord.Interaction):
@@ -30,12 +31,15 @@ def event_info(
 
     # helps handle the case of whether this is to show an event's total attendance or a person's attendance
     if category != "":
-        embed.add_field(name="Attendance count (overall)", value=num_attendees_total, inline=False)
+        curr_semester = current_semester().title()
+        curr_year = current_year()
+
+        embed.add_field(name=f"Overall Attendance Count ({curr_semester} {curr_year})"
+                        , value=num_attendees_total, inline=False)
+        embed.add_field(name=f"{category} Attendance Count ({curr_semester} {curr_year})"
+                        , value=num_attendees_category, inline=False)
     else:
         embed.add_field(name="Attendance count", value=num_attendees_total, inline=False)
-
-    if category != "":
-        embed.add_field(name=f"Attendance count (for {category} category)", value=num_attendees_category, inline=False)
 
     return embed
 
