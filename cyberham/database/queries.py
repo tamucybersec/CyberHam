@@ -25,6 +25,26 @@ def attendance_for_user(
     )
     return db.cursor.fetchone()[0]
 
+def attendance_for_user_specific_category(
+    user_id: str,
+    category: str,
+    semester: Semester = current_semester(),
+    year: int = current_year(),
+) -> int:
+    db.cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM attendance
+        JOIN events ON attendance.code = events.code
+        WHERE attendance.user_id = ?
+            AND events.semester = ?
+            AND events.year = ?
+            AND events.category = ?
+        """,
+            (user_id, semester, year, category)
+    )
+
+    return db.cursor.fetchone()[0]
 
 def attendance_for_all_users(
     semester: Semester = current_semester(),

@@ -1,7 +1,8 @@
 import discord
 import cyberham.backend.events as backend_events
 import cyberham.backend.users as backend_users
-from cyberham.database.queries import points_for_user, attendance_for_user
+from cyberham.database.queries import points_for_user, attendance_for_user, attendance_for_user_specific_category
+from cyberham.utils.date import current_semester, current_year
 
 
 async def valid_guild(interaction: discord.Interaction):
@@ -18,14 +19,28 @@ def event_info(
     points: int,
     date: str,
     code: str,
-    num_attendees: int,
+    num_attendees_total: int = 0,
+    num_attendees_category: int = 0,
+    category: str = ""
 ):
     embed = discord.Embed(title="Event Information", color=0xFFFFFF)
     embed.add_field(name="Name", value=name, inline=False)
     embed.add_field(name="Points", value=points, inline=False)
     embed.add_field(name="Code", value=code, inline=False)
     embed.add_field(name="Date", value=date, inline=False)
-    embed.add_field(name="Attendance count", value=num_attendees, inline=False)
+
+    # helps handle the case of whether this is to show an event's total attendance or a person's attendance
+    if category != "":
+        curr_semester = current_semester().title()
+        curr_year = current_year()
+
+        embed.add_field(name=f"Overall Attendance Count ({curr_semester} {curr_year})"
+                        , value=num_attendees_total, inline=False)
+        embed.add_field(name=f"{category} Attendance Count ({curr_semester} {curr_year})"
+                        , value=num_attendees_category, inline=False)
+    else:
+        embed.add_field(name="Attendance count", value=num_attendees_total, inline=False)
+
     return embed
 
 
@@ -83,5 +98,10 @@ async def handle_attend_response(interaction: discord.Interaction, code: str):
         await interaction.response.send_message(msg, ephemeral=True)
         return
 
-    embed = event_info(event["name"], event["points"], event["date"], code, 0)
+    # gets the attendance for user for whole semester and the certain category
+    total_semester_attendance = attendance_for_user(str(interaction.user.id))
+    category_semester_attendnce = attendance_for_user_specific_category(str(interaction.user.id), event["category"])
+
+    embed = event_info(event["name"], event["points"], event["date"], code,
+                       total_semester_attendance, category_semester_attendnce, event["category"])
     await interaction.response.send_message(msg, embed=embed, ephemeral=True)
