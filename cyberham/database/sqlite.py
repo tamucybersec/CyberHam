@@ -35,7 +35,8 @@ class SQLiteDB:
                 verified INTEGER NOT NULL CHECK(verified IN (0, 1)),
                 join_date TEXT NOT NULL,
                 notes TEXT NOT NULL,
-                resume_format TEXT NOT NULL
+                resume_format TEXT NOT NULL,
+                resume_filename TEXT NOT NULL
             )"""
         )
 

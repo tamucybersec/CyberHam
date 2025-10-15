@@ -101,6 +101,7 @@ class User(TypedDict):
     verified: int  # bool
     join_date: str
     notes: str
+    resume_filename: str | None
     resume_format: str
 
 
@@ -182,6 +183,7 @@ def default_user(user_id: str):
             verified=0,
             join_date="",
             notes="",
+            resume_filename="",
             resume_format="",
         )
     )
