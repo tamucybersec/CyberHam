@@ -93,7 +93,7 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
 
     return {
         "user": {**dict(user),"grad_semester": pretty_semester(user["grad_semester"])},
-        "resume_uploaded_at": resume_uploaded_at,
+        "resumeUploadedAt": resume_uploaded_at,
     }
 
 @app.post("/register/{ticket}")
