@@ -84,7 +84,7 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
     user = usersdb.get((registration["user_id"],)) or default_user(registration["user_id"])
     
     # get resume upload time from the file on disk (if any)
-    resume_filename = str(user.get("resume_filename")) or "" # make sure its a str
+    resume_filename = user["resume_filename"]
     resume_uploaded_at = ""
     if resume_filename != "":
         # user exists and has a resume
@@ -117,7 +117,7 @@ async def register_user(ticket: str,
     
     msg, err = register(ticket, user)
     if err is not None:
-        return JSONResponse(err.json(), status_code=400) # type: ignore[return-value]
+        return JSONResponse(err.json(), status_code=400)
     
     return {"message": msg}
 
