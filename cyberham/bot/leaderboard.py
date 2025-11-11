@@ -55,7 +55,7 @@ def setup_commands(bot: Bot):
             return
 
         prev, curr = 0, 0
-        leaderboard = sorted(leaderboard, key=lambda kv: (kv[1], kv[0]), reverse=True)
+        leaderboard = sorted(leaderboard, key=lambda kv: (kv[1], kv[0]), reverse=False)
         embeds: list[discord.Embed] = []
 
         while curr < len(leaderboard):
