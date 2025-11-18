@@ -103,7 +103,7 @@ def generate_event_markdown(events: Events) -> str:
                     event.description if event.description else ""
                 )
                 boilerplate += (
-                    f"- **[{event.name}](<{event.url}>)** | {channel}{start} - {end}\n"
+                    f"- **{event.name}** | {channel}{start} - {end}\n"
                 )
 
     return boilerplate
