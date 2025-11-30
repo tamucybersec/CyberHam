@@ -4,7 +4,7 @@ from datetime import datetime
 
 from cyberham import website_url
 from cyberham.apis.google_apis import google
-from cyberham.database.typeddb import usersdb, flaggeddb, registerdb, verifydb
+from cyberham.database.typeddb import Maybe, usersdb, resumesdb, flaggeddb, registerdb, verifydb
 from cyberham.database.queries import insert_registration
 from cyberham.types import (
     User,
@@ -15,6 +15,7 @@ from cyberham.types import (
     MaybeError,
     Register,
     Verify,
+    Resume,
 )
 from cyberham.utils.date import (
     datetime_to_datestr,
@@ -25,19 +26,19 @@ import os
 import aiofiles
 
 
-async def upload_resume(user_id: str, resume: UploadFile) -> tuple[str, str, bool]:
+async def upload_resume(user_id: str, resume: UploadFile) -> bool:
     try:
         os.makedirs("resumes", exist_ok=True)
 
         # get original filename
         filename = resume.filename
         if filename is None:
-            return "", "", False
+            return False
         filename = os.path.basename(filename) # to prevent unwanted path traversal
         # get file format
         format = os.path.splitext(filename)[-1].lstrip(".").lower()
         if not format:
-            return "", "", False
+            return False
 
         # Write the file to disk at resumes/{user_id}
         path = os.path.join("resumes", user_id)
@@ -45,11 +46,28 @@ async def upload_resume(user_id: str, resume: UploadFile) -> tuple[str, str, boo
             content = await resume.read()
             await out_file.write(content)
 
-        return filename, format, True
+        # Update resume info in the database
+        def update_resume(existing_resume: Maybe[Resume]) -> Maybe[Resume]:
+            if existing_resume is None: # just create one
+                return Resume(user_id = user_id, 
+                        filename=filename, 
+                        format=format,
+                        upload_date=datetime.now().isoformat(),
+                        is_valid=0)
+            else:
+                # update existing resume
+                existing_resume["filename"] = filename
+                existing_resume["format"] = format
+                existing_resume["upload_date"] = datetime_to_datestr(datetime.now())
+                existing_resume["is_valid"] = 0 # new resume needs verification
+                return existing_resume
+        # if user has resume already
+        result = resumesdb.update(update_resume, pk_values=(user_id,))
+        return (result is not None)
 
     except Exception as e:
         print(f"Upload failed for user {user_id}: {e}")
-        return "", "", False
+        return False
 
 
 def register(ticket: str, user: User) -> tuple[str, MaybeError]:

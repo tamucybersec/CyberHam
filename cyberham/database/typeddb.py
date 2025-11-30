@@ -2,6 +2,7 @@ from cyberham.database.sqlite import SQLiteDB
 from cyberham.types import (
     TableName,
     User,
+    Resume,
     Event,
     Flagged,
     Attendance,
@@ -143,6 +144,7 @@ class TypedDB(Generic[T, PK]):
 
 db = SQLiteDB("cyberham.db")
 usersdb = TypedDB[User, tuple[str]](db, "users", ["user_id"])
+resumesdb = TypedDB[Resume, tuple[str]](db, "resumes", ["user_id"])
 eventsdb = TypedDB[Event, tuple[str]](db, "events", ["code"])
 flaggeddb = TypedDB[Flagged, tuple[str]](db, "flagged", ["user_id"])
 attendancedb = TypedDB[Attendance, tuple[str, str]](

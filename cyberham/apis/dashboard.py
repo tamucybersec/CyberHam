@@ -1,5 +1,4 @@
 from typing import cast, Optional, Any, Mapping
-from datetime import datetime, timezone
 from cyberham import website_url, dashboard_config
 from cyberham.apis.auth import token_status
 from cyberham.types import Permissions, User, default_user
@@ -7,6 +6,7 @@ from cyberham.backend.register import register, upload_resume
 from cyberham.utils.transform import pretty_semester
 from cyberham.database.typeddb import (
     usersdb,
+    resumesdb,
     eventsdb,
     flaggeddb,
     attendancedb,
@@ -23,22 +23,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import json
 import traceback
 import uvicorn
-import os
-
-def get_file_mtime_iso_utc(file_path: str) -> str:
-    # Get the last modified time of a resume file (which should be when it was uploaded).
-    # gets it in UTC ISO 8601 format.
-    try:
-        timestamp = os.path.getmtime(file_path)
-        dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        return dt_utc.isoformat().replace("+00:00", "Z")
-    except FileNotFoundError: # means the resume hasn't been uploaded but this function is being called.
-        return ""
-    except Exception: # Some other unexpected/unhandled error.
-        print(f"Unexpected error getting file mtime for {file_path}:")
-        traceback.print_exc()
-        return ""
-
 
 app = FastAPI()
 
@@ -82,18 +66,20 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
         raise HTTPException(400, "Registration link has expired")
     
     user = usersdb.get((registration["user_id"],)) or default_user(registration["user_id"])
-    
-    # get resume upload time from the file on disk (if any)
-    resume_filename = user["resume_filename"]
-    resume_uploaded_at = ""
-    if resume_filename != "":
-        # user exists and has a resume
-        resume_path = os.path.join("resumes", registration["user_id"])
-        resume_uploaded_at = get_file_mtime_iso_utc(resume_path)
+    resume = resumesdb.get((registration["user_id"],))
+    # get resume data to pass to front end if there's a db row for that resume
+    resume_data: dict[str, Any] = {}
+    if resume is not None:
+        resume_data = {
+            "filename": resume["filename"],
+            "format": resume["format"],
+            "uploadedAt": resume["upload_date"],
+            "is_valid": bool(resume["is_valid"])
+            }
 
     return {
         "user": {**dict(user),"grad_semester": pretty_semester(user["grad_semester"])},
-        "resumeUploadedAt": resume_uploaded_at,
+        "resume_data": resume_data,
     }
 
 @app.post("/register/{ticket}")
@@ -108,12 +94,10 @@ async def register_user(ticket: str,
         raise HTTPException(status_code=400, detail="Invalid user JSON")
 
     if resume is not None:
-        resume_filename, resume_format, success = await upload_resume(user["user_id"], resume)
+        success = await upload_resume(user["user_id"], resume)
         if not success:
             raise HTTPException(status_code=500, detail="Resume upload failed")
         # override user with uploaded resume info
-        user["resume_filename"] = resume_filename
-        user["resume_format"] = resume_format
     
     msg, err = register(ticket, user)
     if err is not None:
