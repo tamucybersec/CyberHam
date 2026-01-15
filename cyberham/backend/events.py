@@ -3,7 +3,7 @@ import string
 
 from datetime import datetime
 from cyberham.apis.google_apis import google
-from cyberham.database.queries import user_attendance_counts_for_events
+from cyberham.database.queries import user_attendance_counts_for_events, insert_rsvp, rsvp_counts_for_event
 from cyberham.database.typeddb import usersdb, eventsdb, attendancedb
 from cyberham.types import (
     Error,
@@ -13,6 +13,7 @@ from cyberham.types import (
     MaybeEvent,
     Attendance,
     Category,
+    rsvp,
     VALID_CATEGORIES,
 )
 from cyberham.utils.date import (
@@ -21,6 +22,7 @@ from cyberham.utils.date import (
     current_year,
     datetime_to_datestr,
     sort_events_by_date,
+    compare_datestrs
 )
 
 
@@ -116,3 +118,46 @@ def event_count() -> int:
 
 def calendar_events() -> tuple[list[CalendarEvent], MaybeError]:
     return google.client.get_events()
+
+def rsvp_event(uid:str, event:str, response:int, date:str):
+    """Add an entry to rsvp table for a given user and event"""
+    #check for formatting on years, and pad zeroes to current date string being passed in
+    try: 
+        dateobj=datetime.strptime(date,"%m/%d/%Y")
+    except ValueError:
+        try:
+            dateobj=datetime.strptime(date,"%m/%d/%y")
+        except:  
+            return "Please use a valid date in the format mm/dd/yy or mm/dd/yyyy"
+    except:
+        return "Please use a valid date in the format mm/dd/yy or mm/dd/yyyy"
+    
+    date=dateobj.strftime("%m/%d/%Y")
+    now=(datetime.now(cst_tz)).strftime("%m/%d/%Y")
+
+    if compare_datestrs(date,now)<0:
+        return "This RSVP form has expired!"
+    
+    user = usersdb.get((uid,))
+    if user is None:
+        return "Please use /register first."
+    
+    reservation = rsvp(
+        user_id=uid,
+        code=event,
+        reservation=response,
+    )
+    insert_rsvp(reservation)
+    resp={0:"Yes!", 1:"No", 2: "Not sure"}
+    return f"You've replied: **{resp[response]}**"
+
+def count_rsvp_event(code:str):
+    """Count totals of each response for a single event"""
+    if code=="":
+            return "Please provide an event code!"
+    event = eventsdb.get((code,))
+    if event is None:
+        return "This event does not exist."
+    else:
+        rsvpTotals = rsvp_counts_for_event(code)
+        return f"For {event['name']}, {rsvpTotals[0]} answered yes, {rsvpTotals[1]} answered no, {rsvpTotals[2]} were unsure."

@@ -85,9 +85,8 @@ class CalendarEvent(TypedDict):
 type Semester = Literal["spring", "fall"]
 type GradSemester = Literal["spring", "summer", "fall", "winter"]
 type TableName = Literal[
-    "users", "events", "flagged", "attendance", "points", "tokens", "register", "verify"
+    "users", "events", "flagged", "attendance", "points", "tokens", "register", "verify", "rsvp"
 ]
-
 Item: TypeAlias = Mapping[str, Any]
 
 
@@ -169,6 +168,10 @@ class Verify(TypedDict):
     user_id: str
     code: int
 
+class rsvp(TypedDict):
+    user_id:str
+    code:str
+    reservation:int
 
 def default_user(user_id: str):
     return deepcopy(
