@@ -74,3 +74,31 @@ class EditModal(discord.ui.Modal, title="Edit a Message"):
                 f"Howdy! The message has been updated.", ephemeral=True
             )
             await self.message.edit(content=f"{self.answer}")
+
+class RSVPOptions(discord.ui.View):
+    def __init__(self, code:str,date:str)->None:
+        super().__init__(timeout=None)
+        self.code=code
+        self.date=date
+    @discord.ui.button(
+        label="Yes", style=discord.ButtonStyle.green, emoji="✅"
+    )
+    async def yes_button(self,interaction:discord.Interaction, button:discord.ui.Button[discord.ui.View]):
+        msg=backend_events.rsvp_event(uid=str(interaction.user.id), event=self.code, response=0, date=self.date)
+        await interaction.response.send_message(msg, ephemeral=True)
+
+    @discord.ui.button(
+        label="No", style=discord.ButtonStyle.red, emoji="✖️"
+    )
+    async def no_button(self,interaction:discord.Interaction, button:discord.ui.Button[discord.ui.View]):
+        msg=backend_events.rsvp_event(uid=str(interaction.user.id), event=self.code, response=1, date=self.date)
+        await interaction.response.send_message(msg, ephemeral=True)
+
+    @discord.ui.button(
+        label="Unsure", style=discord.ButtonStyle.gray, emoji="❓"
+    )
+    async def unsure_button(self,interaction:discord.Interaction, button:discord.ui.Button[discord.ui.View]):
+        msg=backend_events.rsvp_event(uid=str(interaction.user.id), event=self.code, response=2, date=self.date)
+        await interaction.response.send_message(msg, ephemeral=True)
+        
+

@@ -19,7 +19,7 @@ class Bot(discord.Client):
     def __init__(self):
         super().__init__(
             intents=discord.Intents(
-                guilds=True, members=True, messages=True, guild_scheduled_events=True
+                guilds=True, members=True, messages=True, reactions=True, guild_scheduled_events=True
             )
         )
         self.synced = False
@@ -59,10 +59,12 @@ def run_bot():
     from cyberham.bot import events
     from cyberham.bot import leaderboard
     from cyberham.bot import users
+    from cyberham.bot import rsvp
 
     bot = Bot()
     admin.setup_commands(bot)
     announcements.setup_commands(bot)
+    rsvp.setup_commands(bot)
     events.setup_commands(bot)
     leaderboard.setup_commands(bot)
     users.setup_commands(bot)

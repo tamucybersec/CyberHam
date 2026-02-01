@@ -114,6 +114,18 @@ class SQLiteDB:
                 code INTEGER
             )"""
         )
+        
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rsvp (
+                user_id TEXT NOT NULL,
+                code TEXT NOT NULL,
+                reservation INTEGER NOT NULL CHECK (reservation IN (0, 1, 2)),
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE,
+                FOREIGN KEY (code) REFERENCES events(code) ON UPDATE CASCADE,
+                PRIMARY KEY (user_id, code)
+            )"""
+        )
 
         self.conn.commit()
 

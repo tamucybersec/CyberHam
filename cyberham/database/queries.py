@@ -2,8 +2,8 @@
 # this way if the schema changes, we know where to look for fixes
 
 from collections import defaultdict
-from cyberham.database.typeddb import db, registerdb
-from cyberham.types import Semester, Register
+from cyberham.database.typeddb import db, registerdb, rsvpdb
+from cyberham.types import Semester, Register, rsvp
 from cyberham.utils.date import current_semester, current_year
 
 
@@ -167,3 +167,29 @@ def insert_registration(registration: Register):
     )
     db.conn.commit()
     registerdb.create(registration)
+
+def insert_rsvp(reservation: rsvp):
+    db.conn.execute(
+        """
+        DELETE FROM rsvp
+        WHERE user_id = ?
+            AND code = ?
+        """,
+    (reservation["user_id"],reservation["code"])
+    )
+    db.conn.commit()
+    rsvpdb.create(reservation)
+
+def rsvp_counts_for_event(code:str) -> tuple[int,int,int]:
+    db.cursor.execute(
+        f"""
+        SELECT COUNT(*) FILTER (WHERE reservation=0) AS yes, 
+        COUNT(*) FILTER (WHERE reservation=1) AS no, 
+        COUNT(*) FILTER (WHERE reservation=2) AS unsure
+        FROM rsvp
+        WHERE code = ?
+        """,
+        (code,),
+    )
+    responses = db.cursor.fetchone()
+    return responses["yes"],responses["no"],responses["unsure"],

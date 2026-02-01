@@ -7,4 +7,6 @@ activity_group_channels = {
     "AWS Academy": 1280195306733961236,
     "Palo Alto Academy": 986388231052460092,
     "Cisco Networking Academy": 946612171360579627,
+    "Announcements": 689553257412165698,
+    "Tech Committee":1437520719020818503
 }
