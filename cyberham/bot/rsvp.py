@@ -7,6 +7,7 @@ import cyberham.backend.events as backend_events
 from cyberham.bot.bot import Bot
 from cyberham.bot.constants import activity_group_channels
 from cyberham.utils.date import validate_date
+from cyberham import environment
 
 def setup_commands(bot:Bot):
     command_tree=bot.command_tree
