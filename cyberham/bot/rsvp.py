@@ -14,7 +14,7 @@ def setup_commands(bot:Bot):
     @app_commands.default_permissions(manage_events=True)
     @command_tree.command(
         name="generate_rsvp_form",
-        description="generates RSVP poll for a given event code",
+        description="(unstable: breaks on server restart) generates RSVP poll for a given event code",
         guilds=guild_id,
     )
     @app_commands.describe(
@@ -33,10 +33,13 @@ def setup_commands(bot:Bot):
             return
         
         #Set up channel to send RSVP to
-        if (event["category"] in activity_group_channels):
-            channel=cast(discord.TextChannel,await bot.fetch_channel(activity_group_channels[event["category"]]))
+        if environment == "dev":
+            channel_id = "Tech Committee"
+        elif (event["category"] in activity_group_channels):
+            channel_id = event["category"]
         else:
-            channel=cast(discord.TextChannel, await bot.fetch_channel(activity_group_channels["Announcements"]))
+            channel_id = "Announcements"
+        channel=cast(discord.TextChannel,await bot.fetch_channel(activity_group_channels[channel_id]))
         question=f"{event["category"]}: Do you plan to attend **{event["name"]}** on **{event["date"]}**?"
         buttons = RSVPOptions(code=code, date=date)
         await channel.send(question, view=buttons)
