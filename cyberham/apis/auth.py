@@ -29,23 +29,6 @@ def token_status(token: str) -> tuple[Permissions, bool]:
     return tokens["permission"], tokens["permission"] != Permissions.NONE
 
 
-async def get_permission_level(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-) -> Permissions:
-    if credentials.scheme != "Bearer":
-        raise HTTPException(status_code=403, detail="Invalid auth scheme")
-
-    token = credentials.credentials
-    permission, valid = token_status(token)
-    
-    log_auth_attempt(token, permission, valid)
-    
-    if not valid:
-        raise HTTPException(status_code=403, detail="Invalid or revoked token")
-
-    return permission
-
-
 async def get_token_and_permission(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> tuple[str, Permissions]:
@@ -62,6 +45,13 @@ async def get_token_and_permission(
         raise HTTPException(status_code=403, detail="Invalid or revoked token")
 
     return token, permission
+
+
+async def get_permission_level(
+    token_and_perm: tuple[str, Permissions] = Depends(get_token_and_permission),
+) -> Permissions:
+    """Get permission level only (wrapper around get_token_and_permission)."""
+    return token_and_perm[1]
 
 
 def require_permission(min_permission: Permissions):
