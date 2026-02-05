@@ -12,6 +12,7 @@ from cyberham import guild_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.ui import EditModal
 from cyberham.bot.utils import valid_guild
+from cyberham.utils.logger import log_elevated_operation
 
 
 def setup_commands(bot: Bot):
@@ -27,6 +28,12 @@ def setup_commands(bot: Bot):
     async def award(
         interaction: discord.Interaction, user: discord.Member, points: int
     ):
+        log_elevated_operation(
+            operation="award_points",
+            user_id=str(interaction.user.id),
+            user_name=interaction.user.name,
+            details=f"Awarded {points} points to {user.name} (ID: {user.id})"
+        )
         msg: str = backend_users.award(str(user.id), user.name, points)
         await interaction.response.send_message(msg)
 
@@ -42,6 +49,14 @@ def setup_commands(bot: Bot):
         assert interaction.guild is not None
 
         num_events = len(interaction.guild.scheduled_events)
+        
+        log_elevated_operation(
+            operation="delete_all_events",
+            user_id=str(interaction.user.id),
+            user_name=interaction.user.name,
+            details=f"Deleting {num_events} Discord events"
+        )
+        
         msg = f"Deleting {num_events} events from server."
         await interaction.response.send_message(msg)
         for event in interaction.guild.scheduled_events:
@@ -75,6 +90,13 @@ def setup_commands(bot: Bot):
         if not await valid_guild(interaction):
             return
         assert interaction.guild is not None
+
+        log_elevated_operation(
+            operation="update_calendar_events",
+            user_id=str(interaction.user.id),
+            user_name=interaction.user.name,
+            details="Importing events from Google Calendar to Discord"
+        )
 
         events, err = backend_events.calendar_events()
         if err is not None:

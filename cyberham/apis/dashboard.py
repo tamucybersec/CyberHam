@@ -19,6 +19,7 @@ from cyberham.types import Permissions
 from cyberham.apis.auth import require_permission
 from cyberham.utils.date import valid_registration_time
 from cyberham.apis.crud_factory import create_crud_routes
+from cyberham.utils.logger import log_auth_attempt
 from fastapi import FastAPI, Form, File, HTTPException, UploadFile, Depends
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
@@ -76,7 +77,8 @@ async def health_check() -> str:
 
 @app.get("/login")
 async def login(token: str) -> Permissions:
-    permission, _ = token_status(token)
+    permission, valid = token_status(token)
+    log_auth_attempt(token, permission, valid, endpoint="/login")
     return permission
 
 

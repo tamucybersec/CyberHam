@@ -4,6 +4,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from cyberham.types import Permissions, MaybeTokens
 from cyberham.database.typeddb import tokensdb
 from cyberham.utils.date import datetime_to_datestr, compare_datestrs
+from cyberham.utils.logger import log_auth_attempt
 
 security = HTTPBearer()
 
@@ -36,10 +37,31 @@ async def get_permission_level(
 
     token = credentials.credentials
     permission, valid = token_status(token)
+    
+    log_auth_attempt(token, permission, valid)
+    
     if not valid:
         raise HTTPException(status_code=403, detail="Invalid or revoked token")
 
     return permission
+
+
+async def get_token_and_permission(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> tuple[str, Permissions]:
+    """Get both token and permission level for logging purposes."""
+    if credentials.scheme != "Bearer":
+        raise HTTPException(status_code=403, detail="Invalid auth scheme")
+
+    token = credentials.credentials
+    permission, valid = token_status(token)
+    
+    log_auth_attempt(token, permission, valid)
+    
+    if not valid:
+        raise HTTPException(status_code=403, detail="Invalid or revoked token")
+
+    return token, permission
 
 
 def require_permission(min_permission: Permissions):

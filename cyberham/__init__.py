@@ -67,11 +67,34 @@ def setup_module_logging(name: str):
     module_logger.addHandler(console_handler)
 
 
+def setup_security_logging():
+    """Set up dedicated security event logging."""
+    security_logger = logging.getLogger("cyberham.security")
+    security_logger.setLevel(logging.INFO)
+    
+    # File handler for security events
+    file_handler = logging.FileHandler(
+        filename="security.log", encoding="utf-8", mode="a"  # append mode to preserve history
+    )
+    file_handler.setLevel(logging.INFO)
+    
+    # Format with timestamp, level, and message
+    formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(formatter)
+    
+    security_logger.addHandler(file_handler)
+    return security_logger
+
+
 project_path = Path(__file__).parent
 config = load_configs(project_path.parent)
 google_token, client_secret = load_google_paths(project_path, config)
 setup_discord_logging()
 setup_module_logging(__name__)
+setup_security_logging()
 
 # load various configs for export
 environment = config["environment"]
