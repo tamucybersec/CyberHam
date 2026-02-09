@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from datetime import datetime as dt, timedelta, date
 from calendar import day_name
-from cyberham import guild_id
+from cyberham import guild_id, admin_permission
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild
 from cyberham.bot.constants import activity_group_channels
@@ -18,7 +18,7 @@ Events: TypeAlias = dict[int, dict[str, list[discord.ScheduledEvent]]]
 def setup_commands(bot: Bot):
     command_tree = bot.command_tree
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.command(
         name="generate_announcements",
         description="generates announcements boilerplate based on events",

@@ -75,6 +75,15 @@ setup_module_logging(__name__)
 
 # load various configs for export
 environment = config["environment"]
+is_development = environment == "dev"
+
+# Permission used for admin-only commands.
+# In dev, use manage_channels so the dev server can restrict access
+# without needing to give everyone manage_events.
+admin_permission: dict[str, bool] = (
+    {"manage_channels": True} if is_development else {"manage_events": True}
+)
+admin_permission_attr: str = "manage_channels" if is_development else "manage_events"
 website_url = config["website_url"]
 dashboard_config = config["dashboard"]
 discord_token: Any = config["discord"]["token"]

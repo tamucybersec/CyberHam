@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 import cyberham.backend.register as backend_register
-from cyberham import guild_id
+from cyberham import guild_id, admin_permission, admin_permission_attr
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild, user_profile_embed
 from typing import Any
@@ -67,7 +67,7 @@ def setup_commands(bot: Bot):
         description="get the attendance info for a specific member!",
         guilds=guild_id,
     )
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @app_commands.describe(member="The profile for which member")
     async def profile_member(interaction: discord.Interaction, member: discord.Member):
         await user_profile_embed(interaction, str(member.id))
@@ -98,7 +98,7 @@ def setup_commands(bot: Bot):
             isinstance(interaction.user, discord.Member)
             and interaction.user.resolved_permissions
         ):
-            perm: bool = interaction.user.resolved_permissions.manage_events
+            perm: bool = getattr(interaction.user.resolved_permissions, admin_permission_attr)
         else:
             perm = False
 

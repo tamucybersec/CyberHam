@@ -7,12 +7,12 @@ import cyberham.backend.events as backend_events
 from cyberham.bot.bot import Bot
 from cyberham.bot.constants import activity_group_channels
 from cyberham.utils.date import validate_date
-from cyberham import environment
+from cyberham import environment, admin_permission
 
 def setup_commands(bot:Bot):
     command_tree=bot.command_tree
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.command(
         name="generate_rsvp_form",
         description="(unstable: breaks on server restart) generates RSVP poll for a given event code",
@@ -46,7 +46,7 @@ def setup_commands(bot:Bot):
         await channel.send(question, view=buttons)
         await interaction.response.send_message("RSVP question sent: "+question, ephemeral=True)
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.command(
         name="count_rsvp",
         description="generates RSVP response count for a given event code",

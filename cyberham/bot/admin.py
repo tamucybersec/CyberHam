@@ -8,7 +8,7 @@ from datetime import datetime as dt
 
 import cyberham.backend.events as backend_events
 import cyberham.backend.users as backend_users
-from cyberham import guild_id
+from cyberham import guild_id, admin_permission
 from cyberham.bot.bot import Bot
 from cyberham.bot.ui import EditModal
 from cyberham.bot.utils import valid_guild
@@ -17,7 +17,7 @@ from cyberham.bot.utils import valid_guild
 def setup_commands(bot: Bot):
     command_tree = bot.command_tree
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.command(
         name="award", description="manually award points to a user", guilds=guild_id
     )
@@ -30,7 +30,7 @@ def setup_commands(bot: Bot):
         msg: str = backend_users.award(str(user.id), user.name, points)
         await interaction.response.send_message(msg)
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.command(
         name="delete_all_events",
         description="delete all current discord events",
@@ -47,7 +47,7 @@ def setup_commands(bot: Bot):
         for event in interaction.guild.scheduled_events:
             await event.delete()
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.context_menu(name="Edit message", guilds=guild_id)
     async def edit_message(
         interaction: discord.Interaction, message: discord.Message
@@ -55,7 +55,7 @@ def setup_commands(bot: Bot):
         modal = EditModal(message)
         await interaction.response.send_modal(modal)
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.command(
         name="send_editable_message",
         description="send a message that will be editable by user with permission configured in integrations",
@@ -65,7 +65,7 @@ def setup_commands(bot: Bot):
         modal = EditModal()
         await interaction.response.send_modal(modal)
 
-    @app_commands.default_permissions(manage_events=True)
+    @app_commands.default_permissions(**admin_permission)
     @command_tree.command(
         name="update_calendar_events",
         description="create discord events for google calendar events",
