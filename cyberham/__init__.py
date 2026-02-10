@@ -43,7 +43,7 @@ def load_configs(root: Path) -> Config:
     local_config_path = root / "config.local.toml"
     if local_config_path.exists():
         local_config = load_config(local_config_path)
-        merge_configs(merged, local_config)
+        merged = merge_configs(merged, local_config)
 
     return merged
 

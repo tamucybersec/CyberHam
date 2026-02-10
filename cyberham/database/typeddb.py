@@ -143,6 +143,8 @@ class TypedDB(Generic[T, PK]):
         return cast(Maybe[T], item)
 
 
+# Safe at module level: cyberham/__init__.py does not import from cyberham.database,
+# so db_path is fully initialized before this module loads.
 from cyberham import db_path
 
 db = SQLiteDB(db_path)
