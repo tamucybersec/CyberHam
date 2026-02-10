@@ -32,7 +32,9 @@ def write_full_backup():
         "tokens",
     ]
 
-    db = SQLiteDB("cyberham.db")
+    from cyberham import db_path
+
+    db = SQLiteDB(db_path)
     for table in tables:
         write_backup(table, db.get_all_rows(table))
 

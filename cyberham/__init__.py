@@ -35,10 +35,17 @@ def load_configs(root: Path) -> Config:
     base_config = load_config(base_config_path)
     environment = base_config.get("environment", "dev")
 
-    env_config_path = project_path.parent / f"config.{environment}.toml"
+    env_config_path = root / f"config.{environment}.toml"
     env_config = load_config(env_config_path)
-    
-    return merge_configs(base_config, env_config)
+
+    merged = merge_configs(base_config, env_config)
+
+    local_config_path = root / "config.local.toml"
+    if local_config_path.exists():
+        local_config = load_config(local_config_path)
+        merge_configs(merged, local_config)
+
+    return merged
 
 
 def load_google_paths(project_path: Path, config: Config) -> tuple[Path, Path]:
@@ -80,3 +87,4 @@ dashboard_config = config["dashboard"]
 discord_token: Any = config["discord"]["token"]
 guild_id = [Guild(id=x) for x in config["discord"]["test_guild_ids"]]
 admin_channel_id: Any = config["discord"]["admin_channel_id"]
+db_path: str = config.get("database", {}).get("path", "cyberham.db")

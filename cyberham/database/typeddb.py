@@ -143,8 +143,10 @@ class TypedDB(Generic[T, PK]):
         return cast(Maybe[T], item)
 
 
-db = SQLiteDB("cyberham.db")
-readonlydb = ReadonlyDB("cyberham.db")
+from cyberham import db_path
+
+db = SQLiteDB(db_path)
+readonlydb = ReadonlyDB(db_path)
 usersdb = TypedDB[User, tuple[str]](db, "users", ["user_id"])
 eventsdb = TypedDB[Event, tuple[str]](db, "events", ["code"])
 flaggeddb = TypedDB[Flagged, tuple[str]](db, "flagged", ["user_id"])

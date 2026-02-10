@@ -8,7 +8,7 @@ Go to the [discord developer portal](https://discord.com/developers/applications
 
 <img alt="Create a bot profile" src="https://file.garden/ZcqcCFK3bnacTMc-/Application_Creation.png" width="50%"/>
 
-Go to the bot tab and reset the token. This is what you will put in the `discord_token` parameter in the config.toml file.
+Go to the bot tab and reset the token. This is what you will put in the `[discord]` `token` field in your `config.local.toml` file.
 
 <img alt="Reset the bot token" src="https://file.garden/ZcqcCFK3bnacTMc-/Token_Reset.png" width="70%"/>
 
@@ -32,7 +32,7 @@ The guild/server id can be located in the widget tab in the server settings.
 
 <img alt="Acquire a test guild ID" src="https://file.garden/ZcqcCFK3bnacTMc-/Guild_Id.png" width="70%"/>
 
-This is the guild id you include into the `test_guild_ids` parameter in the config.toml
+This is the guild id you include into the `test_guild_ids` field in your `config.local.toml`
 
 # Port Forwarding
 

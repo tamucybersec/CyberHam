@@ -57,6 +57,26 @@ pip install -r requirements.txt
 -   Place them in the root of the project (same level as this README.md)
 -   These handle all the environment variables for the app
 
+### Local Config (Optional)
+
+-   To use your own personal bot and test server, create a `config.local.toml` file at the root of the project
+-   This file is merged last and overrides values from the shared config files
+-   It is already gitignored, NEVER commit this file
+
+Example `config.local.toml`:
+
+```toml
+[discord]
+token = "your-personal-bot-token"
+test_guild_ids = [your_guild_id]
+admin_channel_id = your_channel_id
+
+[database]
+path = "yourname.db"
+```
+
+-   Follow the [SETUP.md](SETUP.md) guide to create your own bot and get your guild ID
+
 ### Secrets Files
 
 -   Create a `secrets` folder at the root of your project (same level as this README.md)
