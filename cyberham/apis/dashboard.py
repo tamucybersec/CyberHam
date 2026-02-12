@@ -63,23 +63,22 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
     if registration is None:
         raise HTTPException(400, "Invalid registration link.")
     elif not valid_registration_time(registration["time"]):
-        raise HTTPException(400, "Registration link has expired")
-    
+        raise HTTPException(400, "Registration link has expired")    
     user = usersdb.get((registration["user_id"],)) or default_user(registration["user_id"])
     resume = resumesdb.get((registration["user_id"],))
     # get resume data to pass to front end if there's a db row for that resume
-    resume_data: dict[str, Any] = {}
+    resume_data: Mapping[str, Any] = {}
     if resume is not None:
         resume_data = {
             "filename": resume["filename"],
             "format": resume["format"],
-            "uploadedAt": resume["upload_date"],
+            "upload_date": resume["upload_date"],
             "is_valid": bool(resume["is_valid"])
             }
 
     return {
         "user": {**dict(user),"grad_semester": pretty_semester(user["grad_semester"])},
-        "resume_data": resume_data,
+        "resume": resume_data,
     }
 
 @app.post("/register/{ticket}")
@@ -110,6 +109,13 @@ routers = [
     create_crud_routes(
         prefix="users",
         db=usersdb,
+        pk_names=["user_id"],
+        get_perm=Permissions.SPONSOR,
+        modify_perm=Permissions.ADMIN,
+    ),
+    create_crud_routes(
+        prefix="resumes",
+        db=resumesdb,
         pk_names=["user_id"],
         get_perm=Permissions.SPONSOR,
         modify_perm=Permissions.ADMIN,

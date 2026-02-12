@@ -112,6 +112,7 @@ class Resume(TypedDict):
     upload_date: str
     is_valid: int # bool (1 or 0)
 
+MaybeResume: TypeAlias = Optional[Resume]
 
 class Event(TypedDict):
     name: str
