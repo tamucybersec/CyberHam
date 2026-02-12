@@ -58,3 +58,16 @@ def valid_registration_time(time: str) -> bool:
     now = datetime.now()
     expiry = datetime.fromisoformat(time) + timedelta(hours=1)
     return now <= expiry
+
+def validate_date(date:str):
+    response=True
+    try: 
+        response=bool(datetime.strptime(date,"%m/%d/%Y"))
+    except ValueError:
+        try: 
+            response=bool(datetime.strptime(date,"%m/%d/%y"))
+        except:
+            response=False
+    except:
+        response=False
+    return response

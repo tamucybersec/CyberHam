@@ -5,6 +5,7 @@ from cyberham.types import Permissions, User, default_user
 from cyberham.backend.register import register, upload_resume
 from cyberham.utils.transform import pretty_semester
 from cyberham.database.typeddb import (
+    readonlydb,
     usersdb,
     resumesdb,
     eventsdb,
@@ -14,12 +15,15 @@ from cyberham.database.typeddb import (
     tokensdb,
     registerdb,
 )
+from cyberham.types import Permissions
+from cyberham.apis.auth import require_permission
 from cyberham.utils.date import valid_registration_time
 from cyberham.apis.crud_factory import create_crud_routes
-from fastapi import FastAPI, Form, File, HTTPException, UploadFile
+from fastapi import FastAPI, Form, File, HTTPException, UploadFile, Depends
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import json
 import traceback
 import uvicorn
@@ -81,10 +85,12 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
         "resume": resume_data,
     }
 
+
 @app.post("/register/{ticket}")
-async def register_user(ticket: str,
-                        user_json: str = Form(...),
-                        resume: Optional[UploadFile] = File(None),
+async def register_user(
+    ticket: str,
+    user_json: str = Form(...),
+    resume: Optional[UploadFile] = File(None),
 ):
     try:
         user_dict = json.loads(user_json)
@@ -101,8 +107,23 @@ async def register_user(ticket: str,
     msg, err = register(ticket, user)
     if err is not None:
         return JSONResponse(err.json(), status_code=400)
-    
+
     return {"message": msg}
+
+
+class QueryPayload(BaseModel):
+    sql: str
+
+
+@app.post(
+    "/query/readonly",
+    dependencies=[Depends(require_permission(Permissions.SUPER_ADMIN))],
+)
+async def query_readonly(body: QueryPayload):
+    try:
+        return readonlydb.execute(body.sql)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
 
 
 routers = [

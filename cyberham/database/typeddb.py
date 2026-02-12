@@ -1,4 +1,5 @@
 from cyberham.database.sqlite import SQLiteDB
+from cyberham.database.readonly import ReadonlyDB
 from cyberham.types import (
     TableName,
     User,
@@ -12,6 +13,7 @@ from cyberham.types import (
     Verify,
     Item,
     Semester,
+    rsvp
 )
 from typing import (
     cast,
@@ -143,6 +145,7 @@ class TypedDB(Generic[T, PK]):
 
 
 db = SQLiteDB("cyberham.db")
+readonlydb = ReadonlyDB("cyberham.db")
 usersdb = TypedDB[User, tuple[str]](db, "users", ["user_id"])
 resumesdb = TypedDB[Resume, tuple[str]](db, "resumes", ["user_id"])
 eventsdb = TypedDB[Event, tuple[str]](db, "events", ["code"])
@@ -156,3 +159,6 @@ pointsdb = TypedDB[Points, tuple[str, Semester, int]](
 tokensdb = TypedDB[Tokens, tuple[str]](db, "tokens", ["token"])
 registerdb = TypedDB[Register, tuple[str]](db, "register", ["ticket"])
 verifydb = TypedDB[Verify, tuple[str]](db, "verify", ["user_id"])
+rsvpdb=TypedDB[rsvp, tuple[str, str, int]](
+    db, "rsvp", ["user_id", "code", "reservation"]
+)
