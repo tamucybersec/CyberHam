@@ -91,6 +91,8 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
     user = usersdb.get((registration["user_id"],)) or default_user(
         registration["user_id"]
     )
+    if "sponsor_email_opt_out" not in user:
+        user["sponsor_email_opt_out"] = 0
 
     # get resume upload time from the file on disk (if any)
     resume_filename = user["resume_filename"]
