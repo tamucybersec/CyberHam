@@ -98,6 +98,7 @@ class User(TypedDict):
     major: str
     email: str
     verified: int  # bool
+    sponsor_email_opt_out: int  # bool
     join_date: str
     notes: str
     resume_filename: str | None
@@ -184,6 +185,7 @@ def default_user(user_id: str):
             major="",
             email="",
             verified=0,
+            sponsor_email_opt_out=0,
             join_date="",
             notes="",
             resume_filename="",
