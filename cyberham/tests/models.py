@@ -34,8 +34,6 @@ def valid_user() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -52,8 +50,6 @@ def valid_user_2() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -70,8 +66,6 @@ def updated_user() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -88,8 +82,6 @@ def updated_user_2() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -106,8 +98,6 @@ def flagged_user() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -124,8 +114,6 @@ def no_email_user() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -142,8 +130,6 @@ def unregistered_user() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -160,8 +146,6 @@ def unregistered_user_2() -> User:
             verified=True,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 

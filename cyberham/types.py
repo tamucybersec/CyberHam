@@ -85,7 +85,7 @@ class CalendarEvent(TypedDict):
 type Semester = Literal["spring", "fall"]
 type GradSemester = Literal["spring", "summer", "fall", "winter"]
 type TableName = Literal[
-    "users", "events", "flagged", "attendance", "points", "tokens", "register", "verify", "rsvp"
+    "users", "resumes", "events", "flagged", "attendance", "points", "tokens", "register", "verify", "rsvp"
 ]
 Item: TypeAlias = Mapping[str, Any]
 
@@ -100,12 +100,18 @@ class User(TypedDict):
     verified: int  # bool
     join_date: str
     notes: str
-    resume_filename: str | None
-    resume_format: str
-
 
 MaybeUser: TypeAlias = Optional[User]
 
+
+class Resume(TypedDict):
+    user_id: str
+    filename: str
+    format: str
+    upload_date: str
+    is_valid: int # bool (1 or 0)
+
+MaybeResume: TypeAlias = Optional[Resume]
 
 class Event(TypedDict):
     name: str
@@ -185,8 +191,6 @@ def default_user(user_id: str):
             email="",
             verified=0,
             join_date="",
-            notes="",
-            resume_filename="",
-            resume_format="",
+            notes=""
         )
     )

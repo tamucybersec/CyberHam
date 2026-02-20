@@ -34,9 +34,19 @@ class SQLiteDB:
                 email TEXT NOT NULL,
                 verified INTEGER NOT NULL CHECK(verified IN (0, 1)),
                 join_date TEXT NOT NULL,
-                notes TEXT NOT NULL,
-                resume_format TEXT NOT NULL,
-                resume_filename TEXT NOT NULL
+                notes TEXT NOT NULL
+            )"""
+        )
+
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS resumes (
+                user_id TEXT PRIMARY KEY, 
+                filename TEXT NOT NULL,
+                format TEXT NOT NULL,
+                upload_date TEXT NOT NULL,
+                is_valid INTEGER NOT NULL CHECK(is_valid IN (0, 1)), --has it been verified by an officer? (planned feature)
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE
             )"""
         )
 
