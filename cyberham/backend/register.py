@@ -86,6 +86,11 @@ def register(ticket: str, user: User) -> tuple[str, MaybeError]:
         )
 
     def update_user(u: MaybeUser) -> MaybeUser:
+        if "sponsor_email_opt_out" not in user:
+            user["sponsor_email_opt_out"] = (
+                u["sponsor_email_opt_out"] if u is not None else 0
+            )
+
         if u is None:
             user["join_date"] = datetime_to_datestr(datetime.now())
             return user

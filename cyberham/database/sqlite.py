@@ -33,6 +33,7 @@ class SQLiteDB:
                 major TEXT NOT NULL,
                 email TEXT NOT NULL,
                 verified INTEGER NOT NULL CHECK(verified IN (0, 1)),
+                sponsor_email_opt_out INTEGER NOT NULL DEFAULT 0 CHECK(sponsor_email_opt_out IN (0, 1)),
                 join_date TEXT NOT NULL,
                 notes TEXT NOT NULL
             )"""
@@ -124,7 +125,7 @@ class SQLiteDB:
                 code INTEGER
             )"""
         )
-        
+
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS rsvp (

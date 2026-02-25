@@ -79,6 +79,9 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
             "upload_date": resume["upload_date"],
             "is_valid": bool(resume["is_valid"])
             }
+        
+    if "sponsor_email_opt_out" not in user:
+        user["sponsor_email_opt_out"] = 0
 
     return {
         "user": {**dict(user),"grad_semester": pretty_semester(user["grad_semester"])},

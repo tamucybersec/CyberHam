@@ -32,6 +32,7 @@ def valid_user() -> User:
             major="",
             email="lane@tamu.edu",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
@@ -48,6 +49,7 @@ def valid_user_2() -> User:
             major="",
             email="stella@tamu.edu",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
@@ -64,6 +66,7 @@ def updated_user() -> User:
             major="",
             email="emma@tamu.edu",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
@@ -80,6 +83,7 @@ def updated_user_2() -> User:
             major="",
             email="colby@tamu.edu",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
@@ -96,6 +100,7 @@ def flagged_user() -> User:
             major="",
             email="",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
@@ -112,6 +117,7 @@ def no_email_user() -> User:
             major="",
             email="",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
@@ -128,6 +134,7 @@ def unregistered_user() -> User:
             major="",
             email="owen@tamu.edu",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
@@ -144,6 +151,7 @@ def unregistered_user_2() -> User:
             major="",
             email="zach@tamu.edu",
             verified=True,
+            sponsor_email_opt_out=False,
             join_date=today,
             notes="",
         )
