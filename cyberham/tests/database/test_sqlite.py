@@ -83,58 +83,5 @@ class TestSQLiteCrud:
     def test_get_count(self):
         assert self.sqlite.get_count(table) == 2
 
-    def test_users_schema_migration_adds_opt_out_column(self):
-        self.sqlite.conn.execute("DROP TABLE users")
-        self.sqlite.conn.execute(
-            """
-            CREATE TABLE users (
-                user_id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                grad_semester TEXT NOT NULL,
-                grad_year INTEGER NOT NULL,
-                major TEXT NOT NULL,
-                email TEXT NOT NULL,
-                verified INTEGER NOT NULL CHECK(verified IN (0, 1)),
-                join_date TEXT NOT NULL,
-                notes TEXT NOT NULL,
-                resume_format TEXT NOT NULL,
-                resume_filename TEXT NOT NULL
-            )
-            """
-        )
-        self.sqlite.conn.execute(
-            """
-            INSERT INTO users (
-                user_id, name, grad_semester, grad_year, major, email, verified,
-                join_date, notes, resume_format, resume_filename
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                "legacy-user",
-                "Legacy User",
-                "spring",
-                2026,
-                "Computer Science",
-                "legacy@tamu.edu",
-                1,
-                "2025-01-01",
-                "",
-                "",
-                "",
-            ),
-        )
-        self.sqlite.conn.commit()
-
-        self.sqlite._migrate_users_schema()
-        self.sqlite._migrate_users_schema()
-
-        self.sqlite.cursor.execute("PRAGMA table_info(users)")
-        columns = {column["name"] for column in self.sqlite.cursor.fetchall()}
-        assert "sponsor_email_opt_out" in columns
-
-        legacy_user = self.sqlite.get_row(table, pk_names, ("legacy-user",))
-        assert legacy_user is not None
-        assert legacy_user["sponsor_email_opt_out"] == 0
-
     def _pk_values(self, model: dict[str, object]) -> tuple[Any, ...]:
         return tuple(model[pk] for pk in pk_names)

@@ -125,7 +125,7 @@ class SQLiteDB:
                 code INTEGER
             )"""
         )
-        
+
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS rsvp (
@@ -138,21 +138,7 @@ class SQLiteDB:
             )"""
         )
 
-        self._migrate_users_schema()
         self.conn.commit()
-
-    def _migrate_users_schema(self) -> None:
-        self.cursor.execute("PRAGMA table_info(users)")
-        columns = self.cursor.fetchall()
-        column_names = {column["name"] for column in columns}
-
-        if "sponsor_email_opt_out" not in column_names:
-            self.conn.execute(
-                """
-                ALTER TABLE users
-                ADD COLUMN sponsor_email_opt_out INTEGER NOT NULL DEFAULT 0 CHECK(sponsor_email_opt_out IN (0, 1))
-                """
-            )
 
     # create
     def create_row(self, table: TableName, item: Item) -> None:
