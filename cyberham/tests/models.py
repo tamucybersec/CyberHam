@@ -35,8 +35,6 @@ def valid_user() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -54,8 +52,6 @@ def valid_user_2() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -73,8 +69,6 @@ def updated_user() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -92,8 +86,6 @@ def updated_user_2() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -111,8 +103,6 @@ def flagged_user() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -130,8 +120,6 @@ def no_email_user() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -149,8 +137,6 @@ def unregistered_user() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
@@ -168,8 +154,6 @@ def unregistered_user_2() -> User:
             sponsor_email_opt_out=False,
             join_date=today,
             notes="",
-            resume_format="",
-            resume_filename=""
         )
     )
 
