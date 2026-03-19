@@ -4,6 +4,8 @@ import cyberham.backend.register as backend_register
 from cyberham import guild_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild, user_profile_embed
+from cyberham.types import MaybeUser, default_user
+from cyberham.database.typeddb import usersdb
 from typing import Any
 
 
@@ -17,6 +19,14 @@ def setup_commands(bot: Bot):
     )
     async def register(interaction: discord.Interaction):
         user_id = str(interaction.user.id)
+        username = str(interaction.user.name)
+
+        def set_name(u: MaybeUser) -> MaybeUser:
+            if u is None:
+                u = default_user(user_id)
+            u["username"] = username
+            return u
+        usersdb.update(set_name, pk_values=(user_id,))
         url = backend_register.generate_registration_url(user_id)
         button = discord.ui.Button[discord.ui.View](label="Register", url=url)
         view = discord.ui.View()
@@ -116,6 +126,14 @@ def setup_commands(bot: Bot):
                     output += f"{command.name}\n"
 
         await interaction.response.send_message(output)
+    
+    @bot.event
+    async def on_member_update(before: discord.Member, after: discord.Member):
+        if before.name != after.name:
+            usersdb.update(
+                lambda u: {**u, "username": after.name} if u else None,
+                pk_values=(str(after.id),),
+            )
 
     # satisfy type checker
     _: list[Any] = [
