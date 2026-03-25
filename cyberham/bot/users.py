@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 import cyberham.backend.register as backend_register
-from cyberham import guild_id
+from cyberham import guild_id, admin_channel_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild, user_profile_embed
 from cyberham.database.typeddb import usersdb
@@ -142,7 +142,7 @@ def setup_commands(bot: Bot):
         guilds=guild_id
     )
     async def remove_non_aggie_roles(interaction: discord.Interaction):
-        if interaction.channel.name != 'officers':
+        if interaction.channel.id != admin_channel_id:
             await interaction.response.send_message("You do not have the permissions "
                                                     "or are in the wrong channel to run this command.")
             return
