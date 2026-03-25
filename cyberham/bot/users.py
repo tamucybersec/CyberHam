@@ -7,9 +7,6 @@ from cyberham.bot.utils import valid_guild, user_profile_embed
 from cyberham.database.typeddb import usersdb
 from typing import Any
 
-import tomllib
-
-
 def setup_commands(bot: Bot):
     command_tree = bot.command_tree
 
@@ -37,9 +34,6 @@ def setup_commands(bot: Bot):
     @app_commands.describe(code="Please enter the code sent to your TAMU email")
     async def verify(interaction: discord.Interaction, code: int):
         msg: str = backend_register.verify_email(code, str(interaction.user.id))
-
-        with open("config.dev.toml", "rb") as f:
-            data = tomllib.load(f)
 
         if "verified!" in msg and interaction.guild_id == server_interaction_guild_id:
             assert interaction.guild is not None
