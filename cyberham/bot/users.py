@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 import cyberham.backend.register as backend_register
-from cyberham import guild_id, admin_channel_id
+from cyberham import guild_id, admin_channel_id, server_interaction_guild_id, aggie_role_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild, user_profile_embed
 from cyberham.database.typeddb import usersdb
@@ -41,23 +41,16 @@ def setup_commands(bot: Bot):
         with open("config.dev.toml", "rb") as f:
             data = tomllib.load(f)
 
-        server_interaction_guild_id = data['discord']['test_guild_ids'][0]
-        aggie_role_id = data['discord']['aggie_role_id']
-
         if "verified!" in msg and interaction.guild_id == server_interaction_guild_id:
             assert interaction.guild is not None
-
-            print("SUCCESS!!!!!")
             member = interaction.guild.get_member(interaction.user.id)
             if member is None:
                 # Fallback in case member is not cached
                 member = await interaction.guild.fetch_member(interaction.user.id)
 
             user = usersdb.get((interaction.user.id,))
-            print(user["email"])
 
             if user["email"].endswith("tamu.edu"):
-                print("aggie role given to user")
                 await member.add_roles(
                     discord.Object(id=aggie_role_id), reason="TAMU email verified"
                 )
@@ -149,7 +142,6 @@ def setup_commands(bot: Bot):
 
         for dict in usersdb.get_all():
             if not dict['email'].endswith("tamu.edu"):
-                print(dict['user_id'])
                 member = interaction.guild.get_member(dict['user_id'])
 
                 if member is None:
