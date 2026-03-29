@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 import cyberham.backend.register as backend_register
-from cyberham import guild_id, admin_channel_id, server_interaction_guild_id, aggie_role_id
+from cyberham import guild_id, admin_channel_id, aggie_role_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild, user_profile_embed
 from cyberham.database.typeddb import usersdb
@@ -35,16 +35,16 @@ def setup_commands(bot: Bot):
     async def verify(interaction: discord.Interaction, code: int):
         msg: str = backend_register.verify_email(code, str(interaction.user.id))
 
-        if "verified!" in msg and interaction.guild_id == server_interaction_guild_id:
+        if "verified!" in msg and interaction.guild_id == guild_id[0]:
             assert interaction.guild is not None
             member = interaction.guild.get_member(interaction.user.id)
             if member is None:
                 # Fallback in case member is not cached
                 member = await interaction.guild.fetch_member(interaction.user.id)
 
-            user = usersdb.get((interaction.user.id,))
+            user = usersdb.get((str(interaction.user.id),))
 
-            if user["email"].endswith("tamu.edu"):
+            if user is not None and user["email"].endswith("tamu.edu"):
                 await member.add_roles(
                     discord.Object(id=aggie_role_id), reason="TAMU email verified"
                 )
@@ -129,21 +129,21 @@ def setup_commands(bot: Bot):
         guilds=guild_id
     )
     async def remove_non_aggie_roles(interaction: discord.Interaction):
-        if interaction.channel.id != admin_channel_id:
+        if interaction.channel is not None and interaction.channel.id != admin_channel_id:
             await interaction.response.send_message("You do not have the permissions "
                                                     "or are in the wrong channel to run this command.")
             return
 
         for dict in usersdb.get_all():
-            if not dict['email'].endswith("tamu.edu"):
-                member = interaction.guild.get_member(dict['user_id'])
+            if not dict['email'].endswith("tamu.edu") and interaction.guild is not None:
+                member = interaction.guild.get_member(int(dict['user_id']))
 
                 if member is None:
                     # Fallback in case member is not cached
-                    member = await interaction.guild.fetch_member(dict['user_id'])
+                    member = await interaction.guild.fetch_member(int(dict['user_id']))
 
                 await member.remove_roles(
-                    discord.Object(1486203798815903819),
+                    discord.Object(id=aggie_role_id),
                     reason="email used for verification is not an tamu.edu email"
                 )
 
@@ -158,4 +158,5 @@ def setup_commands(bot: Bot):
         profile_member,
         size,
         list_of_commands,
+        remove_non_aggie_roles
     ]
