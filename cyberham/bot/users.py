@@ -1,11 +1,11 @@
 import discord
 from discord import app_commands
 import cyberham.backend.register as backend_register
-from cyberham import guild_id
+from cyberham import guild_id, admin_channel_id, aggie_role_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild, user_profile_embed
+from cyberham.database.typeddb import usersdb
 from typing import Any
-
 
 def setup_commands(bot: Bot):
     command_tree = bot.command_tree
@@ -34,15 +34,21 @@ def setup_commands(bot: Bot):
     @app_commands.describe(code="Please enter the code sent to your TAMU email")
     async def verify(interaction: discord.Interaction, code: int):
         msg: str = backend_register.verify_email(code, str(interaction.user.id))
-        if "verified!" in msg and interaction.guild_id == 631254092332662805:
+
+        if "verified!" in msg and interaction.guild_id == guild_id[0]:
             assert interaction.guild is not None
             member = interaction.guild.get_member(interaction.user.id)
             if member is None:
                 # Fallback in case member is not cached
                 member = await interaction.guild.fetch_member(interaction.user.id)
-            await member.add_roles(
-                discord.Object(id=1015024081432743996), reason="TAMU email verified"
-            )
+
+            user = usersdb.get((str(interaction.user.id),))
+
+            if user is not None and user["email"].endswith("tamu.edu"):
+                await member.add_roles(
+                    discord.Object(id=aggie_role_id), reason="TAMU email verified"
+                )
+
         await interaction.response.send_message(msg, ephemeral=True)
 
     @verify.error
@@ -117,6 +123,32 @@ def setup_commands(bot: Bot):
 
         await interaction.response.send_message(output)
 
+    @app_commands.checks.cooldown(3, 5 * 60)
+    @command_tree.command(
+        name="remove_aggie_role", description="remove Aggie role for all verified users with a non tamu.edu email",
+        guilds=guild_id
+    )
+    async def remove_non_aggie_roles(interaction: discord.Interaction):
+        if interaction.channel is not None and interaction.channel.id != admin_channel_id:
+            await interaction.response.send_message("You do not have the permissions "
+                                                    "or are in the wrong channel to run this command.")
+            return
+
+        for dict in usersdb.get_all():
+            if not dict['email'].endswith("tamu.edu") and interaction.guild is not None:
+                member = interaction.guild.get_member(int(dict['user_id']))
+
+                if member is None:
+                    # Fallback in case member is not cached
+                    member = await interaction.guild.fetch_member(int(dict['user_id']))
+
+                await member.remove_roles(
+                    discord.Object(id=aggie_role_id),
+                    reason="email used for verification is not an tamu.edu email"
+                )
+
+        await interaction.response.send_message("All previously verified members without a tamu.edu email do not have an Aggie role!")
+
     # satisfy type checker
     _: list[Any] = [
         register,
@@ -126,4 +158,5 @@ def setup_commands(bot: Bot):
         profile_member,
         size,
         list_of_commands,
+        remove_non_aggie_roles
     ]
