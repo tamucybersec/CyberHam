@@ -1,52 +1,61 @@
 import json
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 import pytest
 from cyberham.apis.dashboard import app
 
-client = TestClient(app)
+client: TestClient = TestClient(app)
+
 
 # Fixture to provide a standard payload
 @pytest.fixture
-def standard_user_payload():
+def standard_user_payload() -> dict[str, str]:
     return {
         "user_id": "u1",
         "grad_semester": "2026S",
         "resume_filename": "",
-        "resume_format": ""
+        "resume_format": "",
     }
 
+
 class TestDashboard:
-    
+
     # ------------------------------------------------------------------
-    # /login 
+    # /login
     # ------------------------------------------------------------------
-    
+
     @pytest.mark.parametrize(
         "token_val, mock_return, expected_body",
         [
-            ("some-token", (0, None), 0),          # none user
-            ("some-token", (1, None), 1),          # sponsor user
-            ("some-token", (2, None), 2),          # committee user
-            ("some-token", (3, None), 3),          # admin user
-            ("definitely-invalid", (0, "invalid token"), 0), # invalid token
-        ]
+            ("some-token", (0, None), 0),           # none user
+            ("some-token", (1, None), 1),           # sponsor user
+            ("some-token", (2, None), 2),           # committee user
+            ("some-token", (3, None), 3),           # admin user
+            ("definitely-invalid", (0, "invalid token"), 0),  # invalid token
+        ],
     )
     @patch("cyberham.apis.dashboard.token_status")
-    def test_login_tokens(self, mock_token_status, token_val, mock_return, expected_body):
+    def test_login_tokens(
+        self,
+        mock_token_status: MagicMock,
+        token_val: str,
+        mock_return: tuple[int, str | None],
+        expected_body: int,
+    ) -> None:
         """
-        Verifies that the /login endpoint correctly maps token validation 
+        Verifies that the /login endpoint correctly maps token validation
         results from the database to the appropriate user permission levels.
         """
         mock_token_status.return_value = mock_return
-        
+
         resp = client.get("/login", params={"token": token_val})
-        
+
         assert resp.status_code == 200
         assert resp.json() == expected_body
         mock_token_status.assert_called_once_with(token_val)
 
-    def test_login_missing_token(self):
+    def test_login_missing_token(self) -> None:
         """
         Verifies that the API rejects login attempts that omit the token parameter entirely.
         """
@@ -56,15 +65,15 @@ class TestDashboard:
     # ------------------------------------------------------------------
     # /register
     # ------------------------------------------------------------------
-    
-    def test_register_missing_user_json(self):
+
+    def test_register_missing_user_json(self) -> None:
         """
         Verifies that the API blocks registration if the user_json payload is missing.
         """
         resp = client.post("/register/test-ticket")
         assert resp.status_code == 422
 
-    def test_register_invalid_json(self):
+    def test_register_invalid_json(self) -> None:
         """
         Verifies that the API safely catches and rejects malformed JSON strings.
         """
@@ -76,25 +85,29 @@ class TestDashboard:
         assert resp.json()["detail"] == "Invalid user JSON"
 
     @patch("cyberham.apis.dashboard.register")
-    def test_register_missing_fields(self, mock_register):
+    def test_register_missing_fields(self, mock_register: MagicMock) -> None:
         """
-        Documents a known issue: The API currently lacks validation for missing keys 
+        Documents a known issue: The API currently lacks validation for missing keys
         in the JSON payload and will crash (500 Error) if required fields are missing.
         """
         mock_register.side_effect = KeyError("grad_semester")
-        
+
         # Use a specific client just for this test that doesn't crash the runner
-        safe_client = TestClient(app, raise_server_exceptions=False)
+        safe_client: TestClient = TestClient(app, raise_server_exceptions=False)
 
         resp = safe_client.post(
             "/register/test-ticket",
-            data={"user_json": '{"user_id": "u1"}'}
+            data={"user_json": '{"user_id": "u1"}'},
         )
 
         assert resp.status_code == 500
 
     @patch("cyberham.apis.dashboard.register")
-    def test_register_success_no_resume(self, mock_register, standard_user_payload):
+    def test_register_success_no_resume(
+        self,
+        mock_register: MagicMock,
+        standard_user_payload: dict[str, str],
+    ) -> None:
         """
         Verifies the happy path for a user successfully registering without uploading a resume.
         """
@@ -106,14 +119,18 @@ class TestDashboard:
         assert resp.status_code == 200
         assert resp.json()["message"] == "Registered successfully"
         mock_register.assert_called_once()
-    
+
     @patch("cyberham.apis.dashboard.register")
-    def test_register_returns_error(self, mock_register, standard_user_payload):
+    def test_register_returns_error(
+        self,
+        mock_register: MagicMock,
+        standard_user_payload: dict[str, str],
+    ) -> None:
         """
         Verifies that the endpoint correctly bubbles up errors (like an invalid ticket)
         returned by the underlying database registration logic.
         """
-        mock_err = MagicMock()
+        mock_err: MagicMock = MagicMock()
         mock_err.json.return_value = {"detail": "Invalid ticket"}
         mock_register.return_value = ("", mock_err)
 
@@ -126,7 +143,12 @@ class TestDashboard:
 
     @patch("cyberham.apis.dashboard.register")
     @patch("cyberham.apis.dashboard.upload_resume", new_callable=AsyncMock)
-    def test_register_with_resume_success(self, mock_upload, mock_register, standard_user_payload):
+    def test_register_with_resume_success(
+        self,
+        mock_upload: AsyncMock,
+        mock_register: MagicMock,
+        standard_user_payload: dict[str, str],
+    ) -> None:
         """
         Verifies the happy path for a user successfully registering and uploading a resume file.
         """
@@ -145,9 +167,14 @@ class TestDashboard:
 
     @patch("cyberham.apis.dashboard.register")
     @patch("cyberham.apis.dashboard.upload_resume", new_callable=AsyncMock)
-    def test_register_resume_upload_fails(self, mock_upload, mock_register, standard_user_payload):
+    def test_register_resume_upload_fails(
+        self,
+        mock_upload: AsyncMock,
+        mock_register: MagicMock,
+        standard_user_payload: dict[str, str],
+    ) -> None:
         """
-        Verifies that if the resume upload process fails, the registration process is halted 
+        Verifies that if the resume upload process fails, the registration process is halted
         and an appropriate 500 error is returned.
         """
         mock_upload.return_value = ""
@@ -163,11 +190,11 @@ class TestDashboard:
         mock_register.assert_not_called()
 
     # ------------------------------------------------------------------
-    # /self 
+    # /self
     # ------------------------------------------------------------------
-    
+
     @patch("cyberham.apis.dashboard.registerdb.get")
-    def test_get_self_invalid_ticket(self, mock_register_get):
+    def test_get_self_invalid_ticket(self, mock_register_get: MagicMock) -> None:
         """
         Verifies that requesting profile data with a non-existent ticket returns a 400 error.
         """
@@ -182,13 +209,13 @@ class TestDashboard:
     @patch("cyberham.apis.dashboard.registerdb.get")
     def test_get_self_corrupt_db(
         self,
-        mock_register_get,
-        mock_valid_time,
-        mock_users_get,
-        mock_resumes_get,
-    ):
+        mock_register_get: MagicMock,
+        mock_valid_time: MagicMock,
+        mock_users_get: MagicMock,
+        mock_resumes_get: MagicMock,
+    ) -> None:
         """
-        Verifies that the API raises a KeyError if the database returns a corrupted 
+        Verifies that the API raises a KeyError if the database returns a corrupted
         registration record that is missing mandatory schema fields like 'time'.
         """
         mock_register_get.return_value = {}  # missing "time" and "user_id"
@@ -201,7 +228,11 @@ class TestDashboard:
 
     @patch("cyberham.apis.dashboard.registerdb.get")
     @patch("cyberham.apis.dashboard.valid_registration_time")
-    def test_get_self_expired_link(self, mock_valid_time, mock_register_get):
+    def test_get_self_expired_link(
+        self,
+        mock_valid_time: MagicMock,
+        mock_register_get: MagicMock,
+    ) -> None:
         """
         Verifies that attempting to use an expired registration ticket is rejected.
         """
@@ -219,14 +250,14 @@ class TestDashboard:
     @patch("cyberham.apis.dashboard.pretty_semester")
     def test_get_self_user_exists_no_resume(
         self,
-        mock_pretty_semester,
-        mock_users_get,
-        mock_valid_time,
-        mock_register_get,
-        mock_resume_get
-    ):
+        mock_pretty_semester: MagicMock,
+        mock_users_get: MagicMock,
+        mock_valid_time: MagicMock,
+        mock_register_get: MagicMock,
+        mock_resume_get: MagicMock,
+    ) -> None:
         """
-        Verifies the happy path for retrieving an existing user's profile data 
+        Verifies the happy path for retrieving an existing user's profile data
         when they have no resume on file.
         """
         mock_register_get.return_value = {"time": 123, "user_id": "u1"}
@@ -241,7 +272,7 @@ class TestDashboard:
 
         resp = client.get("/self/some-ticket")
         assert resp.status_code == 200
-        body = resp.json()
+        body: dict[str, Any] = resp.json()
 
         assert body["user"]["user_id"] == "u1"
         assert body["user"]["grad_semester"] == "Spring 2026"
@@ -256,16 +287,16 @@ class TestDashboard:
     @patch("cyberham.apis.dashboard.registerdb.get")
     def test_get_self_uses_default(
         self,
-        mock_register_get,
-        mock_valid_time,
-        mock_users_get,
-        mock_pretty_semester,
-        mock_default_user,
-        mock_resumes_get,
-    ):
+        mock_register_get: MagicMock,
+        mock_valid_time: MagicMock,
+        mock_users_get: MagicMock,
+        mock_pretty_semester: MagicMock,
+        mock_default_user: MagicMock,
+        mock_resumes_get: MagicMock,
+    ) -> None:
         """
-        Verifies the fallback mechanism: If a user has a valid ticket but no existing profile 
-        in the database, the API gracefully creates and returns a temporary default profile 
+        Verifies the fallback mechanism: If a user has a valid ticket but no existing profile
+        in the database, the API gracefully creates and returns a temporary default profile
         rather than crashing.
         """
         mock_register_get.return_value = {"time": 123, "user_id": "u2"}
@@ -282,7 +313,7 @@ class TestDashboard:
 
         resp = client.get("/self/some-ticket")
         assert resp.status_code == 200
-        body = resp.json()
+        body: dict[str, Any] = resp.json()
 
         assert body["resume"] == {}
         assert body["user"]["user_id"] == "u2"
@@ -298,14 +329,14 @@ class TestDashboard:
     @patch("cyberham.apis.dashboard.registerdb.get")
     def test_get_self_ok_with_resume(
         self,
-        mock_register_get,
-        mock_valid_time,
-        mock_users_get,
-        mock_pretty_semester,
-        mock_resumes_get,
-    ):
+        mock_register_get: MagicMock,
+        mock_valid_time: MagicMock,
+        mock_users_get: MagicMock,
+        mock_pretty_semester: MagicMock,
+        mock_resumes_get: MagicMock,
+    ) -> None:
         """
-        Verifies the happy path for retrieving an existing user's profile data, 
+        Verifies the happy path for retrieving an existing user's profile data,
         ensuring that attached resume metadata is correctly fetched and parsed.
         """
         mock_register_get.return_value = {"time": 123, "user_id": "u1"}
@@ -325,6 +356,6 @@ class TestDashboard:
 
         resp = client.get("/self/ticket")
         assert resp.status_code == 200
-        body = resp.json()
+        body: dict[str, Any] = resp.json()
         assert body["resume"]["upload_date"] == "2026-01-01T00:00:00Z"
         assert body["resume"]["is_valid"] is True
