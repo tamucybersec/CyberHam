@@ -12,3 +12,4 @@ beautifulsoup4~=4.13.4
 lxml~=5.4.0
 aiofiles~=24.1.0
 python-multipart~=0.0.20
+httpx~=0.28.1
