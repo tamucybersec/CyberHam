@@ -20,13 +20,6 @@ class SQLiteDB:
         self.cursor = self.conn.cursor()
         self._create_tables()
 
-    def _needs_join(self, table: TableName) -> bool:
-        return table in ["resumes", "flagged", "attendance", "points", "rsvp", "verify"]
-
-    def _get_table_columns(self, table: TableName) -> list[str]:
-        self.cursor.execute(f"PRAGMA table_info({table})")
-        return [row[1] for row in self.cursor.fetchall()]
-
     def _create_tables(self):
         self.conn.execute("PRAGMA foreign_keys = ON")
 
@@ -35,7 +28,6 @@ class SQLiteDB:
             CREATE TABLE IF NOT EXISTS users (
                 user_id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
-                username TEXT NOT NULL,
                 grad_semester TEXT NOT NULL,
                 grad_year INTEGER NOT NULL,
                 major TEXT NOT NULL,
@@ -150,11 +142,9 @@ class SQLiteDB:
 
     # create
     def create_row(self, table: TableName, item: Item) -> None:
-        table_columns = self._get_table_columns(table)
-        filtered_item = {k: v for k, v in item.items() if k in table_columns}
-        cols = ", ".join(list(filtered_item.keys()))
-        placeholders = ", ".join("?" for _ in filtered_item)
-        vals = list(filtered_item.values())
+        cols = ", ".join(list(item.keys()))
+        placeholders = ", ".join("?" for _ in item)
+        vals = list(item.values())
 
         self.cursor.execute(
             f"INSERT INTO {table} ({cols}) VALUES ({placeholders})", vals
@@ -166,10 +156,7 @@ class SQLiteDB:
         self, table: TableName, pk_names: list[str], pk_values: PK
     ) -> Optional[Item]:
         wheres = self._wheres(pk_names)
-        if TableName in ["resumes", "flagged", "attendance", "points", "rsvp", "verify"]:
-            self.cursor.execute(f"SELECT t.*, u.username FROM {table} t JOIN users u ON u.user_id = t.user_id WHERE {wheres}", pk_values)
-        else:
-            self.cursor.execute(f"SELECT * FROM {table} WHERE {wheres}", pk_values)
+        self.cursor.execute(f"SELECT * FROM {table} WHERE {wheres}", pk_values)
         row = self.cursor.fetchone()
         return dict(row) if row else None
 
@@ -177,13 +164,8 @@ class SQLiteDB:
     def update_row(
         self, table: TableName, pk_names: list[str], original: Item, updated: Item
     ) -> None:
-        # Determine the columns that have changed (only real table columns)
-        table_columns = self._get_table_columns(table)
-        diffs = {
-            key: updated[key]
-            for key in updated
-            if key in table_columns and original.get(key) != updated[key]
-        }
+        # Determine the columns that have changed
+        diffs = {key: updated[key] for key in updated if original[key] != updated[key]}
 
         if not diffs:
             return  # Nothing to update
@@ -209,14 +191,6 @@ class SQLiteDB:
             self.conn.commit()
         return old
 
-    # get username
-    def get_username(
-        self, pk_names: list[str], pk_values: PK
-    ) -> Optional[str]:
-        wheres = self._wheres(pk_names)
-        username = self.cursor.execute(f"SELECT username FROM users WHERE {wheres}", pk_values)
-        return username.fetchone()[0] if username else None
-    
     def get_batch(
         self,
         table: TableName,
@@ -233,16 +207,10 @@ class SQLiteDB:
         for vals in pk_values:
             values.extend(vals)
 
-        if self._needs_join(table):
-            self.cursor.execute(
-                f"SELECT t.*, u.username FROM {table} t JOIN users u ON t.user_id = u.user_id WHERE {wheres}",
-                values,
-            )
-        else:
-            self.cursor.execute(
-                f"SELECT * FROM {table} WHERE {wheres}",
-                values,
-            )
+        self.cursor.execute(
+            f"SELECT * FROM {table} WHERE {wheres}",
+            values,
+        )
         rows = self.cursor.fetchall()
 
         # lookup map of pk values -> row
@@ -261,12 +229,7 @@ class SQLiteDB:
         return results
 
     def get_all_rows(self, table: TableName) -> list[Item]:
-        if self._needs_join(table):
-            self.cursor.execute(
-                f"SELECT t.*, u.username FROM {table} t JOIN users u ON t.user_id = u.user_id"
-            )
-        else:
-            self.cursor.execute(f"SELECT * FROM {table}")
+        self.cursor.execute(f"SELECT * FROM {table}")
         return [dict(row) for row in self.cursor.fetchall()]
 
     def get_count(self, table: TableName) -> int:
@@ -298,10 +261,7 @@ class SQLiteDB:
             return {"error": "Unexpected failure", "details": str(e)}
 
     def batch_insert(self, table: TableName, items: Sequence[Item]):
-        if not items:
-            return
-        table_columns = self._get_table_columns(table)
-        keys = [k for k in items[0].keys() if k in table_columns]
+        keys = items[0].keys()
         placeholders = ", ".join(["?"] * len(keys))
         columns = ", ".join(keys)
         sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"

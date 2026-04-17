@@ -93,7 +93,6 @@ Item: TypeAlias = Mapping[str, Any]
 class User(TypedDict):
     user_id: str
     name: str
-    username: str
     grad_semester: GradSemester
     grad_year: int
     major: str
@@ -108,7 +107,6 @@ MaybeUser: TypeAlias = Optional[User]
 
 class Resume(TypedDict):
     user_id: str
-    username: str
     filename: str
     format: str
     upload_date: str
@@ -131,7 +129,6 @@ MaybeEvent: TypeAlias = Optional[Event]
 
 class Flagged(TypedDict):
     user_id: str
-    username: str
     offenses: int
 
 
@@ -140,7 +137,6 @@ MaybeFlagged: TypeAlias = Optional[Flagged]
 
 class Attendance(TypedDict):
     user_id: str
-    username: str
     code: str
 
 
@@ -149,7 +145,6 @@ MaybeAttendance: TypeAlias = Optional[Attendance]
 
 class Points(TypedDict):
     user_id: str
-    username: str
     points: int
     semester: Semester
     year: int
@@ -179,12 +174,10 @@ class Register(TypedDict):
 
 class Verify(TypedDict):
     user_id: str
-    username: str
     code: int
 
 class rsvp(TypedDict):
     user_id:str
-    username: str
     code:str
     reservation:int
 
@@ -193,7 +186,6 @@ def default_user(user_id: str):
         User(
             user_id=user_id,
             name="",
-            username="",
             grad_semester=cast(GradSemester, ""),
             grad_year=cast(int, ""),
             major="",
