@@ -11,7 +11,7 @@ import cyberham.backend.events as backend_events
 from cyberham import guild_id, discord_token, admin_channel_id
 from cyberham.bot.utils import event_info
 from cyberham.types import Category
-from cyberham import dashboard_config
+from cyberham import ipc_key, ipc_port
 
 
 class Bot(discord.Client):
@@ -27,12 +27,10 @@ class Bot(discord.Client):
         self.synced = False
         self.logger = logging.getLogger(__name__)
         self.command_tree = app_commands.CommandTree(self)
-        self.ipc = ipcx.Server(self, secret_key="myu", port=1730)
+        self.ipc = ipcx.Server(self, secret_key=ipc_key, port=ipc_port)
     
     async def setup_hook(self) -> None:
-        print("setting up...")
         await self.ipc.start()
-        print("set up")
 
     async def on_ipc_ready(self) -> None:
         print("IPC server starting")

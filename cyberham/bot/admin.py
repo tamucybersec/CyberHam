@@ -129,27 +129,6 @@ def setup_commands(bot: Bot):
 
         await interaction.followup.send(new_msg)
 
-    # @app_commands.default_permissions(manage_events=True)
-    # @command_tree.command(
-    #     name="lookup", description="fetch a user's profile via @mention", guilds=guild_id
-    # )
-    # async def lookup(
-    #     interaction: discord.Interaction, user: discord.Member, points: int
-    # ):
-    #     msg: str = backend_users.award(str(user.id), user.name, points)
-    #     await interaction.response.send_message(msg)
-
-    # user = bot.super().get_user(user_id)
-    #     if not user:
-    #         try:
-    #             user = await bot.super().fetch_user(user_id)
-    #         except Exception as e:
-    #             raise e
-    #     return {
-    #         "id": user_id,
-    #         "username": user.name,
-    #         "display_name": user.display_name
-    #     }
 
     # satisfy type checker
     _: list[Any] = [
