@@ -1,13 +1,11 @@
 import discord
 from discord import app_commands
 import cyberham.backend.register as backend_register
-from cyberham import guild_id
+from cyberham import guild_id, admin_channel_id, aggie_role_id
 from cyberham.bot.bot import Bot
 from cyberham.bot.utils import valid_guild, user_profile_embed
-from cyberham.types import MaybeUser, default_user
 from cyberham.database.typeddb import usersdb
 from typing import Any
-
 
 def setup_commands(bot: Bot):
     command_tree = bot.command_tree
@@ -19,14 +17,6 @@ def setup_commands(bot: Bot):
     )
     async def register(interaction: discord.Interaction):
         user_id = str(interaction.user.id)
-        username = str(interaction.user.name)
-
-        def set_name(u: MaybeUser) -> MaybeUser:
-            if u is None:
-                u = default_user(user_id)
-            u["username"] = username
-            return u
-        usersdb.update(set_name, pk_values=(user_id,))
         url = backend_register.generate_registration_url(user_id)
         button = discord.ui.Button[discord.ui.View](label="Register", url=url)
         view = discord.ui.View()
@@ -44,15 +34,21 @@ def setup_commands(bot: Bot):
     @app_commands.describe(code="Please enter the code sent to your TAMU email")
     async def verify(interaction: discord.Interaction, code: int):
         msg: str = backend_register.verify_email(code, str(interaction.user.id))
-        if "verified!" in msg and interaction.guild_id == 631254092332662805:
+
+        if "verified!" in msg and interaction.guild_id == guild_id[0]:
             assert interaction.guild is not None
             member = interaction.guild.get_member(interaction.user.id)
             if member is None:
                 # Fallback in case member is not cached
                 member = await interaction.guild.fetch_member(interaction.user.id)
-            await member.add_roles(
-                discord.Object(id=1015024081432743996), reason="TAMU email verified"
-            )
+
+            user = usersdb.get((str(interaction.user.id),))
+
+            if user is not None and user["email"].endswith("tamu.edu"):
+                await member.add_roles(
+                    discord.Object(id=aggie_role_id), reason="TAMU email verified"
+                )
+
         await interaction.response.send_message(msg, ephemeral=True)
 
     @verify.error
@@ -126,14 +122,32 @@ def setup_commands(bot: Bot):
                     output += f"{command.name}\n"
 
         await interaction.response.send_message(output)
-    
-    @bot.event
-    async def on_member_update(before: discord.Member, after: discord.Member):
-        if before.name != after.name:
-            usersdb.update(
-                lambda u: {**u, "username": after.name} if u else None,
-                pk_values=(str(after.id),),
-            )
+
+    @app_commands.checks.cooldown(3, 5 * 60)
+    @command_tree.command(
+        name="remove_aggie_role", description="remove Aggie role for all verified users with a non tamu.edu email",
+        guilds=guild_id
+    )
+    async def remove_non_aggie_roles(interaction: discord.Interaction):
+        if interaction.channel is not None and interaction.channel.id != admin_channel_id:
+            await interaction.response.send_message("You do not have the permissions "
+                                                    "or are in the wrong channel to run this command.")
+            return
+
+        for dict in usersdb.get_all():
+            if not dict['email'].endswith("tamu.edu") and interaction.guild is not None:
+                member = interaction.guild.get_member(int(dict['user_id']))
+
+                if member is None:
+                    # Fallback in case member is not cached
+                    member = await interaction.guild.fetch_member(int(dict['user_id']))
+
+                await member.remove_roles(
+                    discord.Object(id=aggie_role_id),
+                    reason="email used for verification is not an tamu.edu email"
+                )
+
+        await interaction.response.send_message("All previously verified members without a tamu.edu email do not have an Aggie role!")
 
     # satisfy type checker
     _: list[Any] = [
@@ -144,4 +158,5 @@ def setup_commands(bot: Bot):
         profile_member,
         size,
         list_of_commands,
+        remove_non_aggie_roles
     ]

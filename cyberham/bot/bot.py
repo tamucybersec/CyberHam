@@ -5,11 +5,13 @@ from pytz import timezone
 import discord
 from discord import app_commands
 from discord import ScheduledEvent
+from discord.ext import ipcx
 
 import cyberham.backend.events as backend_events
 from cyberham import guild_id, discord_token, admin_channel_id
 from cyberham.bot.utils import event_info
 from cyberham.types import Category
+from cyberham import dashboard_config
 
 
 class Bot(discord.Client):
@@ -25,6 +27,19 @@ class Bot(discord.Client):
         self.synced = False
         self.logger = logging.getLogger(__name__)
         self.command_tree = app_commands.CommandTree(self)
+        self.ipc = ipcx.Server(self, secret_key="myu", port=1730)
+    
+    async def setup_hook(self) -> None:
+        print("setting up...")
+        await self.ipc.start()
+        print("set up")
+
+    async def on_ipc_ready(self) -> None:
+        print("IPC server starting")
+    
+    async def on_ipc_error(self, endpoint, error) -> None:
+        print(endpoint, "raised", error)
+    
 
     async def on_ready(self):
         await self.wait_until_ready()
@@ -33,7 +48,6 @@ class Bot(discord.Client):
             print("synced server", g.id)
         self.synced = True
         print("bot online")
-        self.loop.create_task(self.update_usernames())
 
     async def on_scheduled_event_create(self, event: ScheduledEvent):
         # voice channel events do not trigger this
@@ -51,33 +65,6 @@ class Bot(discord.Client):
             embed = event_info(event.name, points, time.strftime("%m/%d/%Y"), code, 0)
             await channel.send(f"The code is `{code}`", embed=embed)
 
-    async def update_usernames(self):
-        import sqlite3
-        async def f(user_id: int) -> str:
-            user = self.get_user(user_id)
-            if user: return user.name
-            try:
-                user = await self.fetch_user(user_id)
-                return user.name
-            except discord.NotFound:
-                return "user not found"
-            except discord.HTTPException:
-                return "error fetching user"
-        
-        try: 
-            with sqlite3.connect("cyberham.db") as conn:
-                cursor = conn.cursor()
-                cursor.execute("select user_id from users")
-                rows = cursor.fetchall()
-                for row in rows:
-                    username = await f(int(row[0]))
-                    cursor.execute('''update users set username = ? where user_id = ?''', (username, row[0]))
-                    conn.commit()
-                cursor.close()
-        except Exception as e:
-            print("Error updating usernames:", e)
-            return
-        print("Usernames updated successfully")
 
 def run_bot():
     # hand off the command tree so the commands can register themselves
@@ -90,6 +77,17 @@ def run_bot():
     from cyberham.bot import rsvp
 
     bot = Bot()
+
+    @bot.ipc.route()
+    async def test(data: object) -> str:
+        try:
+            user = bot.get_user(data.user_id)
+            if user is None:
+                user = await bot.fetch_user(data.user_id)
+        except Exception as e:
+            print("found exception:",e)
+        return str(user)
+    
     admin.setup_commands(bot)
     announcements.setup_commands(bot)
     rsvp.setup_commands(bot)

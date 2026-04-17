@@ -27,8 +27,10 @@ from pydantic import BaseModel
 import json
 import traceback
 import uvicorn
+from discord.ext import ipcx
 
 app = FastAPI()
+ipc = ipcx.Client(secret_key="myu", port=1730)#int(dashboard_config["port"]))
 
 app.add_middleware(
     CORSMiddleware,
@@ -113,6 +115,18 @@ async def register_user(
 
     return {"message": msg}
 
+@app.get('/user/{user_id}') # NEEDS SERVER MEMBERS AND GATEWAYS INTENT
+async def username(user_id: int) -> str:
+    try:
+        user = await ipc.request("test",user_id=user_id)
+        return user
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+@app.get('/test')
+async def test() -> int:
+    member_count = await ipc.request("test1",guild_id=1467346500559573004)
+    return int(member_count)
 
 class QueryPayload(BaseModel):
     sql: str
