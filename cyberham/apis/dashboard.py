@@ -1,5 +1,5 @@
 from typing import cast, Optional, Any, Mapping
-from cyberham import website_url, dashboard_config
+from cyberham import website_url, dashboard_config, ipc_key, ipc_port
 from cyberham.apis.auth import token_status
 from cyberham.types import Permissions, User, default_user
 from cyberham.backend.register import register, upload_resume
@@ -27,8 +27,10 @@ from pydantic import BaseModel
 import json
 import traceback
 import uvicorn
+from discord.ext import ipcx
 
 app = FastAPI()
+ipc = ipcx.Client(secret_key=ipc_key, port=ipc_port)
 
 app.add_middleware(
     CORSMiddleware,
@@ -113,6 +115,13 @@ async def register_user(
 
     return {"message": msg}
 
+@app.get('/user/{user_id}') # NEEDS SERVER MEMBERS AND GATEWAYS INTENT
+async def username(user_id: int) -> str:
+    try:
+        user = await ipc.request("test",user_id=user_id)
+        return user
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
 
 class QueryPayload(BaseModel):
     sql: str
