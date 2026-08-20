@@ -55,6 +55,16 @@ async def health_check() -> str:
     return "healthy"
 
 
+@app.get("/ip")
+async def get_ip(request: Request):
+    x_forwarded_for = request.headers.get("x-forwarded-for")
+    if x_forwarded_for:
+        client_ip = x_forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "Unknown"
+    return client_ip
+
+
 @app.get("/login")
 async def login(token: str) -> Permissions:
     permission, _ = token_status(token)
