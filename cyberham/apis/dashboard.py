@@ -24,6 +24,7 @@ from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import ipaddress
 import json
 import traceback
 import uvicorn
@@ -55,14 +56,36 @@ async def health_check() -> str:
     return "healthy"
 
 
+def _normalize_ip(ip: str) -> str:
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
+        return str(addr.ipv4_mapped)
+    return str(addr)
+
+
 @app.get("/ip")
 async def get_ip(request: Request):
     x_forwarded_for = request.headers.get("x-forwarded-for")
     if x_forwarded_for:
-        client_ip = x_forwarded_for.split(",")[0].strip()
+        candidates = [_normalize_ip(ip.strip()) for ip in x_forwarded_for.split(",") if ip.strip()]
     else:
-        client_ip = request.client.host if request.client else "Unknown"
-    return client_ip
+        candidates = [request.client.host] if request.client else []
+        candidates = [_normalize_ip(ip) for ip in candidates]
+
+    if not candidates:
+        return "Unknown"
+
+    for ip in candidates:
+        try:
+            if isinstance(ipaddress.ip_address(ip), ipaddress.IPv4Address):
+                return ip
+        except ValueError:
+            continue
+
+    return candidates[0]
 
 
 @app.get("/login")
