@@ -134,15 +134,14 @@ async def register_user(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid user JSON")
 
+    msg, err = register(ticket, user)
+    if err is not None:
+        return JSONResponse(err.json(), status_code=400)
+
     if resume is not None:
         success = await upload_resume(user["user_id"], resume)
         if not success:
             raise HTTPException(status_code=500, detail="Resume upload failed")
-        # override user with uploaded resume info
-    
-    msg, err = register(ticket, user)
-    if err is not None:
-        return JSONResponse(err.json(), status_code=400)
 
     return {"message": msg}
 
