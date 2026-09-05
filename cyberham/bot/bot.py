@@ -9,6 +9,7 @@ from discord import ScheduledEvent
 import cyberham.backend.events as backend_events
 from cyberham import guild_id, discord_token, admin_channel_id
 from cyberham.bot.utils import event_info
+from cyberham.bot.ui import RSVPButton
 from cyberham.types import Category
 
 
@@ -25,6 +26,9 @@ class Bot(discord.Client):
         self.synced = False
         self.logger = logging.getLogger(__name__)
         self.command_tree = app_commands.CommandTree(self)
+
+    async def setup_hook(self):
+        self.add_dynamic_items(RSVPButton)
 
     async def on_ready(self):
         await self.wait_until_ready()

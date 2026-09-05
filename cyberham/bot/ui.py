@@ -1,5 +1,5 @@
-from typing import cast, Optional
-
+from typing import cast, Optional, Any
+import re
 import discord
 from discord import ui
 import cyberham.backend.events as backend_events
@@ -74,31 +74,48 @@ class EditModal(discord.ui.Modal, title="Edit a Message"):
                 f"Howdy! The message has been updated.", ephemeral=True
             )
             await self.message.edit(content=f"{self.answer}")
-
-class RSVPOptions(discord.ui.View):
-    def __init__(self, code:str,date:str)->None:
-        super().__init__(timeout=None)
+        
+class RSVPButton(ui.DynamicItem[ui.Button[Any]], template=r'rsvp:(?P<s>[1-4]):(?P<a>[^:]+):(?P<c>[^:]+):(?P<d>[^:]+):(?P<e>[^:]+):(?P<l>.+)'):
+    def __init__(self, rsvplabel: str, rsvpstyle: discord.ButtonStyle, rsvpemoji: str, action: str, code: str, date: str):
+        custom_id = f"rsvp:{rsvpstyle.value}:{action}:{code}:{date}:{rsvpemoji}:{rsvplabel}"
+        button: ui.Button[Any]=ui.Button(
+            label=rsvplabel,
+            custom_id=custom_id,
+            style=rsvpstyle,
+            emoji=rsvpemoji
+        )
+        super().__init__(button)
+        self.action=action
         self.code=code
         self.date=date
-    @discord.ui.button(
-        label="Yes", style=discord.ButtonStyle.green, emoji="✅"
-    )
-    async def yes_button(self,interaction:discord.Interaction, button:discord.ui.Button[discord.ui.View]):
-        msg=backend_events.rsvp_event(uid=str(interaction.user.id), event=self.code, response=0, date=self.date)
-        await interaction.response.send_message(msg, ephemeral=True)
 
-    @discord.ui.button(
-        label="No", style=discord.ButtonStyle.red, emoji="✖️"
-    )
-    async def no_button(self,interaction:discord.Interaction, button:discord.ui.Button[discord.ui.View]):
-        msg=backend_events.rsvp_event(uid=str(interaction.user.id), event=self.code, response=1, date=self.date)
-        await interaction.response.send_message(msg, ephemeral=True)
-
-    @discord.ui.button(
-        label="Unsure", style=discord.ButtonStyle.gray, emoji="❓"
-    )
-    async def unsure_button(self,interaction:discord.Interaction, button:discord.ui.Button[discord.ui.View]):
-        msg=backend_events.rsvp_event(uid=str(interaction.user.id), event=self.code, response=2, date=self.date)
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Item[Any], match: re.Match[str]):
+        return cls(rsvplabel=match.group('l'),
+            rsvpstyle=discord.ButtonStyle(int(match.group('s'))),
+            rsvpemoji=match.group('e'),
+            action=match.group('a'),
+            code=match.group('c'),
+            date=match.group('d'))
+    
+    async def callback(self, interaction: discord.Interaction):
+        if not self.custom_id:
+            return
+        # _, _, _,action, code, date = self.custom_id.split(":")
+        
+        response_num = {
+            "yes":0,
+            "no":1,
+            "maybe":2
+        }
+        msg = backend_events.rsvp_event(uid=str(interaction.user.id), event=self.code, response=response_num[self.action], date=self.date)
         await interaction.response.send_message(msg, ephemeral=True)
         
+
+class RSVPOptions(discord.ui.View):
+    def __init__(self, code: str, date: str):
+        super().__init__(timeout=None)
+        self.add_item(RSVPButton("Yes", discord.ButtonStyle.green, "✅", "yes", code, date))
+        self.add_item(RSVPButton("No", discord.ButtonStyle.red, "✖️", "no", code, date))
+        self.add_item(RSVPButton("Maybe", discord.ButtonStyle.gray, "❓", "maybe", code, date))
 
