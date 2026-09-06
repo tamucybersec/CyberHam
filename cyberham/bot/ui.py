@@ -101,7 +101,6 @@ class RSVPButton(ui.DynamicItem[ui.Button[Any]], template=r'rsvp:(?P<s>[1-4]):(?
     async def callback(self, interaction: discord.Interaction):
         if not self.custom_id:
             return
-        # _, _, _,action, code, date = self.custom_id.split(":")
         
         response_num = {
             "yes":0,
