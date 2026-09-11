@@ -2,7 +2,7 @@
 
 This setup guide will help you create the required resources to begin using the bot. This includes creating a google cloud account, a development server, the bot itself, and recording the required secrets.
 
-To start off, create this `config.dev.toml` at the root of your project and paste the below inside. By the end, you should have this file completely filled out:
+To start off, create this `config.dev.toml` in the `secrets` folder at the root of your project and paste the below inside. By the end, you should have this file completely filled out:
 
 ```toml
 website_url = "http://localhost:3000"
