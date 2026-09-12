@@ -1,0 +1,25 @@
+networks:
+  infra:
+    external: true
+
+volumes:
+  cyberham_data:
+    external: true
+  decrypted_secrets:
+    external: true
+
+services:
+  cyberham:
+    image: $REGISTRY_URI/cyberham:latest
+    container_name: cyberham
+    restart: unless-stopped
+    networks:
+      - infra
+    volumes:
+      - cyberham_data:/app/data
+      - type: volume
+        source: decrypted_secrets
+        target: /app/secrets
+        read_only: true
+        volume:
+          subpath: cyberham
