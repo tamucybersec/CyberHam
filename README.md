@@ -47,21 +47,22 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Download Config Files
+## Download Secrets
 
 - Get an invite to the Tech Committee Discord Server
+- Create a `secrets` folder at the root of your project (same level as this README.md)
+- Everything the app needs that isn't in git lives in this folder
 
 ### Config Files
 
 - Download all `.toml` files from the `#secrets` channel (you'll need the `@member` role first)
-- Place them in the root of the project (same level as this README.md)
+- Place them in the `secrets` folder
 - These handle all the environment variables for the app
 - For the `config.dev.toml` file, follow the [setup guide for the discord bot](SETUP.md#discord-bot)
 
-### Secrets Files
+### Google Files
 
-- Create a `secrets` folder at the root of your project (same level as this README.md)
-- Download and place the `client_secret..json` file from the `#secrets` channel there
+- Download and place the `client_secret..json` file from the `#secrets` channel in the `secrets` folder
 
 ## Running the Application
 

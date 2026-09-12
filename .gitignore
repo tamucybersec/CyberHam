@@ -1,12 +1,13 @@
 # Secrets
-*.toml
 :
 *.db
 *.db-journal
-**/secrets/*
+secrets
+secrets.bak
 *.pem
 
 # Settings and Caches
+.venv
 venv/
 .idea/
 .vscode

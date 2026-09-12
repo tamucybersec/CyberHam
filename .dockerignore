@@ -1,0 +1,8 @@
+venv
+.venv
+backups
+resumes
+*.db
+secrets*
+.git
+__pycache__
