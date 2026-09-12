@@ -73,7 +73,7 @@ secrets_path = project_path.parent / "secrets"
 config = load_configs(secrets_path)
 google_token, client_secret = load_google_paths(secrets_path, config)
 
-data_path = Path(config.get("DATA_DIR", project_path.parent)).resolve()
+data_path = Path(config.get("data_dir", project_path.parent)).resolve()
 data_path.mkdir(parents=True, exist_ok=True)
 setup_discord_logging()
 setup_module_logging(__name__)
