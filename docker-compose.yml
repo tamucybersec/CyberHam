@@ -15,7 +15,7 @@ services:
     networks:
       - infra
     volumes:
-      - cyberham_data:/app
+      - cyberham_data:/app/data
       - type: volume
         source: decrypted_secrets
         target: /app/secrets

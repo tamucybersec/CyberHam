@@ -1,3 +1,4 @@
+from cyberham import data_path
 from cyberham.database.sqlite import SQLiteDB
 from cyberham.database.readonly import ReadonlyDB
 from cyberham.types import (
@@ -144,8 +145,8 @@ class TypedDB(Generic[T, PK]):
         return cast(Maybe[T], item)
 
 
-db = SQLiteDB("cyberham.db")
-readonlydb = ReadonlyDB("cyberham.db")
+db = SQLiteDB(str(data_path / "cyberham.db"))
+readonlydb = ReadonlyDB(str(data_path / "cyberham.db"))
 usersdb = TypedDB[User, tuple[str]](db, "users", ["user_id"])
 resumesdb = TypedDB[Resume, tuple[str]](db, "resumes", ["user_id"])
 eventsdb = TypedDB[Event, tuple[str]](db, "events", ["code"])

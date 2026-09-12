@@ -2,7 +2,7 @@ import random
 from uuid import uuid4
 from datetime import datetime
 
-from cyberham import website_url
+from cyberham import website_url, data_path
 from cyberham.apis.google_apis import google
 from cyberham.database.typeddb import Maybe, usersdb, resumesdb, flaggeddb, registerdb, verifydb
 from cyberham.database.queries import insert_registration
@@ -28,7 +28,7 @@ import aiofiles
 
 async def upload_resume(user_id: str, resume: UploadFile) -> bool:
     try:
-        os.makedirs("resumes", exist_ok=True)
+        os.makedirs(data_path / "resumes", exist_ok=True)
 
         # get original filename
         filename = resume.filename
@@ -41,7 +41,7 @@ async def upload_resume(user_id: str, resume: UploadFile) -> bool:
             return False
 
         # Write the file to disk at resumes/{user_id}
-        path = os.path.join("resumes", user_id)
+        path = os.path.join(data_path / "resumes", user_id)
         async with aiofiles.open(path, "wb") as out_file:
             content = await resume.read()
             await out_file.write(content)
@@ -118,7 +118,6 @@ def generate_registration_url(user_id: str) -> str:
     )
     insert_registration(registration)
     return f"{website_url}/register?ticket={ticket}"
-
 
 
 # NOTE update's a user's email if it differs from their original email

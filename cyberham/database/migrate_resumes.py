@@ -1,4 +1,5 @@
 import os
+from cyberham import data_path
 from cyberham.database.typeddb import usersdb, resumesdb, db
 from cyberham.types import Resume
 from cyberham.database.backup import write_backup
@@ -24,11 +25,13 @@ def migrate_resumes():
     )
     db.conn.commit()
 
-    if not os.path.exists("resumes"):
+    if not os.path.exists(data_path / "resumes"):
         print("No resumes directory found????????")
         return
     has_errors: list[str] = []
-    for user_id in os.listdir("resumes"): # files get written to the user_id of their uploader
+    for user_id in os.listdir(
+        data_path
+     / "resumes"):  # files get written to the user_id of their uploader
         # try getting filename and format from user first (works for uploads after resume indicator update)
         # if they aren't there, then they just weren't stored at all and will be empty strings until it's updated
         user = usersdb.get((user_id,))
@@ -36,14 +39,14 @@ def migrate_resumes():
             print(f"Warning: resume file for unknown user {user_id}")
             has_errors.append(user_id)
             continue
-    
+
         filename = user["resume_filename"] # type: ignore 
         format = user["resume_format"] # type: ignore
-        
+
         # get last modified time for that file (so, when it was written to disk during its upload)
-        resume_path = os.path.join("resumes", user_id)
+        resume_path = os.path.join(data_path / "resumes", user_id)
         upload_date = datetime.fromtimestamp(os.path.getmtime(resume_path), tz=timezone.utc).isoformat().replace("+00:00", "Z")
-        
+
         # skip resumes that already got entered into the resumes table (if this isn't the first time running this)
         existing_resume = resumesdb.get((user_id,))
         if existing_resume is not None:
@@ -72,7 +75,7 @@ def migrate_resumes():
         print("Files not migrated (no matching user in usersdb):\n")
         for id in has_errors:
             print(id)
-    
+
 
 if __name__ == "__main__":
     migrate_resumes()

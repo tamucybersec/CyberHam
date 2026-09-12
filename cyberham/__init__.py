@@ -48,7 +48,9 @@ def load_google_paths(secrets_path: Path, config: Config) -> tuple[Path, Path]:
 
 
 def setup_discord_logging():
-    handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+    handler = logging.FileHandler(
+        filename=data_path / "discord.log", encoding="utf-8", mode="w"
+    )
     handler.setLevel(logging.DEBUG)
     discord_logger = logging.getLogger("discord")
     discord_logger.addHandler(handler)
@@ -57,7 +59,7 @@ def setup_discord_logging():
 def setup_module_logging(name: str):
     module_logger = logging.getLogger(name)
     file_handler = logging.FileHandler(
-        filename=f"{name}.log", encoding="utf-8", mode="w"
+        filename=data_path / f"{name}.log", encoding="utf-8", mode="w"
     )
     file_handler.setLevel(logging.INFO)
     console_handler = logging.StreamHandler()
@@ -70,6 +72,9 @@ project_path = Path(__file__).parent
 secrets_path = project_path.parent / "secrets"
 config = load_configs(secrets_path)
 google_token, client_secret = load_google_paths(secrets_path, config)
+
+data_path = Path(config.get("DATA_DIR", project_path.parent)).resolve()
+data_path.mkdir(parents=True, exist_ok=True)
 setup_discord_logging()
 setup_module_logging(__name__)
 
