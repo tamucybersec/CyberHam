@@ -4,7 +4,6 @@ networks:
 
 volumes:
   cyberham_data:
-    external: true
   decrypted_secrets:
     external: true
 
