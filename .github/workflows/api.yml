@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Decrypt secrets
-        uses: decrypt cyberham
+        run: decrypt cyberham
 
       # TODO:
       # run formatter & linter
