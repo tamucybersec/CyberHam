@@ -1,0 +1,28 @@
+[project]
+name = "cyberham"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "discord.py~=2.4.0",
+    "google-api-python-client~=2.159.0",
+    "google-auth-httplib2~=0.2.0",
+    "google-auth-oauthlib~=1.0.0",
+    "pytz~=2023.3.post1",
+    "uvicorn~=0.34.0",
+    "fastapi~=0.115.11",
+    "cryptography~=46.0.5",
+    "beautifulsoup4~=4.13.4",
+    "lxml~=5.4.0",
+    "aiofiles~=24.1.0",
+    "python-multipart~=0.0.20",
+    "httpx~=0.28.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest~=8.3.3",
+    "google-api-python-client-stubs"
+]
+
+[tool.uv]
+package = false
