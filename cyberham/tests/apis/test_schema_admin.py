@@ -1,11 +1,12 @@
 from pathlib import Path
+import asyncio
 import sqlite3
 import pytest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from cyberham.apis.dashboard import app
+from cyberham.apis.dashboard import app, export_database
 from cyberham.database.schema import (
     canonical_schema,
     load_schema_sql,
@@ -252,6 +253,64 @@ def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path):
             assert exported.execute("SELECT code FROM verify WHERE user_id = 'snapshot-user'").fetchone() == (12345,)
     finally:
         connection.close()
+
+
+@pytest.mark.parametrize(
+    "range_header,expected_status",
+    [("garbage", 400), ("bytes=999999999999-", 416), ("bytes=0-15", 206)],
+)
+def test_export_cleans_up_after_range_requests(tmp_path, range_header, expected_status):
+    db_path = tmp_path / "source.db"
+    _make_database(db_path)
+    snapshots = []
+
+    def capture_snapshot(path):
+        snapshot = snapshot_database(path)
+        snapshots.append(snapshot)
+        return snapshot
+
+    try:
+        with (
+            patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
+            patch("cyberham.apis.dashboard.live_database_path", return_value=db_path),
+            patch("cyberham.apis.dashboard.snapshot_database", side_effect=capture_snapshot),
+        ):
+            response = client.get(
+                "/database/export",
+                headers={**_headers(), "Range": range_header},
+            )
+        assert response.status_code == expected_status
+        assert snapshots and not snapshots[0].exists()
+        if expected_status == 206:
+            assert response.content == b"SQLite format 3" + bytes([0])
+    finally:
+        for snapshot in snapshots:
+            snapshot.unlink(missing_ok=True)
+
+
+@pytest.mark.parametrize("failure", [OSError, asyncio.CancelledError])
+def test_export_cleans_up_when_sending_fails_or_is_cancelled(tmp_path, failure):
+    db_path = tmp_path / "source.db"
+    _make_database(db_path)
+    with patch("cyberham.apis.dashboard.live_database_path", return_value=db_path):
+        response = export_database()
+    snapshot = Path(response.path)
+    assert snapshot.exists()
+
+    async def send(message):
+        if message["type"] == "http.response.body":
+            raise failure()
+
+    async def receive():
+        return {"type": "http.disconnect"}
+
+    try:
+        with pytest.raises(failure):
+            asyncio.run(response({"type": "http", "method": "GET", "headers": []}, receive, send))
+        assert not snapshot.exists()
+        assert db_path.exists()
+    finally:
+        snapshot.unlink(missing_ok=True)
 
 
 def test_schema_uses_live_definitions_and_reports_missing_tables(tmp_path):

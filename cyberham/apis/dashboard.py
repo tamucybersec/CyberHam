@@ -1,4 +1,5 @@
 from typing import cast, Optional, Any, Mapping
+from pathlib import Path
 from cyberham import website_url, dashboard_config
 from cyberham.apis.auth import token_status
 from cyberham.types import Permissions, User, default_user
@@ -24,7 +25,7 @@ from fastapi import FastAPI, Form, File, HTTPException, UploadFile, Depends
 from fastapi.requests import Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.background import BackgroundTask
+from starlette.types import Scope, Receive, Send
 from pydantic import BaseModel
 import ipaddress
 import json
@@ -223,6 +224,16 @@ def get_schema():
     }
 
 
+class DatabaseExportResponse(FileResponse):
+    """Remove the temporary snapshot on success, errors, and cancellation."""
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            Path(self.path).unlink(missing_ok=True)
+
+
 @app.get(
     "/database/export",
     dependencies=[Depends(require_permission(Permissions.SUPER_ADMIN))],
@@ -233,12 +244,11 @@ def export_database():
         raise HTTPException(status_code=404, detail="Database file not found.")
 
     snapshot_path = snapshot_database(database_path)
-    return FileResponse(
+    return DatabaseExportResponse(
         path=snapshot_path,
         media_type="application/x-sqlite3",
         filename=database_path.name,
         headers={"Cache-Control": "no-store"},
-        background=BackgroundTask(snapshot_path.unlink, missing_ok=True),
     )
 
 
