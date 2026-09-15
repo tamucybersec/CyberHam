@@ -6,7 +6,11 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from cyberham.apis.dashboard import app
-from cyberham.database.schema import canonical_schema, load_schema_sql, snapshot_database
+from cyberham.database.schema import (
+    canonical_schema,
+    load_schema_sql,
+    snapshot_database,
+)
 from cyberham.database.table_registry import TABLE_REGISTRY
 from cyberham.types import Permissions
 
@@ -15,6 +19,21 @@ client = TestClient(app)
 
 def _headers() -> dict[str, str]:
     return {"Authorization": "Bearer schema-test-token"}
+
+
+def test_schema_and_export_use_configured_data_directory(tmp_path):
+    _make_database(tmp_path / "cyberham.db")
+    with (
+        patch("cyberham.database.schema.data_path", tmp_path),
+        patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
+    ):
+        schema = client.get("/schema", headers=_headers())
+        exported = client.get("/database/export", headers=_headers())
+    assert schema.status_code == 200
+    assert len(schema.json()["tables"]) == 10
+    assert schema.json()["drift"] == []
+    assert exported.status_code == 200
+    assert exported.content[:16] == b"SQLite format 3" + bytes([0])
 
 
 def _make_database(db_path: Path, *, legacy_resume_columns: bool = False) -> None:

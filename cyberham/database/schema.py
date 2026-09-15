@@ -5,6 +5,8 @@ from pathlib import Path
 import sqlite3
 from tempfile import mkstemp
 
+from cyberham import data_path
+
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 
@@ -55,7 +57,7 @@ def load_schema_sql() -> str:
 
 
 def live_database_path() -> Path:
-    return Path("cyberham.db").resolve()
+    return data_path / "cyberham.db"
 
 
 def _connect(db_path: str) -> sqlite3.Connection:

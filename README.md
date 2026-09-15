@@ -134,6 +134,8 @@ constraints.
   backup, including committed WAL data. Its temporary file is removed after
   sending. The download contains all database records, including access tokens;
   external resume files are not included.
+- Both endpoints read `cyberham.db` from the configured `data_dir`, matching
+  the rest of the backend.
 
 Deploy these endpoints before deploying the website's schema page.
 
