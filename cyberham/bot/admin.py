@@ -129,7 +129,6 @@ def setup_commands(bot: Bot):
 
         await interaction.followup.send(new_msg)
 
-
     # satisfy type checker
     _: list[Any] = [
         award,

@@ -147,13 +147,17 @@ async def register_user(
 
     return {"message": msg}
 
-@app.get('/user/{user_id}') # NEEDS SERVER MEMBERS AND GATEWAYS INTENT
-async def username(user_id: int) -> str:
+@app.get('/user/{user_id}')
+async def username(user_id: int):
     try:
-        user = await ipc.request("test",user_id=user_id)
+        user = await ipc.request("fetch_username",user_id=user_id) # type: ignore
         return user
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"details": str(exc), "error": "Internal Server Error"},
+            headers={"Access-Control-Allow-Origin": website_url},
+        )
 
 class QueryPayload(BaseModel):
     sql: str
