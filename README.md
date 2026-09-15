@@ -115,6 +115,30 @@ python3 -m cyberham
 
 ## Managing the Database
 
+### Dashboard Schema Documentation
+
+The website's `/dashboard/schema` page uses `GET /schema` (Committee or higher)
+to display the live database structure, table purposes, dashboard editors, and
+API permission levels. It also reports missing or extra tables/columns, changed
+column types/nullability/defaults/primary keys, and changed foreign keys compared
+with the expected schema. It does not compare indexes, triggers, or CHECK/UNIQUE
+constraints.
+
+- `cyberham/database/schema.sql` is the source for table creation and the
+  expected schema. SQLite reads it directly; no separate SQL parser is needed.
+- `cyberham/database/table_registry.py` holds table purposes, dashboard paths,
+  and permissions. The same registry configures the dashboard CRUD routes.
+- Existing databases are **not migrated automatically** by `CREATE TABLE IF
+  NOT EXISTS`. Apply migrations separately when changing an existing table.
+- `GET /database/export` requires Super Admin and downloads a consistent SQLite
+  backup, including committed WAL data. Its temporary file is removed after
+  sending. The download contains all database records, including access tokens;
+  external resume files are not included.
+
+Deploy these endpoints before deploying the website's schema page.
+
+### SQLite Tools
+
 - Install `sqlite3` to manage your local database
 
 ### Windows

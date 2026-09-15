@@ -6,23 +6,25 @@ from cyberham.backend.register import register, upload_resume
 from cyberham.utils.transform import pretty_semester
 from cyberham.database.typeddb import (
     readonlydb,
-    usersdb,
-    resumesdb,
-    eventsdb,
-    flaggeddb,
-    attendancedb,
-    pointsdb,
-    tokensdb,
     registerdb,
+    resumesdb,
+    usersdb,
 )
-from cyberham.types import Permissions
+from cyberham.database.schema import (
+    detect_schema_drift,
+    live_database_path,
+    live_schema,
+    snapshot_database,
+)
+from cyberham.database.table_registry import TABLE_REGISTRY, TABLE_REGISTRY_BY_NAME
 from cyberham.apis.auth import require_permission
 from cyberham.utils.date import valid_registration_time
 from cyberham.apis.crud_factory import create_crud_routes
 from fastapi import FastAPI, Form, File, HTTPException, UploadFile, Depends
 from fastapi.requests import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.background import BackgroundTask
 from pydantic import BaseModel
 import ipaddress
 import json
@@ -37,6 +39,7 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
     allow_credentials=True,
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -161,56 +164,94 @@ async def query_readonly(body: QueryPayload):
         return JSONResponse({"error": str(e)}, status_code=400)
 
 
+@app.get(
+    "/schema",
+    dependencies=[Depends(require_permission(Permissions.COMMITTEE))],
+)
+def get_schema():
+    tables = []
+    live = live_schema()
+    drift = detect_schema_drift(live=live)
+
+    for name, table in live.items():
+        entry = TABLE_REGISTRY_BY_NAME.get(name)
+        tables.append(
+            {
+                "name": name,
+                "purpose": (
+                    entry.purpose if entry else "This table has not been documented yet."
+                ),
+                "dashboard_path": entry.dashboard_path if entry else None,
+                "view_permission": entry.get_permission if entry else None,
+                "modify_permission": entry.modify_permission if entry else None,
+                "primary_key": table.primary_key,
+                "columns": [
+                    {
+                        "name": column.name,
+                        "type": column.type,
+                        "not_null": column.not_null,
+                        "default_value": column.default_value,
+                        "is_primary_key": column.primary_key_index > 0,
+                    }
+                    for column in table.columns
+                ],
+                "foreign_keys": [
+                    {
+                        "column": foreign_key.column,
+                        "references_table": foreign_key.references_table,
+                        "references_column": foreign_key.references_column,
+                        "on_update": foreign_key.on_update,
+                        "on_delete": foreign_key.on_delete,
+                    }
+                    for foreign_key in table.foreign_keys
+                ],
+            }
+        )
+
+    return {
+        "tables": tables,
+        "drift": [
+            {
+                "table": item.table,
+                "missing_columns": item.missing_columns,
+                "extra_columns": item.extra_columns,
+                "changed_columns": item.changed_columns,
+                "relationships_changed": item.relationships_changed,
+            }
+            for item in drift
+        ],
+    }
+
+
+@app.get(
+    "/database/export",
+    dependencies=[Depends(require_permission(Permissions.SUPER_ADMIN))],
+)
+def export_database():
+    database_path = live_database_path()
+    if not database_path.exists():
+        raise HTTPException(status_code=404, detail="Database file not found.")
+
+    snapshot_path = snapshot_database(database_path)
+    return FileResponse(
+        path=snapshot_path,
+        media_type="application/x-sqlite3",
+        filename=database_path.name,
+        headers={"Cache-Control": "no-store"},
+        background=BackgroundTask(snapshot_path.unlink, missing_ok=True),
+    )
+
+
 routers = [
     create_crud_routes(
-        prefix="users",
-        db=usersdb,
-        pk_names=["user_id"],
-        get_perm=Permissions.SPONSOR,
-        modify_perm=Permissions.ADMIN,
-    ),
-    create_crud_routes(
-        prefix="resumes",
-        db=resumesdb,
-        pk_names=["user_id"],
-        get_perm=Permissions.SPONSOR,
-        modify_perm=Permissions.ADMIN,
-    ),
-    create_crud_routes(
-        prefix="events",
-        db=eventsdb,
-        pk_names=["code"],
-        get_perm=Permissions.SPONSOR,
-        modify_perm=Permissions.ADMIN,
-    ),
-    create_crud_routes(
-        prefix="flagged",
-        db=flaggeddb,
-        pk_names=["user_id"],
-        get_perm=Permissions.COMMITTEE,
-        modify_perm=Permissions.ADMIN,
-    ),
-    create_crud_routes(
-        prefix="attendance",
-        db=attendancedb,
-        pk_names=["user_id", "code"],
-        get_perm=Permissions.SPONSOR,
-        modify_perm=Permissions.ADMIN,
-    ),
-    create_crud_routes(
-        prefix="points",
-        db=pointsdb,
-        pk_names=["user_id", "semester", "year"],
-        get_perm=Permissions.SPONSOR,
-        modify_perm=Permissions.ADMIN,
-    ),
-    create_crud_routes(
-        prefix="tokens",
-        db=tokensdb,
-        pk_names=["token"],
-        get_perm=Permissions.SUPER_ADMIN,
-        modify_perm=Permissions.SUPER_ADMIN,
-    ),
+        prefix=entry.name,
+        db=entry.db,
+        pk_names=entry.db.pk_names,
+        get_perm=entry.get_permission,
+        modify_perm=entry.modify_permission,
+    )
+    for entry in TABLE_REGISTRY
+    if entry.get_permission is not None and entry.modify_permission is not None
 ]
 
 
