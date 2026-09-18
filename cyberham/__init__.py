@@ -1,6 +1,7 @@
 # __init__.py runs before the entry point __main__.py does
 # loads values from the secrets/config*.toml files and sets up the logger
 
+import os
 import tomllib
 import logging
 from pathlib import Path
@@ -33,7 +34,8 @@ def merge_configs(base: Config, override: Config) -> Config:
 def load_configs(secrets_path: Path) -> Config:
     base_config_path = secrets_path / "config.toml"
     base_config = load_config(base_config_path)
-    environment = base_config.get("environment", "dev")
+    environment = os.environ.get("CYBERHAM_ENV") or base_config.get("environment", "dev")
+    base_config["environment"] = environment
 
     env_config_path = secrets_path / f"config.{environment}.toml"
     env_config = load_config(env_config_path)

@@ -2,10 +2,19 @@
 
 This setup guide will help you create the required resources to begin using the bot. This includes creating a google cloud account, a development server, the bot itself, and recording the required secrets.
 
-To start off, create this `config.dev.toml` in the `secrets` folder at the root of your project and paste the below inside. By the end, you should have this file completely filled out:
+The app reads two config files from the `secrets` folder at the root of your project: the base `config.toml`, and an environment-specific `config.<environment>.toml` whose values override the base.
+
+To start off, make sure `config.toml` sets the environment to dev:
+
+```toml
+environment = "dev"
+```
+
+Then create this `config.dev.toml` in the `secrets` folder and paste the below inside. By the end, you should have this file completely filled out:
 
 ```toml
 website_url = "http://localhost:3000"
+data_dir = "data"
 
 [google]
 client_file_name = ""
@@ -14,10 +23,15 @@ client_file_name = ""
 token = ""
 test_guild_ids = [0]
 admin_channel_id = 0
+aggie_role_id = 0
 
 [ipcx]
 secret_key = "somekeyhere"
 port = 4729
+
+[dashboard]
+host = "localhost"
+port = 5183
 ```
 
 > **Preface**: Discord updates very frequently so parts of this guide are likely outdated. If so, your best bet is probably finding a youtube video like "creating a discord bot 2026" and updating this guide to go along with that. Discord has really poor documentation so it'll probably be hard to find a static site that records all this information.
@@ -77,6 +91,10 @@ For simplicity, you can create your own server to do development in. If you make
         - Create a role named "Student"
             - Give it no permissions
             - Save your changes
+        - Create a role named "Aggie"
+            - Give it no permissions
+            - Save your changes
+            - The bot gives this role to users who verify a TAMU email, so the bot's own role must be above it in the role list
 - Create a new text channel
     - Call it "admins-only"
     - Make it a private channel
@@ -94,6 +112,10 @@ For simplicity, you can create your own server to do development in. If you make
         - The second number is the channel id
             - Fill out the `discord.admin_channel_id` field in your config
                 - It is just one number, the only number being the channel id you just found
+- Find the "Aggie" role
+    - Enable Developer Mode in Discord (User Settings > Advanced) if you haven't already
+    - In Server Settings > Roles, right click the "Aggie" role and click "Copy Role ID"
+        - Fill out the `discord.aggie_role_id` field in your config
 
 ## Setting up the bot
 
