@@ -41,6 +41,31 @@ Work in progress
         - Refactor, polish, and optimize
         - Make it clean, efficient, elegant, and maintainable
 
+## Linting and Formatting
+
+We use [ruff](https://docs.astral.sh/ruff/) for both linting and formatting, and run it
+through [pre-commit](https://pre-commit.com/) so nothing unformatted reaches a PR.
+
+### One-time setup
+
+Install the git hook after cloning:
+
+```bash
+uv run pre-commit install
+```
+
+From then on, the hooks run automatically on every `git commit` against the files you
+staged. If a hook rewrites a file, the commit is aborted; review the changes, `git add`
+them, and commit again.
+
+### Running it manually
+
+```bash
+uv run ruff check --fix .   # lint, applying safe fixes
+uv run ruff format .        # format
+uv run pre-commit run -a    # everything, across the whole repo
+```
+
 # Pull Requests (PRs)
 
 ## PR Etiquette
