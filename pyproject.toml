@@ -21,8 +21,46 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest~=8.3.3",
-    "google-api-python-client-stubs"
+    "google-api-python-client-stubs",
+    "pre-commit~=4.6.2",
+    "pyright~=1.1.407",
+    "ruff~=0.16.8",
 ]
 
 [tool.uv]
 package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Body",
+    "fastapi.Depends",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Query",
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pyright]
+include = ["cyberham"]
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "strict"
+reportUnknownMemberType = "information"

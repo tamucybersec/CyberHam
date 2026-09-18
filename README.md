@@ -15,36 +15,29 @@ cd CyberHam
 
 ## Setup the Environment
 
-- Regardless of your system, you'll need to install python3.12
-    - Use `python --version` to see your current python version
-    - We use specific features of python3.12 in the project, but discord.py stopped support at python3.12, so you need exactly python3.12 to develop this project
+- We use [uv](https://docs.astral.sh/uv/) to manage python, the virtual environment, and dependencies
+- The project requires exactly python3.12
+    - We use specific features of python3.12 in the project, but discord.py stopped support at python3.12
+    - You don't need to install it yourself; uv will download python3.12 automatically if it isn't already on your system
 
-### Windows
+### Install uv
 
-- Install the correct python version from [python.org](https://www.python.org/downloads/release/python-31210/)
-    - The last available version with an installer is 3.12.10
-    - Make sure you enable `also set environment variables` during the installation process or you'll either need to set the environment variable yourself or configure a python version manager
+- Follow the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/), or:
 
 ```bash
-# requires python3.12
+# Windows
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-python -m venv venv
-.\venv\Scripts\activate.bat
-pip install -r requirements.txt
+# Unix / WSL
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Unix / WSL
+### Install Dependencies
 
-- Use your package manager to install python3.12
-    - Run it specifically with `python3.12`, or set it as your default version through other means
+- From the root of the project, run:
 
 ```bash
-# requires python3.12
-
-python3 -m venv venv
-# or python3.12 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv sync
 ```
 
 ## Download Secrets
@@ -58,6 +51,10 @@ pip install -r requirements.txt
 - Download all `.toml` files from the `#secrets` channel (you'll need the `@member` role first)
 - Place them in the `secrets` folder
 - These handle all the environment variables for the app
+- The config is split across two files, which are merged together at startup:
+    - `config.toml` is the base config shared by every environment
+    - `config.<environment>.toml` holds the environment-specific values
+        - Any value here overrides the same value in `config.toml`
 - For the `config.dev.toml` file, follow the [setup guide for the discord bot](SETUP.md#discord-bot)
 
 ### Google Files
@@ -66,27 +63,17 @@ pip install -r requirements.txt
 
 ## Running the Application
 
-- Make sure you're in the proper virtual environment (which was set by the `activate` script from the [Setup the Environment](#setup-the-environment) step)
-
-### Windows
 
 ```bash
-python -m cyberham
-```
-
-### Unix / WSL
-
-```bash
-python3 -m cyberham
-# or python3.12 -m cyberham
+uv run python -m cyberham
 ```
 
 ### Troubleshooting
 
 - In case you run into any errors during this step, there are a few actions you can take
-- The most likely issue is that you set up the virtual environment incorrectly
-    - For vscode: `ctrl+shift+p` > Python: Select Interpreter > Python3.12 ('venv': venv)
-    - If you get any further errors: `exit` your virtual environment, delete your `venv` folder, and restart from [Setup the Environment](#setup-the-environment)
+- The most likely issue is that the virtual environment is set up incorrectly
+    - For vscode: `ctrl+shift+p` > Python: Select Interpreter > Python3.12 ('.venv': venv)
+    - If you get any further errors: delete your `.venv` folder and run `uv sync` again
 
 ## Authentication
 
