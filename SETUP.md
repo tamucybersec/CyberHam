@@ -14,6 +14,10 @@ client_file_name = ""
 token = ""
 test_guild_ids = [0]
 admin_channel_id = 0
+
+[ipcx]
+secret_key = "somekeyhere"
+port = 4729
 ```
 
 > **Preface**: Discord updates very frequently so parts of this guide are likely outdated. If so, your best bet is probably finding a youtube video like "creating a discord bot 2026" and updating this guide to go along with that. Discord has really poor documentation so it'll probably be hard to find a static site that records all this information.

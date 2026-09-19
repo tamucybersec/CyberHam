@@ -5,13 +5,17 @@ from pytz import timezone
 import discord
 from discord import app_commands
 from discord import ScheduledEvent
+from discord.ext import commands, ipcx
 
 import cyberham.backend.events as backend_events
 from cyberham import guild_id, discord_token, admin_channel_id
 from cyberham.bot.utils import event_info
 from cyberham.bot.ui import RSVPButton
 from cyberham.types import Category
+from cyberham import ipc_key, ipc_port
 
+class FetchUserPayload():
+    user_id: int
 
 class Bot(discord.Client):
     logger: logging.Logger
@@ -26,9 +30,17 @@ class Bot(discord.Client):
         self.synced = False
         self.logger = logging.getLogger(__name__)
         self.command_tree = app_commands.CommandTree(self)
-
-    async def setup_hook(self):
+        self.ipc = ipcx.Server(cast(commands.Bot, self), port=ipc_port, secret_key=ipc_key)
+    
+    async def setup_hook(self) -> None:
         self.add_dynamic_items(RSVPButton)
+        await self.ipc.start()
+
+    async def on_ipc_ready(self) -> None:
+        print("IPC server starting")
+    
+    async def on_ipc_error(self, endpoint: str, error: Exception) -> None:
+        print(endpoint, "raised", error)
 
     async def on_ready(self):
         await self.wait_until_ready()
@@ -66,6 +78,14 @@ def run_bot():
     from cyberham.bot import rsvp
 
     bot = Bot()
+
+    @bot.ipc.route() # type: ignore
+    async def fetch_username(data: FetchUserPayload) -> str:
+        user = bot.get_user(data.user_id)
+        if user is None:
+            user = await bot.fetch_user(data.user_id)
+        return str(user)
+    
     admin.setup_commands(bot)
     announcements.setup_commands(bot)
     rsvp.setup_commands(bot)
