@@ -115,6 +115,8 @@ python3 -m cyberham
 
 ## Managing the Database
 
+### SQLite Tools
+
 - Install `sqlite3` to manage your local database
 
 ### Windows
