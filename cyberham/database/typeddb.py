@@ -156,6 +156,6 @@ pointsdb = TypedDB[Points, tuple[str, Semester, int]](
 tokensdb = TypedDB[Tokens, tuple[str]](db, "tokens", ["token"])
 registerdb = TypedDB[Register, tuple[str]](db, "register", ["ticket"])
 verifydb = TypedDB[Verify, tuple[str]](db, "verify", ["user_id"])
-rsvpdb=TypedDB[rsvp, tuple[str, str, int]](
+rsvpdb = TypedDB[rsvp, tuple[str, str, int]](
     db, "rsvp", ["user_id", "code", "reservation"]
 )

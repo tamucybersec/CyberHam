@@ -16,6 +16,7 @@ from cyberham.types import Category
 class FetchUserPayload:
     user_id: int
 
+
 class Bot(discord.Client):
     logger: logging.Logger
     command_tree: app_commands.CommandTree
@@ -23,21 +24,27 @@ class Bot(discord.Client):
     def __init__(self):
         super().__init__(
             intents=discord.Intents(
-                guilds=True, members=True, messages=True, reactions=True, guild_scheduled_events=True
+                guilds=True,
+                members=True,
+                messages=True,
+                reactions=True,
+                guild_scheduled_events=True,
             )
         )
         self.synced = False
         self.logger = logging.getLogger(__name__)
         self.command_tree = app_commands.CommandTree(self)
-        self.ipc = ipcx.Server(cast(commands.Bot, self), port=ipc_port, secret_key=ipc_key)
-    
+        self.ipc = ipcx.Server(
+            cast(commands.Bot, self), port=ipc_port, secret_key=ipc_key
+        )
+
     async def setup_hook(self) -> None:
         self.add_dynamic_items(RSVPButton)
         await self.ipc.start()
 
     async def on_ipc_ready(self) -> None:
         print("IPC server starting")
-    
+
     async def on_ipc_error(self, endpoint: str, error: Exception) -> None:
         print(endpoint, "raised", error)
 
@@ -73,13 +80,13 @@ def run_bot():
 
     bot = Bot()
 
-    @bot.ipc.route() # type: ignore
+    @bot.ipc.route()  # type: ignore
     async def fetch_username(data: FetchUserPayload) -> str:
         user = bot.get_user(data.user_id)
         if user is None:
             user = await bot.fetch_user(data.user_id)
         return str(user)
-    
+
     admin.setup_commands(bot)
     announcements.setup_commands(bot)
     rsvp.setup_commands(bot)

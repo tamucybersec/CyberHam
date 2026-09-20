@@ -22,7 +22,6 @@ def standard_user_payload() -> dict[str, str]:
 
 
 class TestDashboard:
-
     # ------------------------------------------------------------------
     # /login
     # ------------------------------------------------------------------
@@ -30,10 +29,10 @@ class TestDashboard:
     @pytest.mark.parametrize(
         "token_val, mock_return, expected_body",
         [
-            ("some-token", (0, None), 0),           # none user
-            ("some-token", (1, None), 1),           # sponsor user
-            ("some-token", (2, None), 2),           # committee user
-            ("some-token", (3, None), 3),           # admin user
+            ("some-token", (0, None), 0),  # none user
+            ("some-token", (1, None), 1),  # sponsor user
+            ("some-token", (2, None), 2),  # committee user
+            ("some-token", (3, None), 3),  # admin user
             ("definitely-invalid", (0, "invalid token"), 0),  # invalid token
         ],
     )

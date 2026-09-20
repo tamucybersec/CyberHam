@@ -34,9 +34,9 @@ class TestCreateEvent(BackendPatcher):
                 event["name"], event["points"], event["date"], event["category"]
             )
             assert err is None
-            assert (
-                code not in created
-            ), f"Collision detected on iteration {i} code {code}"
+            assert code not in created, (
+                f"Collision detected on iteration {i} code {code}"
+            )
             created[code] = None
 
         assert True

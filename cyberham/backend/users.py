@@ -39,9 +39,11 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
 
     # get codes
     for event in events:
-        if (activity.lower() in event["name"].lower() and 
-            event["semester"] == current_sem and 
-            event["year"] == current_yr):
+        if (
+            activity.lower() in event["name"].lower()
+            and event["semester"] == current_sem
+            and event["year"] == current_yr
+        ):
             codes.append(event["code"])
 
     # get sorted list of ids based on attendance
@@ -90,4 +92,4 @@ def award(user_id: str, user_name: str, points: int) -> str:
         update_points, pk_values=(user_id, current_semester(), current_year())
     )
 
-    return f"Successfully added {points} points to {user_name} ({user["name"]})."
+    return f"Successfully added {points} points to {user_name} ({user['name']})."

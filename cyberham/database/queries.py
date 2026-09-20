@@ -28,6 +28,7 @@ def attendance_for_user(
     )
     return db.cursor.fetchone()[0]
 
+
 def attendance_for_user_specific_category(
     user_id: str,
     category: str,
@@ -46,10 +47,11 @@ def attendance_for_user_specific_category(
             AND events.year = ?
             AND events.category = ?
         """,
-            (user_id, semester, year, category)
+        (user_id, semester, year, category),
     )
 
     return db.cursor.fetchone()[0]
+
 
 def attendance_for_all_users(
     semester: Semester | None = None,
@@ -179,6 +181,7 @@ def insert_registration(registration: Register):
     db.conn.commit()
     registerdb.create(registration)
 
+
 def insert_rsvp(reservation: rsvp):
     db.conn.execute(
         """
@@ -186,12 +189,13 @@ def insert_rsvp(reservation: rsvp):
         WHERE user_id = ?
             AND code = ?
         """,
-    (reservation["user_id"],reservation["code"])
+        (reservation["user_id"], reservation["code"]),
     )
     db.conn.commit()
     rsvpdb.create(reservation)
 
-def rsvp_counts_for_event(code:str) -> tuple[int,int,int]:
+
+def rsvp_counts_for_event(code: str) -> tuple[int, int, int]:
     db.cursor.execute(
         """
         SELECT COUNT(*) FILTER (WHERE reservation=0) AS yes, 
@@ -203,4 +207,8 @@ def rsvp_counts_for_event(code:str) -> tuple[int,int,int]:
         (code,),
     )
     responses = db.cursor.fetchone()
-    return responses["yes"],responses["no"],responses["unsure"],
+    return (
+        responses["yes"],
+        responses["no"],
+        responses["unsure"],
+    )

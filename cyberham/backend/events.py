@@ -123,40 +123,42 @@ def event_count() -> int:
 def calendar_events() -> tuple[list[CalendarEvent], MaybeError]:
     return google.client.get_events()
 
-def rsvp_event(uid:str, event:str, response:int, date:str):
+
+def rsvp_event(uid: str, event: str, response: int, date: str):
     """Add an entry to rsvp table for a given user and event"""
-    #check for formatting on years, and pad zeroes to current date string being passed in
+    # check for formatting on years, and pad zeroes to current date string being passed in
     try:
-        dateobj=datetime.strptime(date,"%m/%d/%Y")
+        dateobj = datetime.strptime(date, "%m/%d/%Y")
     except (ValueError, TypeError):
         try:
-            dateobj=datetime.strptime(date,"%m/%d/%y")
+            dateobj = datetime.strptime(date, "%m/%d/%y")
         except (ValueError, TypeError):
             return "Please use a valid date in the format mm/dd/yy or mm/dd/yyyy"
 
-    date=dateobj.strftime("%m/%d/%Y")
-    now=(datetime.now(cst_tz)).strftime("%m/%d/%Y")
+    date = dateobj.strftime("%m/%d/%Y")
+    now = (datetime.now(cst_tz)).strftime("%m/%d/%Y")
 
-    if compare_datestrs(date,now)<0:
+    if compare_datestrs(date, now) < 0:
         return "This RSVP form has expired!"
-    
+
     user = usersdb.get((uid,))
     if user is None:
         return "Please use /register first."
-    
+
     reservation = rsvp(
         user_id=uid,
         code=event,
         reservation=response,
     )
     insert_rsvp(reservation)
-    resp={0:"Yes!", 1:"No", 2: "Not sure"}
+    resp = {0: "Yes!", 1: "No", 2: "Not sure"}
     return f"You've replied: **{resp[response]}**"
 
-def count_rsvp_event(code:str):
+
+def count_rsvp_event(code: str):
     """Count totals of each response for a single event"""
-    if code=="":
-            return "Please provide an event code!"
+    if code == "":
+        return "Please provide an event code!"
     event = eventsdb.get((code,))
     if event is None:
         return "This event does not exist."

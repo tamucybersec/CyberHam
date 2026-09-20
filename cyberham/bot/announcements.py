@@ -103,9 +103,7 @@ def generate_event_markdown(events: Events) -> str:
                 channel = get_activity_group_channel(
                     event.description if event.description else ""
                 )
-                boilerplate += (
-                    f"- **{event.name}** | {channel}{start} - {end}\n"
-                )
+                boilerplate += f"- **{event.name}** | {channel}{start} - {end}\n"
 
     return boilerplate
 

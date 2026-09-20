@@ -55,12 +55,14 @@ def compare_datestrs(a: str, b: str) -> int:
         return -1 if monthA < monthB else 1
     return -1 if yearA < yearB else 1
 
+
 def valid_registration_time(time: str) -> bool:
     now = datetime.now()
     expiry = datetime.fromisoformat(time) + timedelta(hours=1)
     return now <= expiry
 
-def validate_date(date:str):
+
+def validate_date(date: str):
     for fmt in ("%m/%d/%Y", "%m/%d/%y"):
         try:
             datetime.strptime(date, fmt)

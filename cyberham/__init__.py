@@ -34,7 +34,9 @@ def merge_configs(base: Config, override: Config) -> Config:
 def load_configs(secrets_path: Path) -> Config:
     base_config_path = secrets_path / "config.toml"
     base_config = load_config(base_config_path)
-    environment = os.environ.get("CYBERHAM_ENV") or base_config.get("environment", "dev")
+    environment = os.environ.get("CYBERHAM_ENV") or base_config.get(
+        "environment", "dev"
+    )
     base_config["environment"] = environment
 
     env_config_path = secrets_path / f"config.{environment}.toml"
@@ -92,6 +94,6 @@ dashboard_config = config["dashboard"]
 discord_token: Any = config["discord"]["token"]
 guild_id = [Guild(id=x) for x in config["discord"]["test_guild_ids"]]
 admin_channel_id: Any = config["discord"]["admin_channel_id"]
-aggie_role_id = config['discord']['aggie_role_id']
-ipc_key = config['ipcx']['secret_key']
-ipc_port = config['ipcx']['port']
+aggie_role_id = config["discord"]["aggie_role_id"]
+ipc_key = config["ipcx"]["secret_key"]
+ipc_port = config["ipcx"]["port"]

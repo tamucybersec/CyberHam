@@ -86,7 +86,16 @@ class CalendarEvent(TypedDict):
 type Semester = Literal["spring", "fall"]
 type GradSemester = Literal["spring", "summer", "fall", "winter"]
 type TableName = Literal[
-    "users", "resumes", "events", "flagged", "attendance", "points", "tokens", "register", "verify", "rsvp"
+    "users",
+    "resumes",
+    "events",
+    "flagged",
+    "attendance",
+    "points",
+    "tokens",
+    "register",
+    "verify",
+    "rsvp",
 ]
 type Item = Mapping[str, Any]
 
@@ -103,6 +112,7 @@ class User(TypedDict):
     join_date: str
     notes: str
 
+
 type MaybeUser = User | None
 
 
@@ -111,9 +121,11 @@ class Resume(TypedDict):
     filename: str
     format: str
     upload_date: str
-    is_valid: int # bool (1 or 0)
+    is_valid: int  # bool (1 or 0)
+
 
 type MaybeResume = Resume | None
+
 
 class Event(TypedDict):
     name: str
@@ -177,10 +189,12 @@ class Verify(TypedDict):
     user_id: str
     code: int
 
+
 class rsvp(TypedDict):
-    user_id:str
-    code:str
-    reservation:int
+    user_id: str
+    code: str
+    reservation: int
+
 
 def default_user(user_id: str):
     return deepcopy(
@@ -194,6 +208,6 @@ def default_user(user_id: str):
             verified=0,
             sponsor_email_opt_out=0,
             join_date="",
-            notes=""
+            notes="",
         )
     )

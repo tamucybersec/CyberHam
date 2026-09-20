@@ -38,7 +38,9 @@ class TableSchema:
     def primary_key(self) -> list[str]:
         return [
             column.name
-            for column in sorted(self.columns, key=lambda column: column.primary_key_index)
+            for column in sorted(
+                self.columns, key=lambda column: column.primary_key_index
+            )
             if column.primary_key_index > 0
         ]
 

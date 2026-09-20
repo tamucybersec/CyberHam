@@ -108,7 +108,7 @@ class _Client(GoogleClientProtocol):
             )
 
             if "id" in send_message:
-                print(f'Message Id: {send_message["id"]}')
+                print(f"Message Id: {send_message['id']}")
                 print(f"[{code}] -> {address}")
             else:
                 print("Error: sent message missing id")

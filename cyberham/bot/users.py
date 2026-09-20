@@ -128,45 +128,55 @@ def setup_commands(bot: Bot):
 
     @app_commands.checks.cooldown(3, 5 * 60)
     @command_tree.command(
-        name="refresh_aggie_role", description="refresh aggie role grants for all members",
-        guilds=guild_id
+        name="refresh_aggie_role",
+        description="refresh aggie role grants for all members",
+        guilds=guild_id,
     )
     async def refresh_non_aggie_roles(interaction: discord.Interaction):
-        if interaction.channel is not None and interaction.channel.id != admin_channel_id:
-            await interaction.response.send_message("You do not have the permissions "
-                                                    "or are in the wrong channel to run this command.")
+        if (
+            interaction.channel is not None
+            and interaction.channel.id != admin_channel_id
+        ):
+            await interaction.response.send_message(
+                "You do not have the permissions "
+                "or are in the wrong channel to run this command."
+            )
             return
         if interaction.guild is None:
-            await interaction.response.send_message("This command must be run in a server.")
+            await interaction.response.send_message(
+                "This command must be run in a server."
+            )
             return
         await interaction.response.defer()
 
         for dict in usersdb.get_all():
-            member = interaction.guild.get_member(int(dict['user_id']))
+            member = interaction.guild.get_member(int(dict["user_id"]))
 
             if member is None:
                 try:
                     # Fallback in case member is not cached
-                    member = await interaction.guild.fetch_member(int(dict['user_id']))
+                    member = await interaction.guild.fetch_member(int(dict["user_id"]))
                 except discord.NotFound:
                     # user is no longer in the server
                     continue
 
             has_role = any(role.id == aggie_role_id for role in member.roles)
-            is_tamu = dict['verified'] and dict['email'].endswith("tamu.edu")
+            is_tamu = dict["verified"] and dict["email"].endswith("tamu.edu")
 
             if is_tamu and not has_role:
                 await member.add_roles(
                     discord.Object(id=aggie_role_id),
-                    reason="verified with a tamu.edu email"
+                    reason="verified with a tamu.edu email",
                 )
             elif not is_tamu and has_role:
                 await member.remove_roles(
                     discord.Object(id=aggie_role_id),
-                    reason="email used for verification is not an tamu.edu email"
+                    reason="email used for verification is not an tamu.edu email",
                 )
 
-        await interaction.followup.send("Aggie roles have been refreshed for all members!")
+        await interaction.followup.send(
+            "Aggie roles have been refreshed for all members!"
+        )
 
     # satisfy type checker
     _: list[Any] = [
@@ -177,5 +187,5 @@ def setup_commands(bot: Bot):
         profile_member,
         size,
         list_of_commands,
-        refresh_non_aggie_roles
+        refresh_non_aggie_roles,
     ]
