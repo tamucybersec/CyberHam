@@ -1,13 +1,13 @@
+from cyberham.database.backup import load_latest_backup, write_backup
 from cyberham.database.typeddb import (
+    attendancedb,
     db,
-    usersdb,
     eventsdb,
     flaggeddb,
-    attendancedb,
     pointsdb,
     tokensdb,
+    usersdb,
 )
-from cyberham.database.backup import write_backup, load_latest_backup
 
 # these tests are useful when updating the schema:
 # just backup the current data to json
@@ -57,4 +57,4 @@ class TestRecovery:
         db.conn.execute("PRAGMA foreign_keys = ON")
         db.conn.commit()
 
-        assert False
+        raise AssertionError()

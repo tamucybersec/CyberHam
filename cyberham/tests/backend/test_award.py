@@ -1,14 +1,15 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.users import award
+from cyberham.database.typeddb import pointsdb
 from cyberham.tests.models import (
+    points,
+    unregistered_user,
+    updated_user_2,
     users,
     valid_user,
-    updated_user_2,
-    unregistered_user,
-    points,
 )
 from cyberham.utils.date import current_semester, current_year
-from cyberham.database.typeddb import pointsdb
 
 
 class TestAward(BackendPatcher):

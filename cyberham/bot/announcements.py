@@ -1,18 +1,19 @@
-from typing import Any, TypeAlias
-from pytz import timezone
+from calendar import day_name
+from datetime import date, timedelta
+from datetime import datetime as dt
+from typing import Any
 
 import discord
 from discord import app_commands
-from datetime import datetime as dt, timedelta, date
-from calendar import day_name
+from pytz import timezone
+
 from cyberham import guild_id
 from cyberham.bot.bot import Bot
-from cyberham.bot.utils import valid_guild
 from cyberham.bot.constants import activity_group_channels
-from cyberham.utils.date import to_central_time, format_central_time
+from cyberham.bot.utils import valid_guild
+from cyberham.utils.date import format_central_time, to_central_time
 
-
-Events: TypeAlias = dict[int, dict[str, list[discord.ScheduledEvent]]]
+type Events = dict[int, dict[str, list[discord.ScheduledEvent]]]
 
 
 def setup_commands(bot: Bot):

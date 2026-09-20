@@ -1,12 +1,12 @@
 from typing import Literal
 
-from cyberham.database.typeddb import usersdb, eventsdb, pointsdb
-from cyberham.types import User, MaybeUser, Points, MaybePoints
 from cyberham.database.queries import (
     attendance_for_all_users,
     points_for_all_users,
     user_attendance_counts_for_events,
 )
+from cyberham.database.typeddb import eventsdb, pointsdb, usersdb
+from cyberham.types import MaybePoints, MaybeUser, Points, User
 from cyberham.utils.date import current_semester, current_year
 
 
@@ -46,7 +46,7 @@ def leaderboard_search(activity: str) -> list[tuple[str, int]]:
 
     # get sorted list of ids based on attendance
     attendance = user_attendance_counts_for_events(codes)
-    user_ids = [(user_id,) for user_id in attendance.keys()]
+    user_ids = [(user_id,) for user_id in attendance]
     user_ids.sort(key=lambda user_id: attendance[user_id[0]], reverse=True)
     users = usersdb.get_batch(user_ids)
 

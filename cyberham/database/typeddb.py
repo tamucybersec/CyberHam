@@ -1,43 +1,39 @@
+from collections.abc import Callable, Mapping, Sequence
+from copy import deepcopy
+from typing import (
+    Any,
+    TypeVar,
+    cast,
+    overload,
+)
+
 from cyberham import data_path
-from cyberham.database.sqlite import SQLiteDB
 from cyberham.database.readonly import ReadonlyDB
+from cyberham.database.sqlite import SQLiteDB
 from cyberham.types import (
-    TableName,
-    User,
-    Resume,
+    Attendance,
     Event,
     Flagged,
-    Attendance,
-    Points,
-    Tokens,
-    Register,
-    Verify,
     Item,
+    Points,
+    Register,
+    Resume,
     Semester,
-    rsvp
+    TableName,
+    Tokens,
+    User,
+    Verify,
+    rsvp,
 )
-from typing import (
-    cast,
-    TypeVar,
-    Generic,
-    TypeAlias,
-    Optional,
-    Callable,
-    Mapping,
-    Any,
-    overload,
-    Sequence,
-)
-from copy import deepcopy
 
 T = TypeVar("T", bound=Mapping[str, Any])
-Maybe: TypeAlias = Optional[T]
-Update: TypeAlias = Callable[[Maybe[T]], Maybe[T]]
+type Maybe[T: Mapping[str, Any]] = T | None
+type Update[T: Mapping[str, Any]] = Callable[[Maybe[T]], Maybe[T]]
 
 PK = TypeVar("PK", bound=tuple[Any, ...])
 
 
-class TypedDB(Generic[T, PK]):
+class TypedDB[T: Mapping[str, Any], PK: tuple[Any, ...]]:
     _db: SQLiteDB
     table: TableName
     pk_names: list[str]

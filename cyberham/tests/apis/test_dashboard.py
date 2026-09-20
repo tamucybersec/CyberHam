@@ -1,8 +1,10 @@
 import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
+
 from cyberham.apis.dashboard import app
 
 client: TestClient = TestClient(app)

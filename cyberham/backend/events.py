@@ -1,28 +1,32 @@
 import random
 import string
-
 from datetime import datetime
+
 from cyberham.apis.google_apis import google
-from cyberham.database.queries import user_attendance_counts_for_events, insert_rsvp, rsvp_counts_for_event
-from cyberham.database.typeddb import usersdb, eventsdb, attendancedb
+from cyberham.database.queries import (
+    insert_rsvp,
+    rsvp_counts_for_event,
+    user_attendance_counts_for_events,
+)
+from cyberham.database.typeddb import attendancedb, eventsdb, usersdb
 from cyberham.types import (
-    Error,
-    MaybeError,
-    CalendarEvent,
-    Event,
-    MaybeEvent,
-    Attendance,
-    Category,
-    rsvp,
     VALID_CATEGORIES,
+    Attendance,
+    CalendarEvent,
+    Category,
+    Error,
+    Event,
+    MaybeError,
+    MaybeEvent,
+    rsvp,
 )
 from cyberham.utils.date import (
+    compare_datestrs,
     cst_tz,
     current_semester,
     current_year,
     datetime_to_datestr,
     sort_events_by_date,
-    compare_datestrs
 )
 
 
@@ -32,7 +36,7 @@ def create_event(
     if name == "":
         return "", Error("Event name cannot be empty.")
 
-    if not (category in VALID_CATEGORIES):
+    if category not in VALID_CATEGORIES:
         return "", Error(
             f"Event '{name}' does not have a valid category ({category}). Valid categories: {VALID_CATEGORIES}"
         )
@@ -68,7 +72,7 @@ def attend_event(code: str, user_id: str) -> tuple[str, MaybeEvent]:
         return "Please use /register to make a profile first!", None
 
     email_reminder = ""
-    if user["verified"] == False:
+    if not user["verified"]:
         email_reminder = "Please verify your email address with /verify or request a new code if it timed out using /register."
 
     # event validation
@@ -122,16 +126,14 @@ def calendar_events() -> tuple[list[CalendarEvent], MaybeError]:
 def rsvp_event(uid:str, event:str, response:int, date:str):
     """Add an entry to rsvp table for a given user and event"""
     #check for formatting on years, and pad zeroes to current date string being passed in
-    try: 
+    try:
         dateobj=datetime.strptime(date,"%m/%d/%Y")
-    except ValueError:
+    except (ValueError, TypeError):
         try:
             dateobj=datetime.strptime(date,"%m/%d/%y")
-        except:  
+        except (ValueError, TypeError):
             return "Please use a valid date in the format mm/dd/yy or mm/dd/yyyy"
-    except:
-        return "Please use a valid date in the format mm/dd/yy or mm/dd/yyyy"
-    
+
     date=dateobj.strftime("%m/%d/%Y")
     now=(datetime.now(cst_tz)).strftime("%m/%d/%Y")
 

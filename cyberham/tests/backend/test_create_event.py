@@ -1,7 +1,8 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.events import create_event
-from cyberham.tests.models import valid_event
 from cyberham.database.typeddb import eventsdb
+from cyberham.tests.models import valid_event
 
 
 class TestCreateEvent(BackendPatcher):

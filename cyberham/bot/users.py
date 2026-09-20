@@ -1,11 +1,14 @@
+from typing import Any
+
 import discord
 from discord import app_commands
+
 import cyberham.backend.register as backend_register
-from cyberham import guild_id, admin_channel_id, aggie_role_id
+from cyberham import admin_channel_id, aggie_role_id, guild_id
 from cyberham.bot.bot import Bot
-from cyberham.bot.utils import valid_guild, user_profile_embed
+from cyberham.bot.utils import user_profile_embed, valid_guild
 from cyberham.database.typeddb import usersdb
-from typing import Any
+
 
 def setup_commands(bot: Bot):
     command_tree = bot.command_tree

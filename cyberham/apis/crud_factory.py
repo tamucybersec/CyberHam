@@ -1,10 +1,13 @@
-from cyberham.database.typeddb import TypedDB, T, PK
+from collections.abc import Sequence
+from typing import Any, cast
+
 from fastapi import APIRouter, Depends
-from cyberham.types import Permissions
-from cyberham.apis.auth import require_permission
-from typing import Any, Sequence, cast
-from pydantic import BaseModel
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+from cyberham.apis.auth import require_permission
+from cyberham.database.typeddb import PK, T, TypedDB
+from cyberham.types import Permissions
 
 
 class CreateDeletePayload[T](BaseModel):
@@ -50,7 +53,7 @@ def create_crud_routes(
         db.delete(pk_values)
         return {"message": "deleted"}
 
-    @router.post(f"/replace", dependencies=[Depends(require_permission(modify_perm))])
+    @router.post("/replace", dependencies=[Depends(require_permission(modify_perm))])
     async def replace(body: ReplacePayload[T]):
         res = db.replace(body.replacement)
         if "error" in res:

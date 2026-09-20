@@ -1,20 +1,19 @@
 import logging
 from typing import cast
-from pytz import timezone
 
 import discord
-from discord import app_commands
-from discord import ScheduledEvent
+from discord import ScheduledEvent, app_commands
 from discord.ext import commands, ipcx
+from pytz import timezone
 
 import cyberham.backend.events as backend_events
-from cyberham import guild_id, discord_token, admin_channel_id
-from cyberham.bot.utils import event_info
+from cyberham import admin_channel_id, discord_token, guild_id, ipc_key, ipc_port
 from cyberham.bot.ui import RSVPButton
+from cyberham.bot.utils import event_info
 from cyberham.types import Category
-from cyberham import ipc_key, ipc_port
 
-class FetchUserPayload():
+
+class FetchUserPayload:
     user_id: int
 
 class Bot(discord.Client):
@@ -70,12 +69,7 @@ class Bot(discord.Client):
 def run_bot():
     # hand off the command tree so the commands can register themselves
     # imported inside the function to prevent a circular import
-    from cyberham.bot import admin
-    from cyberham.bot import announcements
-    from cyberham.bot import events
-    from cyberham.bot import leaderboard
-    from cyberham.bot import users
-    from cyberham.bot import rsvp
+    from cyberham.bot import admin, announcements, events, leaderboard, rsvp, users
 
     bot = Bot()
 

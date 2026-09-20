@@ -1,8 +1,8 @@
+import os
+import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
-import os
 from pathlib import Path
-import sqlite3
 from tempfile import mkstemp
 
 from cyberham import data_path

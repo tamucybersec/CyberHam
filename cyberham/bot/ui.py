@@ -1,7 +1,9 @@
-from typing import cast, Optional, Any
 import re
+from typing import Any, cast
+
 import discord
 from discord import ui
+
 import cyberham.backend.events as backend_events
 from cyberham.bot.utils import event_list_embed, handle_attend_response
 
@@ -58,20 +60,20 @@ class EditModal(discord.ui.Modal, title="Edit a Message"):
         label="Message content", style=discord.TextStyle.paragraph, max_length=2000
     )
 
-    def __init__(self, message: Optional[discord.Message] = None):
+    def __init__(self, message: discord.Message | None = None):
         super().__init__()
         self.message = message
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         if self.message is None:
             await interaction.response.send_message(
-                f"Howdy! The message has been sent.", ephemeral=True
+                "Howdy! The message has been sent.", ephemeral=True
             )
             channel = cast(discord.TextChannel, interaction.channel)
             await channel.send(f"{self.answer}")
         else:
             await interaction.response.send_message(
-                f"Howdy! The message has been updated.", ephemeral=True
+                "Howdy! The message has been updated.", ephemeral=True
             )
             await self.message.edit(content=f"{self.answer}")
         

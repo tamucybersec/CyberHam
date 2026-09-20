@@ -1,12 +1,15 @@
-import pytest
-from cyberham.database.sqlite import SQLiteDB
-from cyberham.types import TableName
-from cyberham.tests.models import (
-    valid_user_item,
-    valid_user_2_item,
-    unregistered_user_item,
-)
+import sqlite3
 from typing import Any
+
+import pytest
+
+from cyberham.database.sqlite import SQLiteDB
+from cyberham.tests.models import (
+    unregistered_user_item,
+    valid_user_2_item,
+    valid_user_item,
+)
+from cyberham.types import TableName
 
 table: TableName = "users"
 pk_names = ["user_id"]
@@ -32,7 +35,7 @@ class TestSQLiteCrud:
         assert after == unregistered_user_item()
 
     def test_create_item_fails_overwrite(self):
-        with pytest.raises(Exception):
+        with pytest.raises(sqlite3.IntegrityError):
             self.sqlite.create_row(table, valid_user_item())
 
     def test_get_item(self):

@@ -1,9 +1,9 @@
-from pathlib import Path
 import asyncio
 import sqlite3
-import pytest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 from starlette.types import Message
 

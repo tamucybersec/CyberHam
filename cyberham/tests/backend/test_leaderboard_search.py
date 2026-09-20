@@ -1,12 +1,13 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.users import leaderboard_search
 from cyberham.tests.models import (
-    users,
-    events,
-    attended_event,
-    valid_event,
-    unregistered_event,
     attendance,
+    attended_event,
+    events,
+    unregistered_event,
+    users,
+    valid_event,
 )
 
 

@@ -1,17 +1,18 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.register import verify_email
-from cyberham.types import User
+from cyberham.database.typeddb import usersdb, verifydb
 from cyberham.tests.models import (
+    VERIFICATION_CODE,
+    extended_pending_verifies,
+    flagged_user,
+    flagged_users,
+    unregistered_user,
     users,
     valid_user,
     valid_user_2,
-    flagged_user,
-    unregistered_user,
-    flagged_users,
-    extended_pending_verifies,
-    VERIFICATION_CODE,
 )
-from cyberham.database.typeddb import usersdb, verifydb
+from cyberham.types import User
 
 
 class TestVerifyEmail(BackendPatcher):

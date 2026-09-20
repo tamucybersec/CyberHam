@@ -1,29 +1,37 @@
+import os
 import random
-from uuid import uuid4
 from datetime import datetime
+from uuid import uuid4
 
-from cyberham import website_url, data_path
+import aiofiles
+from fastapi import UploadFile
+
+from cyberham import data_path, website_url
 from cyberham.apis.google_apis import google
-from cyberham.database.typeddb import Maybe, usersdb, resumesdb, flaggeddb, registerdb, verifydb
 from cyberham.database.queries import insert_registration
+from cyberham.database.typeddb import (
+    Maybe,
+    flaggeddb,
+    registerdb,
+    resumesdb,
+    usersdb,
+    verifydb,
+)
 from cyberham.types import (
-    User,
-    MaybeUser,
-    Flagged,
-    MaybeFlagged,
     Error,
+    Flagged,
     MaybeError,
+    MaybeFlagged,
+    MaybeUser,
     Register,
-    Verify,
     Resume,
+    User,
+    Verify,
 )
 from cyberham.utils.date import (
     datetime_to_datestr,
     valid_registration_time,
 )
-from fastapi import UploadFile
-import os
-import aiofiles
 
 
 async def upload_resume(user_id: str, resume: UploadFile) -> bool:

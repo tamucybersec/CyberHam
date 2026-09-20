@@ -1,16 +1,18 @@
+from datetime import datetime
+
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.register import register_email
-from cyberham.types import User, Verify
+from cyberham.database.typeddb import flaggeddb, verifydb
 from cyberham.tests.models import (
+    flagged_user,
+    no_email_user,
+    pending_verifies,
+    unregistered_user,
     users,
     valid_user,
-    no_email_user,
-    unregistered_user,
-    flagged_user,
-    pending_verifies,
 )
-from datetime import datetime
-from cyberham.database.typeddb import flaggeddb, verifydb
+from cyberham.types import User, Verify
 
 
 class TestRegisterEmail(BackendPatcher):
@@ -28,7 +30,7 @@ class TestRegisterEmail(BackendPatcher):
             res == ""
         ), "Should return no status for already registered users not changing their email"
         assert (
-            self._has_pending_verify(valid_user()) == False
+            not self._has_pending_verify(valid_user())
         ), "Should not send a verification code to users not changing their email"
         assert self._no_offenses(
             valid_user()
@@ -101,7 +103,7 @@ class TestRegisterEmail(BackendPatcher):
 
     def _no_offenses(self, user: User) -> bool:
         flagged = flaggeddb.get((user["user_id"],))
-        return flagged == None
+        return flagged is None
 
     def _offense_count(self, user: User) -> int:
         flagged = flaggeddb.get((user["user_id"],))

@@ -1,8 +1,10 @@
 import sqlite3
-from typing import Optional, Any, Sequence
-from cyberham.types import Item, TableName
+from collections.abc import Sequence
+from typing import Any
+
 from cyberham.database.backup import write_backup
 from cyberham.database.schema import load_schema_sql
+from cyberham.types import Item, TableName
 
 type PK = tuple[Any, ...]
 
@@ -40,7 +42,7 @@ class SQLiteDB:
     # read
     def get_row(
         self, table: TableName, pk_names: list[str], pk_values: PK
-    ) -> Optional[Item]:
+    ) -> Item | None:
         wheres = self._wheres(pk_names)
         self.cursor.execute(f"SELECT * FROM {table} WHERE {wheres}", pk_values)
         row = self.cursor.fetchone()
@@ -69,7 +71,7 @@ class SQLiteDB:
     # delete
     def delete_row(
         self, table: TableName, pk_names: list[str], pk_values: PK
-    ) -> Optional[Item]:
+    ) -> Item | None:
         old = self.get_row(table, pk_names, pk_values)
         if old:
             wheres = self._wheres(pk_names)
@@ -82,7 +84,7 @@ class SQLiteDB:
         table: TableName,
         pk_names: list[str],
         pk_values: Sequence[PK],
-    ) -> Sequence[Optional[Item]]:
+    ) -> Sequence[Item | None]:
         if pk_values == []:
             return []
 
@@ -106,10 +108,10 @@ class SQLiteDB:
             row_map[key] = dict(row)
 
         # rebuild list in the same order as pk_values
-        results: list[Optional[Item]] = []
+        results: list[Item | None] = []
         for key_values in pk_values:
             key = tuple(key_values)
-            result = row_map.get(key, None)
+            result = row_map.get(key)
             results.append(result)
 
         return results

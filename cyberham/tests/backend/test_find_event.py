@@ -1,11 +1,12 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.events import find_event
 from cyberham.tests.models import (
-    users,
-    events,
-    valid_event,
-    unregistered_event,
     attendance,
+    events,
+    unregistered_event,
+    users,
+    valid_event,
 )
 
 

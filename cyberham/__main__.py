@@ -1,15 +1,16 @@
 # __main__.py is the entry point of the app
 # used to start all the services (discord bot and api server)
 
-from threading import Thread
-from multiprocessing import Process
-from cyberham.bot.bot import run_bot
-from cyberham.apis.dashboard import run_api
-from cyberham.database.backup import write_full_backup
 import signal
 import sys
 import time
+from multiprocessing import Process
+from threading import Thread
 from types import FrameType
+
+from cyberham.apis.dashboard import run_api
+from cyberham.bot.bot import run_bot
+from cyberham.database.backup import write_full_backup
 
 
 def periodic_backup():

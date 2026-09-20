@@ -1,11 +1,11 @@
 # __init__.py runs before the entry point __main__.py does
 # loads values from the secrets/config*.toml files and sets up the logger
 
+import logging
 import os
 import tomllib
-import logging
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, cast
 
 type Config = dict[str, Any]

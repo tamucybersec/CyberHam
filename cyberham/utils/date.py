@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
-from pytz import timezone
-from cyberham.types import Event, Semester
 
+from pytz import timezone
+
+from cyberham.types import Event, Semester
 
 # central timezone
 cst_tz = timezone("US/Central")
@@ -60,14 +61,10 @@ def valid_registration_time(time: str) -> bool:
     return now <= expiry
 
 def validate_date(date:str):
-    response=True
-    try: 
-        response=bool(datetime.strptime(date,"%m/%d/%Y"))
-    except ValueError:
-        try: 
-            response=bool(datetime.strptime(date,"%m/%d/%y"))
-        except:
-            response=False
-    except:
-        response=False
-    return response
+    for fmt in ("%m/%d/%Y", "%m/%d/%y"):
+        try:
+            datetime.strptime(date, fmt)
+            return True
+        except (ValueError, TypeError):
+            continue
+    return False

@@ -1,16 +1,23 @@
-from typing import cast, Optional, Any, Mapping
+import ipaddress
+import json
+import traceback
+from collections.abc import Mapping
 from pathlib import Path
-from cyberham import website_url, dashboard_config, ipc_key, ipc_port
-from cyberham.apis.auth import token_status
-from cyberham.types import Permissions, User, default_user
+from typing import Any, cast
+
+import uvicorn
+from discord.ext import ipcx
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel
+from starlette.types import Receive, Scope, Send
+
+from cyberham import dashboard_config, ipc_key, ipc_port, website_url
+from cyberham.apis.auth import require_permission, token_status
+from cyberham.apis.crud_factory import create_crud_routes
 from cyberham.backend.register import register, upload_resume
-from cyberham.utils.transform import pretty_semester
-from cyberham.database.typeddb import (
-    readonlydb,
-    registerdb,
-    resumesdb,
-    usersdb,
-)
 from cyberham.database.schema import (
     detect_schema_drift,
     live_database_path,
@@ -18,20 +25,15 @@ from cyberham.database.schema import (
     snapshot_database,
 )
 from cyberham.database.table_registry import TABLE_REGISTRY, TABLE_REGISTRY_BY_NAME
-from cyberham.apis.auth import require_permission
+from cyberham.database.typeddb import (
+    readonlydb,
+    registerdb,
+    resumesdb,
+    usersdb,
+)
+from cyberham.types import Permissions, User, default_user
 from cyberham.utils.date import valid_registration_time
-from cyberham.apis.crud_factory import create_crud_routes
-from fastapi import FastAPI, Form, File, HTTPException, UploadFile, Depends
-from fastapi.requests import Request
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.types import Scope, Receive, Send
-from pydantic import BaseModel
-import ipaddress
-import json
-import traceback
-import uvicorn
-from discord.ext import ipcx
+from cyberham.utils.transform import pretty_semester
 
 app = FastAPI()
 ipc = ipcx.Client(secret_key=ipc_key, port=ipc_port)
@@ -132,13 +134,13 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
 async def register_user(
     ticket: str,
     user_json: str = Form(...),
-    resume: Optional[UploadFile] = File(None),
+    resume: UploadFile | None = File(None),
 ):
     try:
         user_dict = json.loads(user_json)
         user = User(**user_dict)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid user JSON")
+    except Exception as err:
+        raise HTTPException(status_code=400, detail="Invalid user JSON") from err
 
     msg, err = register(ticket, user)
     if err is not None:

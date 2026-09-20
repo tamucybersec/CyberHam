@@ -1,7 +1,12 @@
 import discord
+
 import cyberham.backend.events as backend_events
 import cyberham.backend.users as backend_users
-from cyberham.database.queries import points_for_user, attendance_for_user, attendance_for_user_specific_category
+from cyberham.database.queries import (
+    attendance_for_user,
+    attendance_for_user_specific_category,
+    points_for_user,
+)
 from cyberham.utils.date import current_semester, current_year
 
 

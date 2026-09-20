@@ -1,9 +1,11 @@
 import os
+from datetime import UTC, datetime
+
 from cyberham import data_path
-from cyberham.database.typeddb import usersdb, resumesdb, db
-from cyberham.types import Resume
 from cyberham.database.backup import write_backup
-from datetime import datetime, timezone
+from cyberham.database.typeddb import db, resumesdb, usersdb
+from cyberham.types import Resume
+
 
 def migrate_resumes():
     # get all users
@@ -45,7 +47,7 @@ def migrate_resumes():
 
         # get last modified time for that file (so, when it was written to disk during its upload)
         resume_path = os.path.join(data_path / "resumes", user_id)
-        upload_date = datetime.fromtimestamp(os.path.getmtime(resume_path), tz=timezone.utc).isoformat().replace("+00:00", "Z")
+        upload_date = datetime.fromtimestamp(os.path.getmtime(resume_path), tz=UTC).isoformat().replace("+00:00", "Z")
 
         # skip resumes that already got entered into the resumes table (if this isn't the first time running this)
         existing_resume = resumesdb.get((user_id,))

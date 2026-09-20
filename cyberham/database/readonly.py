@@ -20,12 +20,12 @@ class ReadonlyDB:
 
         try:
             cursor.execute(sql)
-        except:
-            raise ValueError(f"Query failed or not allowed.")
+        except sqlite3.Error as err:
+            raise ValueError("Query failed or not allowed.") from err
 
         if cursor.description is None:
             return {"columns": [], "rows": []}
 
         columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = [dict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
         return {"columns": columns, "rows": rows}

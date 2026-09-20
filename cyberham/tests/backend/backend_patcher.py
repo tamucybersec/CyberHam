@@ -1,18 +1,18 @@
 from cyberham.apis.google_apis import google
 from cyberham.apis.mock_google_apis import MockGoogleClient
 from cyberham.database.typeddb import (
-    T,
     PK,
+    T,
     TypedDB,
+    attendancedb,
     db,
-    usersdb,
     eventsdb,
     flaggeddb,
-    attendancedb,
     pointsdb,
+    usersdb,
     verifydb,
 )
-from cyberham.types import User, Event, Flagged, Attendance, Points, Verify, TableName
+from cyberham.types import Attendance, Event, Flagged, Points, TableName, User, Verify
 
 
 class BackendPatcher:

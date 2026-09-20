@@ -1,9 +1,11 @@
 # 100% AI code, do not hold me to these standards or god awful naming
 
+import json
+from collections.abc import Sequence
+from typing import cast
+
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from typing import Sequence, cast
-import json
 
 
 # just a utility so I can scrape a list of majors from the undergrad catalog
@@ -19,7 +21,7 @@ def test_major_parser():
 
 
 def get_html_file(filepath: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         html: str = f.read()
 
     return html

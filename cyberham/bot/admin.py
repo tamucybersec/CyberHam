@@ -1,10 +1,8 @@
+from datetime import datetime as dt
 from typing import Any
 
 import discord
-from discord import app_commands
-from discord import EntityType
-from discord import PrivacyLevel
-from datetime import datetime as dt
+from discord import EntityType, PrivacyLevel, app_commands
 
 import cyberham.backend.events as backend_events
 import cyberham.backend.users as backend_users
