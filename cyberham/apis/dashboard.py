@@ -167,10 +167,10 @@ async def query_readonly(body: QueryPayload):
 
 @app.get(
     "/schema",
-    dependencies=[Depends(require_permission(Permissions.COMMITTEE))],
+    dependencies=[Depends(require_permission(Permissions.SUPER_ADMIN))],
 )
-def get_schema():
-    tables = []
+def get_schema() -> dict[str, Any]:
+    tables: list[dict[str, Any]] = []
     live = live_schema()
     drift = detect_schema_drift(live=live)
 

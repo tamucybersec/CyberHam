@@ -2,9 +2,10 @@ from pathlib import Path
 import asyncio
 import sqlite3
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
+from starlette.types import Message
 
 from cyberham.apis.dashboard import app, export_database
 from cyberham.database.schema import (
@@ -22,7 +23,7 @@ def _headers() -> dict[str, str]:
     return {"Authorization": "Bearer schema-test-token"}
 
 
-def test_schema_and_export_use_configured_data_directory(tmp_path):
+def test_schema_and_export_use_configured_data_directory(tmp_path: Path) -> None:
     _make_database(tmp_path / "cyberham.db")
     with (
         patch("cyberham.database.schema.data_path", tmp_path),
@@ -57,10 +58,10 @@ class TestSchemaAdminApi:
     @patch("cyberham.apis.auth.token_status")
     def test_schema_lists_all_tables(
         self,
-        mock_token_status,
+        mock_token_status: MagicMock,
         tmp_path: Path,
     ) -> None:
-        mock_token_status.return_value = (Permissions.COMMITTEE, True)
+        mock_token_status.return_value = (Permissions.SUPER_ADMIN, True)
         db_path = tmp_path / "schema.db"
         _make_database(db_path)
 
@@ -88,10 +89,10 @@ class TestSchemaAdminApi:
     @patch("cyberham.apis.auth.token_status")
     def test_schema_includes_relationships_and_permissions(
         self,
-        mock_token_status,
+        mock_token_status: MagicMock,
         tmp_path: Path,
     ) -> None:
-        mock_token_status.return_value = (Permissions.COMMITTEE, True)
+        mock_token_status.return_value = (Permissions.SUPER_ADMIN, True)
         db_path = tmp_path / "schema.db"
         _make_database(db_path)
 
@@ -146,10 +147,10 @@ class TestSchemaAdminApi:
     @patch("cyberham.apis.auth.token_status")
     def test_schema_reports_legacy_resume_column_drift(
         self,
-        mock_token_status,
+        mock_token_status: MagicMock,
         tmp_path: Path,
     ) -> None:
-        mock_token_status.return_value = (Permissions.COMMITTEE, True)
+        mock_token_status.return_value = (Permissions.SUPER_ADMIN, True)
         db_path = tmp_path / "schema.db"
         _make_database(db_path, legacy_resume_columns=True)
 
@@ -172,7 +173,7 @@ class TestSchemaAdminApi:
     @patch("cyberham.apis.auth.token_status")
     def test_export_requires_super_admin(
         self,
-        mock_token_status,
+        mock_token_status: MagicMock,
         tmp_path: Path,
     ) -> None:
         db_path = tmp_path / "schema.db"
@@ -196,23 +197,29 @@ class TestSchemaAdminApi:
     (Permissions.SPONSOR, True),
     (Permissions.SUPER_ADMIN, False),
 ])
-def test_schema_endpoints_deny_insufficient_or_invalid_tokens(endpoint, permission, valid):
+def test_schema_endpoints_deny_insufficient_or_invalid_tokens(
+    endpoint: str, permission: Permissions, valid: bool
+) -> None:
     with patch("cyberham.apis.auth.token_status", return_value=(permission, valid)):
         response = client.get(endpoint, headers=_headers())
     assert response.status_code == 403
 
 
 @pytest.mark.parametrize("endpoint", ["/schema", "/database/export"])
-def test_schema_endpoints_require_authentication(endpoint):
+def test_schema_endpoints_require_authentication(endpoint: str) -> None:
     assert client.get(endpoint).status_code == 403
 
 
-def test_export_denies_admin():
-    with patch("cyberham.apis.auth.token_status", return_value=(Permissions.ADMIN, True)):
-        assert client.get("/database/export", headers=_headers()).status_code == 403
+@pytest.mark.parametrize("endpoint", ["/schema", "/database/export"])
+@pytest.mark.parametrize("permission", [Permissions.COMMITTEE, Permissions.ADMIN])
+def test_schema_endpoints_deny_below_super_admin(
+    endpoint: str, permission: Permissions
+) -> None:
+    with patch("cyberham.apis.auth.token_status", return_value=(permission, True)):
+        assert client.get(endpoint, headers=_headers()).status_code == 403
 
 
-def test_export_missing_database(tmp_path):
+def test_export_missing_database(tmp_path: Path) -> None:
     missing = tmp_path / "missing.db"
     with (
         patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
@@ -222,16 +229,16 @@ def test_export_missing_database(tmp_path):
     assert not missing.exists()
 
 
-def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path):
+def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path: Path) -> None:
     db_path = tmp_path / "source.db"
     _make_database(db_path)
     connection = sqlite3.connect(db_path)
     connection.execute("PRAGMA journal_mode=WAL")
     connection.execute("INSERT INTO verify VALUES ('snapshot-user', 12345)")
     connection.commit()
-    snapshots = []
+    snapshots: list[Path] = []
 
-    def capture_snapshot(path):
+    def capture_snapshot(path: Path) -> Path:
         snapshot = snapshot_database(path)
         snapshots.append(snapshot)
         return snapshot
@@ -259,12 +266,14 @@ def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path):
     "range_header,expected_status",
     [("garbage", 400), ("bytes=999999999999-", 416), ("bytes=0-15", 206)],
 )
-def test_export_cleans_up_after_range_requests(tmp_path, range_header, expected_status):
+def test_export_cleans_up_after_range_requests(
+    tmp_path: Path, range_header: str, expected_status: int
+) -> None:
     db_path = tmp_path / "source.db"
     _make_database(db_path)
-    snapshots = []
+    snapshots: list[Path] = []
 
-    def capture_snapshot(path):
+    def capture_snapshot(path: Path) -> Path:
         snapshot = snapshot_database(path)
         snapshots.append(snapshot)
         return snapshot
@@ -289,7 +298,9 @@ def test_export_cleans_up_after_range_requests(tmp_path, range_header, expected_
 
 
 @pytest.mark.parametrize("failure", [OSError, asyncio.CancelledError])
-def test_export_cleans_up_when_sending_fails_or_is_cancelled(tmp_path, failure):
+def test_export_cleans_up_when_sending_fails_or_is_cancelled(
+    tmp_path: Path, failure: type[BaseException]
+) -> None:
     db_path = tmp_path / "source.db"
     _make_database(db_path)
     with patch("cyberham.apis.dashboard.live_database_path", return_value=db_path):
@@ -297,11 +308,11 @@ def test_export_cleans_up_when_sending_fails_or_is_cancelled(tmp_path, failure):
     snapshot = Path(response.path)
     assert snapshot.exists()
 
-    async def send(message):
+    async def send(message: Message) -> None:
         if message["type"] == "http.response.body":
             raise failure()
 
-    async def receive():
+    async def receive() -> Message:
         return {"type": "http.disconnect"}
 
     try:
@@ -313,7 +324,7 @@ def test_export_cleans_up_when_sending_fails_or_is_cancelled(tmp_path, failure):
         snapshot.unlink(missing_ok=True)
 
 
-def test_schema_uses_live_definitions_and_reports_missing_tables(tmp_path):
+def test_schema_uses_live_definitions_and_reports_missing_tables(tmp_path: Path) -> None:
     db_path = tmp_path / "schema.db"
     _make_database(db_path)
     with sqlite3.connect(db_path) as connection:
@@ -324,7 +335,7 @@ def test_schema_uses_live_definitions_and_reports_missing_tables(tmp_path):
         connection.execute("DROP TABLE register")
         connection.execute("CREATE TABLE \"extra'table\" (id TEXT)")
     with (
-        patch("cyberham.apis.auth.token_status", return_value=(Permissions.COMMITTEE, True)),
+        patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
         patch("cyberham.database.schema.live_database_path", return_value=db_path),
     ):
         response = client.get("/schema", headers=_headers())
@@ -340,7 +351,7 @@ def test_schema_uses_live_definitions_and_reports_missing_tables(tmp_path):
     assert drift["register"]["missing_columns"] == ["ticket", "time", "user_id"]
 
 
-def test_registry_documents_all_canonical_tables_and_preserves_crud_permissions():
+def test_registry_documents_all_canonical_tables_and_preserves_crud_permissions() -> None:
     canonical = canonical_schema()
     assert set(canonical) == {entry.name for entry in TABLE_REGISTRY}
     expected = {
