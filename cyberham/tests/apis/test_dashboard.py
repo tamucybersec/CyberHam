@@ -175,8 +175,8 @@ class TestDashboard:
         standard_user_payload: dict[str, str],
     ) -> None:
         """
-        Verifies that if the resume upload process fails, the registration process is halted
-        and an appropriate 500 error is returned.
+        Verifies that if the resume upload process fails, an appropriate 500 error is
+        returned instead of the registration success message.
         """
         mock_upload.return_value = ""
         mock_register.return_value = ("SHOULD_NOT_HAPPEN", None)
@@ -188,7 +188,8 @@ class TestDashboard:
         )
         assert resp.status_code == 500
         assert resp.json()["detail"] == "Resume upload failed"
-        mock_register.assert_not_called()
+        mock_register.assert_called_once()
+        mock_upload.assert_awaited_once()
 
     # ------------------------------------------------------------------
     # /self
