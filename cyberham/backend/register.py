@@ -1,29 +1,37 @@
+import os
 import random
-from uuid import uuid4
 from datetime import datetime
+from uuid import uuid4
 
-from cyberham import website_url, data_path
+import aiofiles
+from fastapi import UploadFile
+
+from cyberham import data_path, website_url
 from cyberham.apis.google_apis import google
-from cyberham.database.typeddb import Maybe, usersdb, resumesdb, flaggeddb, registerdb, verifydb
 from cyberham.database.queries import insert_registration
+from cyberham.database.typeddb import (
+    Maybe,
+    flaggeddb,
+    registerdb,
+    resumesdb,
+    usersdb,
+    verifydb,
+)
 from cyberham.types import (
-    User,
-    MaybeUser,
-    Flagged,
-    MaybeFlagged,
     Error,
+    Flagged,
     MaybeError,
+    MaybeFlagged,
+    MaybeUser,
     Register,
-    Verify,
     Resume,
+    User,
+    Verify,
 )
 from cyberham.utils.date import (
     datetime_to_datestr,
     valid_registration_time,
 )
-from fastapi import UploadFile
-import os
-import aiofiles
 
 
 async def upload_resume(user_id: str, resume: UploadFile) -> bool:
@@ -34,7 +42,7 @@ async def upload_resume(user_id: str, resume: UploadFile) -> bool:
         filename = resume.filename
         if filename is None:
             return False
-        filename = os.path.basename(filename) # to prevent unwanted path traversal
+        filename = os.path.basename(filename)  # to prevent unwanted path traversal
         # get file format
         format = os.path.splitext(filename)[-1].lstrip(".").lower()
         if not format:
@@ -48,22 +56,25 @@ async def upload_resume(user_id: str, resume: UploadFile) -> bool:
 
         # Update resume info in the database
         def update_resume(existing_resume: Maybe[Resume]) -> Maybe[Resume]:
-            if existing_resume is None: # just create one
-                return Resume(user_id = user_id, 
-                        filename=filename, 
-                        format=format,
-                        upload_date=datetime.now().isoformat(),
-                        is_valid=0)
+            if existing_resume is None:  # just create one
+                return Resume(
+                    user_id=user_id,
+                    filename=filename,
+                    format=format,
+                    upload_date=datetime.now().isoformat(),
+                    is_valid=0,
+                )
             else:
                 # update existing resume
                 existing_resume["filename"] = filename
                 existing_resume["format"] = format
                 existing_resume["upload_date"] = datetime_to_datestr(datetime.now())
-                existing_resume["is_valid"] = 0 # new resume needs verification
+                existing_resume["is_valid"] = 0  # new resume needs verification
                 return existing_resume
+
         # if user has resume already
         result = resumesdb.update(update_resume, pk_values=(user_id,))
-        return (result is not None)
+        return result is not None
 
     except Exception as e:
         print(f"Upload failed for user {user_id}: {e}")

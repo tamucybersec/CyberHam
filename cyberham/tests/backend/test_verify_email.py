@@ -1,17 +1,18 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.register import verify_email
-from cyberham.types import User
+from cyberham.database.typeddb import usersdb, verifydb
 from cyberham.tests.models import (
+    VERIFICATION_CODE,
+    extended_pending_verifies,
+    flagged_user,
+    flagged_users,
+    unregistered_user,
     users,
     valid_user,
     valid_user_2,
-    flagged_user,
-    unregistered_user,
-    flagged_users,
-    extended_pending_verifies,
-    VERIFICATION_CODE,
 )
-from cyberham.database.typeddb import usersdb, verifydb
+from cyberham.types import User
 
 
 class TestVerifyEmail(BackendPatcher):
@@ -44,9 +45,9 @@ class TestVerifyEmail(BackendPatcher):
         user = usersdb.get((unregistered_user()["user_id"],))
         assert user is None, "Should not create user"
 
-        assert not self._has_pending_verify(
-            unregistered_user()
-        ), "Should not create pending email"
+        assert not self._has_pending_verify(unregistered_user()), (
+            "Should not create pending email"
+        )
 
     def test_no_pending(self):
         res = verify_email(VERIFICATION_CODE, valid_user_2()["user_id"])
@@ -56,9 +57,9 @@ class TestVerifyEmail(BackendPatcher):
         assert user is not None
         assert user["email"] == user["email"], "Should not change email"
 
-        assert not self._has_pending_verify(
-            valid_user_2()
-        ), "Should not create pending email"
+        assert not self._has_pending_verify(valid_user_2()), (
+            "Should not create pending email"
+        )
 
     def test_verify_incorrect_code(self):
         res = verify_email(VERIFICATION_CODE - 1, valid_user()["user_id"])
@@ -68,9 +69,7 @@ class TestVerifyEmail(BackendPatcher):
         assert user is not None
         assert user["email"] == user["email"], "Should not change email"
 
-        assert self._has_pending_verify(
-            valid_user()
-        ), "Should not remove pending email"
+        assert self._has_pending_verify(valid_user()), "Should not remove pending email"
 
     def _has_pending_verify(self, user: User):
         return verifydb.get((user["user_id"],)) is not None

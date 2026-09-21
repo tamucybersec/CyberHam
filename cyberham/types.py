@@ -1,7 +1,8 @@
+from collections.abc import Mapping
 from copy import deepcopy
-from enum import IntEnum
 from datetime import datetime
-from typing import Any, Literal, Optional, TypeAlias, Mapping, TypedDict, cast
+from enum import IntEnum
+from typing import Any, Literal, TypedDict, cast
 
 
 class Error:
@@ -18,7 +19,7 @@ class Error:
         return json
 
 
-MaybeError: TypeAlias = Optional[Error]
+type MaybeError = Error | None
 
 
 class Permissions(IntEnum):
@@ -85,9 +86,18 @@ class CalendarEvent(TypedDict):
 type Semester = Literal["spring", "fall"]
 type GradSemester = Literal["spring", "summer", "fall", "winter"]
 type TableName = Literal[
-    "users", "resumes", "events", "flagged", "attendance", "points", "tokens", "register", "verify", "rsvp"
+    "users",
+    "resumes",
+    "events",
+    "flagged",
+    "attendance",
+    "points",
+    "tokens",
+    "register",
+    "verify",
+    "rsvp",
 ]
-Item: TypeAlias = Mapping[str, Any]
+type Item = Mapping[str, Any]
 
 
 class User(TypedDict):
@@ -102,7 +112,8 @@ class User(TypedDict):
     join_date: str
     notes: str
 
-MaybeUser: TypeAlias = Optional[User]
+
+type MaybeUser = User | None
 
 
 class Resume(TypedDict):
@@ -110,9 +121,11 @@ class Resume(TypedDict):
     filename: str
     format: str
     upload_date: str
-    is_valid: int # bool (1 or 0)
+    is_valid: int  # bool (1 or 0)
 
-MaybeResume: TypeAlias = Optional[Resume]
+
+type MaybeResume = Resume | None
+
 
 class Event(TypedDict):
     name: str
@@ -124,7 +137,7 @@ class Event(TypedDict):
     year: int
 
 
-MaybeEvent: TypeAlias = Optional[Event]
+type MaybeEvent = Event | None
 
 
 class Flagged(TypedDict):
@@ -132,7 +145,7 @@ class Flagged(TypedDict):
     offenses: int
 
 
-MaybeFlagged: TypeAlias = Optional[Flagged]
+type MaybeFlagged = Flagged | None
 
 
 class Attendance(TypedDict):
@@ -140,7 +153,7 @@ class Attendance(TypedDict):
     code: str
 
 
-MaybeAttendance: TypeAlias = Optional[Attendance]
+type MaybeAttendance = Attendance | None
 
 
 class Points(TypedDict):
@@ -150,7 +163,7 @@ class Points(TypedDict):
     year: int
 
 
-MaybePoints: TypeAlias = Optional[Points]
+type MaybePoints = Points | None
 
 
 class Tokens(TypedDict):
@@ -163,7 +176,7 @@ class Tokens(TypedDict):
     permission: Permissions
 
 
-MaybeTokens: TypeAlias = Optional[Tokens]
+type MaybeTokens = Tokens | None
 
 
 class Register(TypedDict):
@@ -176,10 +189,12 @@ class Verify(TypedDict):
     user_id: str
     code: int
 
+
 class rsvp(TypedDict):
-    user_id:str
-    code:str
-    reservation:int
+    user_id: str
+    code: str
+    reservation: int
+
 
 def default_user(user_id: str):
     return deepcopy(
@@ -193,6 +208,6 @@ def default_user(user_id: str):
             verified=0,
             sponsor_email_opt_out=0,
             join_date="",
-            notes=""
+            notes="",
         )
     )

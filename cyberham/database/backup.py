@@ -1,10 +1,11 @@
+import json
 import os
 import re
-import json
-from typing import Sequence
+from collections.abc import Sequence
 from datetime import datetime
+
 from cyberham import data_path
-from cyberham.types import TableName, Item
+from cyberham.types import Item, TableName
 
 path = data_path / "backups"
 timestamp_re = re.compile(r"^(?P<table>\w+)_(?P<ts>\d{8}_\d{6})\.json$")
@@ -70,7 +71,7 @@ def load_latest_backup(table: TableName) -> list[Item]:
         return []  # no backup found
 
     file_path = os.path.join(path, latest_file)
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         data: list[Item] = json.load(f)
 
     return data

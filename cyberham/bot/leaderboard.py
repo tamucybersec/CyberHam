@@ -1,10 +1,11 @@
-from typing import Literal, Any
+from typing import Any, Literal
 
 import discord
 from discord import app_commands
+
 import cyberham.backend.users as backend_users
-from cyberham.bot.bot import Bot
 from cyberham import guild_id
+from cyberham.bot.bot import Bot
 
 
 def setup_commands(bot: Bot):
@@ -32,7 +33,7 @@ def setup_commands(bot: Bot):
         names_column = ""
         point_column = ""
         for user, criteria in users:
-            names_column += f"{user["name"]}\n"
+            names_column += f"{user['name']}\n"
             point_column += f"{criteria}\n"
         embed = discord.Embed(
             title=f"{sort_by.capitalize()} Leaderboard", color=0xFFFFFF
@@ -71,7 +72,7 @@ def setup_commands(bot: Bot):
             prev = curr
             embed = discord.Embed(title=f"Leaderboard for {activity}", color=0xFFFFFF)
             embed.add_field(name="Name", value=names_column, inline=True)
-            embed.add_field(name=f"Attended", value=point_column, inline=True)
+            embed.add_field(name="Attended", value=point_column, inline=True)
             embeds.append(embed)
 
         await interaction.followup.send(embeds=embeds)

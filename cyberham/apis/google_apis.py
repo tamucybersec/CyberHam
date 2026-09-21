@@ -1,28 +1,25 @@
+import base64
 import logging
 import os.path
-import base64
+from datetime import datetime, time, timedelta
+from email.message import EmailMessage
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from typing import TYPE_CHECKING, Protocol, runtime_checkable, Any
-
-from datetime import datetime, timedelta, time
-from pytz import timezone
-
+from google.auth.external_account_authorized_user import Credentials as ExCredentials
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google.auth.external_account_authorized_user import Credentials as ExCredentials
 from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore
 from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError
-from email.message import EmailMessage
+from pytz import timezone
 
-from cyberham import google_token, client_secret
+from cyberham import client_secret, google_token
 from cyberham.types import (
+    VALID_CATEGORIES,
+    CalendarEvent,
     Error,
     MaybeError,
-    CalendarEvent,
-    VALID_CATEGORIES,
 )
-
 
 # force the type checker to populate the structure to prevent type errors
 # finicky, to say the least
@@ -111,10 +108,10 @@ class _Client(GoogleClientProtocol):
             )
 
             if "id" in send_message:
-                print(f'Message Id: {send_message["id"]}')
+                print(f"Message Id: {send_message['id']}")
                 print(f"[{code}] -> {address}")
             else:
-                print(f"Error: sent message missing id")
+                print("Error: sent message missing id")
                 print(f"[{code}] -> {address}")
 
         except HttpError as error:
@@ -163,13 +160,13 @@ class _Client(GoogleClientProtocol):
             # Moves result of the start, end, and name of the events in the next week
             result = []
             for event in events:
-                if not "id" in event:
+                if "id" not in event:
                     raise TypeError("ID not found for event")
-                elif not "start" in event:
+                elif "start" not in event:
                     raise TypeError(f"Start time not found for event {id}")
-                elif not "end" in event:
+                elif "end" not in event:
                     raise TypeError(f"End time not found for event {id}")
-                elif not "summary" in event:
+                elif "summary" not in event:
                     raise TypeError(f"Summary not found for event {id}")
 
                 event_id = event["id"]
@@ -178,10 +175,10 @@ class _Client(GoogleClientProtocol):
                 end = str(event["end"].get("dateTime", event["end"].get("date")))
                 end = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
                 name = event["summary"]
-                location = event["location"] if ("location" in event) else "TBD"
-                category = event["description"] if ("description" in event) else "NONE"
+                location = event.get("location", "TBD")
+                category = event.get("description", "NONE")
 
-                if not (category in VALID_CATEGORIES):
+                if category not in VALID_CATEGORIES:
                     return [], Error(
                         f"Event '{name}' does not have a valid category ({category}). Valid categories: {VALID_CATEGORIES}. Assign the category using the event description."
                     )

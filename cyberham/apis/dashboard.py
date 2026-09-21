@@ -1,16 +1,23 @@
-from typing import cast, Optional, Any, Mapping
+import ipaddress
+import json
+import traceback
+from collections.abc import Mapping
 from pathlib import Path
-from cyberham import website_url, dashboard_config, ipc_key, ipc_port
-from cyberham.apis.auth import token_status
-from cyberham.types import Permissions, User, default_user
+from typing import Any, cast
+
+import uvicorn
+from discord.ext import ipcx
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel
+from starlette.types import Receive, Scope, Send
+
+from cyberham import dashboard_config, ipc_key, ipc_port, website_url
+from cyberham.apis.auth import require_permission, token_status
+from cyberham.apis.crud_factory import create_crud_routes
 from cyberham.backend.register import register, upload_resume
-from cyberham.utils.transform import pretty_semester
-from cyberham.database.typeddb import (
-    readonlydb,
-    registerdb,
-    resumesdb,
-    usersdb,
-)
 from cyberham.database.schema import (
     detect_schema_drift,
     live_database_path,
@@ -18,20 +25,15 @@ from cyberham.database.schema import (
     snapshot_database,
 )
 from cyberham.database.table_registry import TABLE_REGISTRY, TABLE_REGISTRY_BY_NAME
-from cyberham.apis.auth import require_permission
+from cyberham.database.typeddb import (
+    readonlydb,
+    registerdb,
+    resumesdb,
+    usersdb,
+)
+from cyberham.types import Permissions, User, default_user
 from cyberham.utils.date import valid_registration_time
-from cyberham.apis.crud_factory import create_crud_routes
-from fastapi import FastAPI, Form, File, HTTPException, UploadFile, Depends
-from fastapi.requests import Request
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.types import Scope, Receive, Send
-from pydantic import BaseModel
-import ipaddress
-import json
-import traceback
-import uvicorn
-from discord.ext import ipcx
+from cyberham.utils.transform import pretty_semester
 
 app = FastAPI()
 ipc = ipcx.Client(secret_key=ipc_key, port=ipc_port)
@@ -76,7 +78,9 @@ def _normalize_ip(ip: str) -> str:
 async def get_ip(request: Request):
     x_forwarded_for = request.headers.get("x-forwarded-for")
     if x_forwarded_for:
-        candidates = [_normalize_ip(ip.strip()) for ip in x_forwarded_for.split(",") if ip.strip()]
+        candidates = [
+            _normalize_ip(ip.strip()) for ip in x_forwarded_for.split(",") if ip.strip()
+        ]
     else:
         candidates = [request.client.host] if request.client else []
         candidates = [_normalize_ip(ip) for ip in candidates]
@@ -106,8 +110,10 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
     if registration is None:
         raise HTTPException(400, "Invalid registration link.")
     elif not valid_registration_time(registration["time"]):
-        raise HTTPException(400, "Registration link has expired")    
-    user = usersdb.get((registration["user_id"],)) or default_user(registration["user_id"])
+        raise HTTPException(400, "Registration link has expired")
+    user = usersdb.get((registration["user_id"],)) or default_user(
+        registration["user_id"]
+    )
     resume = resumesdb.get((registration["user_id"],))
     # get resume data to pass to front end if there's a db row for that resume
     resume_data: Mapping[str, Any] = {}
@@ -116,14 +122,14 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
             "filename": resume["filename"],
             "format": resume["format"],
             "upload_date": resume["upload_date"],
-            "is_valid": bool(resume["is_valid"])
-            }
-        
+            "is_valid": bool(resume["is_valid"]),
+        }
+
     if "sponsor_email_opt_out" not in user:
         user["sponsor_email_opt_out"] = 0
 
     return {
-        "user": {**dict(user),"grad_semester": pretty_semester(user["grad_semester"])},
+        "user": {**dict(user), "grad_semester": pretty_semester(user["grad_semester"])},
         "resume": resume_data,
     }
 
@@ -132,13 +138,13 @@ async def get_self(ticket: str) -> Mapping[str, Any]:
 async def register_user(
     ticket: str,
     user_json: str = Form(...),
-    resume: Optional[UploadFile] = File(None),
+    resume: UploadFile | None = File(None),
 ):
     try:
         user_dict = json.loads(user_json)
         user = User(**user_dict)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid user JSON")
+    except Exception as err:
+        raise HTTPException(status_code=400, detail="Invalid user JSON") from err
 
     msg, err = register(ticket, user)
     if err is not None:
@@ -151,10 +157,11 @@ async def register_user(
 
     return {"message": msg}
 
-@app.get('/user/{user_id}')
+
+@app.get("/user/{user_id}")
 async def username(user_id: int):
     try:
-        user = await ipc.request("fetch_username",user_id=user_id) # type: ignore
+        user = await ipc.request("fetch_username", user_id=user_id)  # type: ignore
         return user
     except Exception as exc:
         return JSONResponse(
@@ -162,6 +169,7 @@ async def username(user_id: int):
             content={"details": str(exc), "error": "Internal Server Error"},
             headers={"Access-Control-Allow-Origin": website_url},
         )
+
 
 class QueryPayload(BaseModel):
     sql: str
@@ -193,7 +201,9 @@ def get_schema() -> dict[str, Any]:
             {
                 "name": name,
                 "purpose": (
-                    entry.purpose if entry else "This table has not been documented yet."
+                    entry.purpose
+                    if entry
+                    else "This table has not been documented yet."
                 ),
                 "dashboard_path": entry.dashboard_path if entry else None,
                 "view_permission": entry.get_permission if entry else None,

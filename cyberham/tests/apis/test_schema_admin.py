@@ -1,9 +1,9 @@
-from pathlib import Path
 import asyncio
 import sqlite3
-import pytest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 from starlette.types import Message
 
@@ -27,7 +27,10 @@ def test_schema_and_export_use_configured_data_directory(tmp_path: Path) -> None
     _make_database(tmp_path / "cyberham.db")
     with (
         patch("cyberham.database.schema.data_path", tmp_path),
-        patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
+        patch(
+            "cyberham.apis.auth.token_status",
+            return_value=(Permissions.SUPER_ADMIN, True),
+        ),
     ):
         schema = client.get("/schema", headers=_headers())
         exported = client.get("/database/export", headers=_headers())
@@ -192,11 +195,14 @@ class TestSchemaAdminApi:
 
 
 @pytest.mark.parametrize("endpoint", ["/schema", "/database/export"])
-@pytest.mark.parametrize("permission,valid", [
-    (Permissions.NONE, False),
-    (Permissions.SPONSOR, True),
-    (Permissions.SUPER_ADMIN, False),
-])
+@pytest.mark.parametrize(
+    "permission,valid",
+    [
+        (Permissions.NONE, False),
+        (Permissions.SPONSOR, True),
+        (Permissions.SUPER_ADMIN, False),
+    ],
+)
 def test_schema_endpoints_deny_insufficient_or_invalid_tokens(
     endpoint: str, permission: Permissions, valid: bool
 ) -> None:
@@ -222,7 +228,10 @@ def test_schema_endpoints_deny_below_super_admin(
 def test_export_missing_database(tmp_path: Path) -> None:
     missing = tmp_path / "missing.db"
     with (
-        patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
+        patch(
+            "cyberham.apis.auth.token_status",
+            return_value=(Permissions.SUPER_ADMIN, True),
+        ),
         patch("cyberham.apis.dashboard.live_database_path", return_value=missing),
     ):
         assert client.get("/database/export", headers=_headers()).status_code == 404
@@ -245,9 +254,15 @@ def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path: Path) -> N
 
     try:
         with (
-            patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
+            patch(
+                "cyberham.apis.auth.token_status",
+                return_value=(Permissions.SUPER_ADMIN, True),
+            ),
             patch("cyberham.apis.dashboard.live_database_path", return_value=db_path),
-            patch("cyberham.apis.dashboard.snapshot_database", side_effect=capture_snapshot),
+            patch(
+                "cyberham.apis.dashboard.snapshot_database",
+                side_effect=capture_snapshot,
+            ),
         ):
             response = client.get("/database/export", headers=_headers())
         assert response.status_code == 200
@@ -257,7 +272,9 @@ def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path: Path) -> N
         downloaded.write_bytes(response.content)
         with sqlite3.connect(downloaded) as exported:
             assert exported.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
-            assert exported.execute("SELECT code FROM verify WHERE user_id = 'snapshot-user'").fetchone() == (12345,)
+            assert exported.execute(
+                "SELECT code FROM verify WHERE user_id = 'snapshot-user'"
+            ).fetchone() == (12345,)
     finally:
         connection.close()
 
@@ -280,9 +297,15 @@ def test_export_cleans_up_after_range_requests(
 
     try:
         with (
-            patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
+            patch(
+                "cyberham.apis.auth.token_status",
+                return_value=(Permissions.SUPER_ADMIN, True),
+            ),
             patch("cyberham.apis.dashboard.live_database_path", return_value=db_path),
-            patch("cyberham.apis.dashboard.snapshot_database", side_effect=capture_snapshot),
+            patch(
+                "cyberham.apis.dashboard.snapshot_database",
+                side_effect=capture_snapshot,
+            ),
         ):
             response = client.get(
                 "/database/export",
@@ -317,25 +340,38 @@ def test_export_cleans_up_when_sending_fails_or_is_cancelled(
 
     try:
         with pytest.raises(failure):
-            asyncio.run(response({"type": "http", "method": "GET", "headers": []}, receive, send))
+            asyncio.run(
+                response(
+                    {"type": "http", "method": "GET", "headers": []}, receive, send
+                )
+            )
         assert not snapshot.exists()
         assert db_path.exists()
     finally:
         snapshot.unlink(missing_ok=True)
 
 
-def test_schema_uses_live_definitions_and_reports_missing_tables(tmp_path: Path) -> None:
+def test_schema_uses_live_definitions_and_reports_missing_tables(
+    tmp_path: Path,
+) -> None:
     db_path = tmp_path / "schema.db"
     _make_database(db_path)
     with sqlite3.connect(db_path) as connection:
         connection.execute("DROP TABLE verify")
-        connection.execute("CREATE TABLE verify (user_id INTEGER PRIMARY KEY, code TEXT DEFAULT 'pending')")
+        connection.execute(
+            "CREATE TABLE verify (user_id INTEGER PRIMARY KEY, code TEXT DEFAULT 'pending')"
+        )
         connection.execute("DROP TABLE rsvp")
-        connection.execute("CREATE TABLE rsvp (user_id TEXT NOT NULL, code TEXT NOT NULL, reservation INTEGER NOT NULL, PRIMARY KEY (user_id, code))")
+        connection.execute(
+            "CREATE TABLE rsvp (user_id TEXT NOT NULL, code TEXT NOT NULL, reservation INTEGER NOT NULL, PRIMARY KEY (user_id, code))"
+        )
         connection.execute("DROP TABLE register")
-        connection.execute("CREATE TABLE \"extra'table\" (id TEXT)")
+        connection.execute('CREATE TABLE "extra\'table" (id TEXT)')
     with (
-        patch("cyberham.apis.auth.token_status", return_value=(Permissions.SUPER_ADMIN, True)),
+        patch(
+            "cyberham.apis.auth.token_status",
+            return_value=(Permissions.SUPER_ADMIN, True),
+        ),
         patch("cyberham.database.schema.live_database_path", return_value=db_path),
     ):
         response = client.get("/schema", headers=_headers())
@@ -351,7 +387,9 @@ def test_schema_uses_live_definitions_and_reports_missing_tables(tmp_path: Path)
     assert drift["register"]["missing_columns"] == ["ticket", "time", "user_id"]
 
 
-def test_registry_documents_all_canonical_tables_and_preserves_crud_permissions() -> None:
+def test_registry_documents_all_canonical_tables_and_preserves_crud_permissions() -> (
+    None
+):
     canonical = canonical_schema()
     assert set(canonical) == {entry.name for entry in TABLE_REGISTRY}
     expected = {
@@ -366,7 +404,9 @@ def test_registry_documents_all_canonical_tables_and_preserves_crud_permissions(
     for entry in TABLE_REGISTRY:
         assert entry.purpose
         if entry.name in expected:
-            assert (entry.get_permission, entry.modify_permission) == expected[entry.name]
+            assert (entry.get_permission, entry.modify_permission) == expected[
+                entry.name
+            ]
             assert canonical[entry.name].primary_key == entry.db.pk_names
         else:
             assert entry.get_permission is None and entry.modify_permission is None

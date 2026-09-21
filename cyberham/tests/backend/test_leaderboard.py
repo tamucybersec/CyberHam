@@ -1,7 +1,8 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.users import leaderboard
+from cyberham.tests.models import attendance, events, points, users
 from cyberham.types import User
-from cyberham.tests.models import users, events, attendance, points
 from cyberham.utils.date import current_semester, current_year
 
 

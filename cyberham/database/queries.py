@@ -2,16 +2,19 @@
 # this way if the schema changes, we know where to look for fixes
 
 from collections import defaultdict
+
 from cyberham.database.typeddb import db, registerdb, rsvpdb
-from cyberham.types import Semester, Register, rsvp
+from cyberham.types import Register, Semester, rsvp
 from cyberham.utils.date import current_semester, current_year
 
 
 def attendance_for_user(
     user_id: str,
-    semester: Semester = current_semester(),
-    year: int = current_year(),
+    semester: Semester | None = None,
+    year: int | None = None,
 ) -> int:
+    semester = semester or current_semester()
+    year = year or current_year()
     db.cursor.execute(
         """
         SELECT COUNT(*)
@@ -25,12 +28,15 @@ def attendance_for_user(
     )
     return db.cursor.fetchone()[0]
 
+
 def attendance_for_user_specific_category(
     user_id: str,
     category: str,
-    semester: Semester = current_semester(),
-    year: int = current_year(),
+    semester: Semester | None = None,
+    year: int | None = None,
 ) -> int:
+    semester = semester or current_semester()
+    year = year or current_year()
     db.cursor.execute(
         """
         SELECT COUNT(*)
@@ -41,15 +47,18 @@ def attendance_for_user_specific_category(
             AND events.year = ?
             AND events.category = ?
         """,
-            (user_id, semester, year, category)
+        (user_id, semester, year, category),
     )
 
     return db.cursor.fetchone()[0]
 
+
 def attendance_for_all_users(
-    semester: Semester = current_semester(),
-    year: int = current_year(),
+    semester: Semester | None = None,
+    year: int | None = None,
 ) -> dict[str, int]:
+    semester = semester or current_semester()
+    year = year or current_year()
     db.cursor.execute(
         """
         SELECT attendance.user_id, COUNT(*) AS attendance
@@ -67,9 +76,11 @@ def attendance_for_all_users(
 
 def points_for_user(
     user_id: str,
-    semester: Semester = current_semester(),
-    year: int = current_year(),
+    semester: Semester | None = None,
+    year: int | None = None,
 ) -> int:
+    semester = semester or current_semester()
+    year = year or current_year()
     points: int = 0
     db.cursor.execute(
         """
@@ -105,9 +116,11 @@ def points_for_user(
 
 
 def points_for_all_users(
-    semester: Semester = current_semester(),
-    year: int = current_year(),
+    semester: Semester | None = None,
+    year: int | None = None,
 ) -> dict[str, int]:
+    semester = semester or current_semester()
+    year = year or current_year()
     points: dict[str, int] = defaultdict(int)
 
     db.cursor.execute(
@@ -168,6 +181,7 @@ def insert_registration(registration: Register):
     db.conn.commit()
     registerdb.create(registration)
 
+
 def insert_rsvp(reservation: rsvp):
     db.conn.execute(
         """
@@ -175,14 +189,15 @@ def insert_rsvp(reservation: rsvp):
         WHERE user_id = ?
             AND code = ?
         """,
-    (reservation["user_id"],reservation["code"])
+        (reservation["user_id"], reservation["code"]),
     )
     db.conn.commit()
     rsvpdb.create(reservation)
 
-def rsvp_counts_for_event(code:str) -> tuple[int,int,int]:
+
+def rsvp_counts_for_event(code: str) -> tuple[int, int, int]:
     db.cursor.execute(
-        f"""
+        """
         SELECT COUNT(*) FILTER (WHERE reservation=0) AS yes, 
         COUNT(*) FILTER (WHERE reservation=1) AS no, 
         COUNT(*) FILTER (WHERE reservation=2) AS unsure
@@ -192,4 +207,8 @@ def rsvp_counts_for_event(code:str) -> tuple[int,int,int]:
         (code,),
     )
     responses = db.cursor.fetchone()
-    return responses["yes"],responses["no"],responses["unsure"],
+    return (
+        responses["yes"],
+        responses["no"],
+        responses["unsure"],
+    )

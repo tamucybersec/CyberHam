@@ -1,11 +1,12 @@
 from copy import deepcopy
-from typing import Any
 from datetime import datetime, timedelta
-from cyberham.types import User, Event, Flagged, Attendance, Points, Verify
+from typing import Any
+
+from cyberham.types import Attendance, Event, Flagged, Points, User, Verify
 from cyberham.utils.date import (
+    cst_tz,
     current_semester,
     current_year,
-    cst_tz,
     datetime_to_datestr,
 )
 

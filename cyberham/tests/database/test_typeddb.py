@@ -1,13 +1,16 @@
+import sqlite3
+
 import pytest
-from cyberham.types import MaybeUser
+
+from cyberham.database.typeddb import usersdb
+from cyberham.tests.backend.backend_patcher import BackendPatcher
 from cyberham.tests.models import (
-    valid_user,
-    valid_user_2,
     unregistered_user,
     unregistered_user_2,
+    valid_user,
+    valid_user_2,
 )
-from cyberham.tests.backend.backend_patcher import BackendPatcher
-from cyberham.database.typeddb import usersdb
+from cyberham.types import MaybeUser
 
 
 class TestTypedDB(BackendPatcher):
@@ -21,7 +24,7 @@ class TestTypedDB(BackendPatcher):
         assert after == unregistered_user()
 
     def test_create_item_fails_overwrite(self):
-        with pytest.raises(Exception):
+        with pytest.raises(sqlite3.IntegrityError):
             usersdb.create(valid_user())
 
     def test_get_item(self):

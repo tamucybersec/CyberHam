@@ -1,18 +1,19 @@
 from backend_patcher import BackendPatcher
+
 from cyberham.backend.events import attend_event
+from cyberham.database.typeddb import attendancedb
 from cyberham.tests.models import (
-    valid_user,
+    attendance,
+    attended_event,
+    events,
+    future_event,
+    past_event,
+    unregistered_event,
     unregistered_user,
     users,
     valid_event,
-    past_event,
-    future_event,
-    attended_event,
-    unregistered_event,
-    events,
-    attendance,
+    valid_user,
 )
-from cyberham.database.typeddb import attendancedb
 
 
 class TestAttendEvent(BackendPatcher):

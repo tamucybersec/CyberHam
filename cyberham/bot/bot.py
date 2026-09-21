@@ -1,21 +1,21 @@
 import logging
 from typing import cast
-from pytz import timezone
 
 import discord
-from discord import app_commands
-from discord import ScheduledEvent
+from discord import ScheduledEvent, app_commands
 from discord.ext import commands, ipcx
+from pytz import timezone
 
 import cyberham.backend.events as backend_events
-from cyberham import guild_id, discord_token, admin_channel_id
-from cyberham.bot.utils import event_info
+from cyberham import admin_channel_id, discord_token, guild_id, ipc_key, ipc_port
 from cyberham.bot.ui import RSVPButton
+from cyberham.bot.utils import event_info
 from cyberham.types import Category
-from cyberham import ipc_key, ipc_port
 
-class FetchUserPayload():
+
+class FetchUserPayload:
     user_id: int
+
 
 class Bot(discord.Client):
     logger: logging.Logger
@@ -24,21 +24,27 @@ class Bot(discord.Client):
     def __init__(self):
         super().__init__(
             intents=discord.Intents(
-                guilds=True, members=True, messages=True, reactions=True, guild_scheduled_events=True
+                guilds=True,
+                members=True,
+                messages=True,
+                reactions=True,
+                guild_scheduled_events=True,
             )
         )
         self.synced = False
         self.logger = logging.getLogger(__name__)
         self.command_tree = app_commands.CommandTree(self)
-        self.ipc = ipcx.Server(cast(commands.Bot, self), port=ipc_port, secret_key=ipc_key)
-    
+        self.ipc = ipcx.Server(
+            cast(commands.Bot, self), port=ipc_port, secret_key=ipc_key
+        )
+
     async def setup_hook(self) -> None:
         self.add_dynamic_items(RSVPButton)
         await self.ipc.start()
 
     async def on_ipc_ready(self) -> None:
         print("IPC server starting")
-    
+
     async def on_ipc_error(self, endpoint: str, error: Exception) -> None:
         print(endpoint, "raised", error)
 
@@ -70,22 +76,17 @@ class Bot(discord.Client):
 def run_bot():
     # hand off the command tree so the commands can register themselves
     # imported inside the function to prevent a circular import
-    from cyberham.bot import admin
-    from cyberham.bot import announcements
-    from cyberham.bot import events
-    from cyberham.bot import leaderboard
-    from cyberham.bot import users
-    from cyberham.bot import rsvp
+    from cyberham.bot import admin, announcements, events, leaderboard, rsvp, users
 
     bot = Bot()
 
-    @bot.ipc.route() # type: ignore
+    @bot.ipc.route()  # type: ignore
     async def fetch_username(data: FetchUserPayload) -> str:
         user = bot.get_user(data.user_id)
         if user is None:
             user = await bot.fetch_user(data.user_id)
         return str(user)
-    
+
     admin.setup_commands(bot)
     announcements.setup_commands(bot)
     rsvp.setup_commands(bot)

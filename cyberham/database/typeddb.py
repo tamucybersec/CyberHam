@@ -1,43 +1,39 @@
+from collections.abc import Callable, Mapping, Sequence
+from copy import deepcopy
+from typing import (
+    Any,
+    TypeVar,
+    cast,
+    overload,
+)
+
 from cyberham import data_path
-from cyberham.database.sqlite import SQLiteDB
 from cyberham.database.readonly import ReadonlyDB
+from cyberham.database.sqlite import SQLiteDB
 from cyberham.types import (
-    TableName,
-    User,
-    Resume,
+    Attendance,
     Event,
     Flagged,
-    Attendance,
-    Points,
-    Tokens,
-    Register,
-    Verify,
     Item,
+    Points,
+    Register,
+    Resume,
     Semester,
-    rsvp
+    TableName,
+    Tokens,
+    User,
+    Verify,
+    rsvp,
 )
-from typing import (
-    cast,
-    TypeVar,
-    Generic,
-    TypeAlias,
-    Optional,
-    Callable,
-    Mapping,
-    Any,
-    overload,
-    Sequence,
-)
-from copy import deepcopy
 
 T = TypeVar("T", bound=Mapping[str, Any])
-Maybe: TypeAlias = Optional[T]
-Update: TypeAlias = Callable[[Maybe[T]], Maybe[T]]
+type Maybe[T: Mapping[str, Any]] = T | None
+type Update[T: Mapping[str, Any]] = Callable[[Maybe[T]], Maybe[T]]
 
 PK = TypeVar("PK", bound=tuple[Any, ...])
 
 
-class TypedDB(Generic[T, PK]):
+class TypedDB[T: Mapping[str, Any], PK: tuple[Any, ...]]:
     _db: SQLiteDB
     table: TableName
     pk_names: list[str]
@@ -160,6 +156,6 @@ pointsdb = TypedDB[Points, tuple[str, Semester, int]](
 tokensdb = TypedDB[Tokens, tuple[str]](db, "tokens", ["token"])
 registerdb = TypedDB[Register, tuple[str]](db, "register", ["ticket"])
 verifydb = TypedDB[Verify, tuple[str]](db, "verify", ["user_id"])
-rsvpdb=TypedDB[rsvp, tuple[str, str, int]](
+rsvpdb = TypedDB[rsvp, tuple[str, str, int]](
     db, "rsvp", ["user_id", "code", "reservation"]
 )

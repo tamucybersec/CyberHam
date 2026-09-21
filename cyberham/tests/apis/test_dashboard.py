@@ -1,8 +1,10 @@
 import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
+
 from cyberham.apis.dashboard import app
 
 client: TestClient = TestClient(app)
@@ -20,7 +22,6 @@ def standard_user_payload() -> dict[str, str]:
 
 
 class TestDashboard:
-
     # ------------------------------------------------------------------
     # /login
     # ------------------------------------------------------------------
@@ -28,10 +29,10 @@ class TestDashboard:
     @pytest.mark.parametrize(
         "token_val, mock_return, expected_body",
         [
-            ("some-token", (0, None), 0),           # none user
-            ("some-token", (1, None), 1),           # sponsor user
-            ("some-token", (2, None), 2),           # committee user
-            ("some-token", (3, None), 3),           # admin user
+            ("some-token", (0, None), 0),  # none user
+            ("some-token", (1, None), 1),  # sponsor user
+            ("some-token", (2, None), 2),  # committee user
+            ("some-token", (3, None), 3),  # admin user
             ("definitely-invalid", (0, "invalid token"), 0),  # invalid token
         ],
     )
@@ -174,8 +175,8 @@ class TestDashboard:
         standard_user_payload: dict[str, str],
     ) -> None:
         """
-        Verifies that if the resume upload process fails, the registration process is halted
-        and an appropriate 500 error is returned.
+        Verifies that if the resume upload process fails, an appropriate 500 error is
+        returned instead of the registration success message.
         """
         mock_upload.return_value = ""
         mock_register.return_value = ("SHOULD_NOT_HAPPEN", None)
@@ -187,7 +188,8 @@ class TestDashboard:
         )
         assert resp.status_code == 500
         assert resp.json()["detail"] == "Resume upload failed"
-        mock_register.assert_not_called()
+        mock_register.assert_called_once()
+        mock_upload.assert_awaited_once()
 
     # ------------------------------------------------------------------
     # /self

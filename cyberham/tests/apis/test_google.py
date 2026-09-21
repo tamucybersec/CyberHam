@@ -11,4 +11,4 @@ class TestGoogleApi:
         events, err = google.client.get_events()
         assert events
         assert err is None
-        assert False
+        raise AssertionError()
