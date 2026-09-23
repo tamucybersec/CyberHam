@@ -19,6 +19,7 @@ from cyberham.database.typeddb import tokensdb
 LOG_DIR = data_path / "logs"
 KEEP_MONTHS = 2
 
+
 # inherits from FileHandler
 class MonthlyFileHandler(logging.FileHandler):
     def __init__(self, directory: Path, prefix: str):
@@ -35,7 +36,7 @@ class MonthlyFileHandler(logging.FileHandler):
     # if a new month has started, then switch to that months file (runs every log)
     def emit(self, record: logging.LogRecord) -> None:
         month = datetime.now().strftime("%Y-%m")
-        
+
         if month != self.month:
             self.close()
             self.month = month
@@ -44,12 +45,11 @@ class MonthlyFileHandler(logging.FileHandler):
             old_files = sorted(self.directory.glob(f"{self.prefix}-*.txt"))
             for old_file in old_files[:-KEEP_MONTHS]:
                 old_file.unlink(missing_ok=True)
-        super().emit(record) # runs pythons logging library
-
+        super().emit(record)  # runs pythons logging library
 
 
 access_logger = logging.getLogger("cyberham.access")
-access_logger.setLevel(logging.INFO) # minimum handler pass-through 
+access_logger.setLevel(logging.INFO)  # minimum handler pass-through
 
 # makes sure that we dont duplicate every log line
 if not access_logger.handlers:
