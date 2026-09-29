@@ -1,10 +1,3 @@
-# Here is where the logs are accessed and logged from the dashboard api, which records the following:
-# - admin portal logins
-# - wrong login attempts
-# - under-priviledged api key access attempt
-
-# the information is written as <data_dir>/logs/access-YYYY-MM.txt. A new file is started
-# each month and only the current and previous month are kept (which then cycle)
 import hashlib
 import logging
 import sqlite3
