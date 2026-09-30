@@ -161,14 +161,12 @@ async def register_user(
 @app.get("/user/{user_id}")
 async def username(user_id: int):
     try:
-        user = await ipc.request("fetch_username", user_id=user_id)  # type: ignore
+        user: str = await ipc.request("fetch_username", user_id=user_id)
+        if (isinstance(user, dict) and user.get('error')):
+            raise HTTPException(status_code=500, detail="Username lookup failed")
         return user
-    except Exception as exc:
-        return JSONResponse(
-            status_code=500,
-            content={"details": str(exc), "error": "Internal Server Error"},
-            headers={"Access-Control-Allow-Origin": website_url},
-        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Username lookup failed")
 
 
 class QueryPayload(BaseModel):
