@@ -1,5 +1,6 @@
 import asyncio
 from datetime import date
+from typing import Any
 from unittest.mock import patch
 
 import httpx
@@ -24,7 +25,9 @@ DATES = {"start": "2026-01-01", "end": "2026-01-03"}
         (Permissions.SUPER_ADMIN, False),
     ],
 )
-def test_analytics_denies_unauthorized_tokens(permission, valid):
+def test_analytics_denies_unauthorized_tokens(
+    permission: Permissions, valid: bool
+) -> None:
     with patch("cyberham.apis.auth.token_status", return_value=(permission, valid)):
         assert (
             client.get("/analytics", params=DATES, headers=HEADERS).status_code == 403
@@ -44,7 +47,7 @@ def test_analytics_requires_token():
         ({"start": "invalid", "end": "2026-01-01"}, 422),
     ],
 )
-def test_analytics_validates_dates(params, status):
+def test_analytics_validates_dates(params: dict[str, str], status: int) -> None:
     with patch(
         "cyberham.apis.auth.token_status", return_value=(Permissions.COMMITTEE, True)
     ):
@@ -54,7 +57,7 @@ def test_analytics_validates_dates(params, status):
         )
 
 
-def test_unconfigured_analytics(monkeypatch):
+def test_unconfigured_analytics(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("GOATCOUNTER_API_TOKEN", raising=False)
     with patch(
         "cyberham.apis.auth.token_status", return_value=(Permissions.COMMITTEE, True)
@@ -64,7 +67,7 @@ def test_unconfigured_analytics(monkeypatch):
         )
 
 
-def hit(path_id, path, count, event=False):
+def hit(path_id: int, path: str, count: int, event: bool = False) -> dict[str, Any]:
     return {
         "path_id": path_id,
         "path": path,
@@ -75,9 +78,9 @@ def hit(path_id, path, count, event=False):
 
 
 def test_report_paginates_filters_and_combines_campaigns():
-    requests = []
+    requests: list[httpx.Request] = []
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         requests.append(request)
         assert request.headers["Authorization"] == "Bearer stats-only"
         params = request.url.params
@@ -159,12 +162,14 @@ def test_report_paginates_filters_and_combines_campaigns():
 @pytest.mark.parametrize(
     "failure", [401, 429, 500, "timeout", "bad-json", "bad-shape", "redirect"]
 )
-def test_upstream_failures_are_sanitized(monkeypatch, failure):
+def test_upstream_failures_are_sanitized(
+    monkeypatch: pytest.MonkeyPatch, failure: int | str
+) -> None:
     monkeypatch.setenv("GOATCOUNTER_URL", "https://analytics.example")
     monkeypatch.setenv("GOATCOUNTER_API_TOKEN", "private-upstream-token")
     original = httpx.AsyncClient
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         if failure == "timeout":
             raise httpx.ReadTimeout("private-upstream-token", request=request)
         if failure == "bad-json":
@@ -173,9 +178,10 @@ def test_upstream_failures_are_sanitized(monkeypatch, failure):
             return httpx.Response(200, json={"hits": "private-upstream-token"})
         if failure == "redirect":
             return httpx.Response(302, headers={"location": "https://other.example/"})
+        assert isinstance(failure, int)
         return httpx.Response(failure, text="private-upstream-token")
 
-    def factory(**kwargs):
+    def factory(**kwargs: Any) -> httpx.AsyncClient:
         assert kwargs["follow_redirects"] is False
         assert kwargs["trust_env"] is False
         return original(**kwargs, transport=httpx.MockTransport(respond))
@@ -194,24 +200,24 @@ def test_upstream_failures_are_sanitized(monkeypatch, failure):
 @pytest.mark.parametrize(
     "permission", [Permissions.COMMITTEE, Permissions.ADMIN, Permissions.SUPER_ADMIN]
 )
-def test_empty_report_and_authorized_roles(monkeypatch, permission):
+def test_empty_report_and_authorized_roles(
+    monkeypatch: pytest.MonkeyPatch, permission: Permissions
+) -> None:
     monkeypatch.setenv("GOATCOUNTER_URL", "https://analytics.example")
     monkeypatch.setenv("GOATCOUNTER_API_TOKEN", "stats-token")
     original = httpx.AsyncClient
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         # Missing paths must never turn into unfiltered campaign/referral requests.
         assert request.url.path == "/api/v0/stats/hits"
         return httpx.Response(200, json={"hits": None, "more": False})
 
+    def factory(**kwargs: Any) -> httpx.AsyncClient:
+        return original(**kwargs, transport=httpx.MockTransport(respond))
+
     with (
         patch("cyberham.apis.auth.token_status", return_value=(permission, True)),
-        patch(
-            "cyberham.apis.analytics.httpx.AsyncClient",
-            side_effect=lambda **kwargs: original(
-                **kwargs, transport=httpx.MockTransport(respond)
-            ),
-        ),
+        patch("cyberham.apis.analytics.httpx.AsyncClient", side_effect=factory),
     ):
         response = client.get("/analytics", params=DATES, headers=HEADERS)
     assert response.status_code == 200
@@ -223,9 +229,9 @@ def test_empty_report_and_authorized_roles(monkeypatch, permission):
 def test_goatcounter_default_rate_limit_is_retried():
     from cyberham.apis.analytics import get_stats
 
-    calls = []
+    calls: list[httpx.Request] = []
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         calls.append(request)
         return httpx.Response(
             429 if len(calls) == 1 else 200, json={"hits": [], "more": False}

@@ -3,7 +3,7 @@
 import asyncio
 import os
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -201,7 +201,7 @@ async def read_report(
     "/analytics", dependencies=[Depends(require_permission(Permissions.COMMITTEE))]
 )
 async def analytics(response: Response, start: date, end: date):
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(UTC).date()
     if end < start or (end - start).days >= 90 or end > today:
         raise HTTPException(
             400,
