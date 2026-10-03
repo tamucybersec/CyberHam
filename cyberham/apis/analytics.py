@@ -148,8 +148,8 @@ async def read_report(
                 page = Refs.model_validate(payload)
                 rows = page.refs or []
                 for row in rows:
-                    if re.fullmatch(r"campaign:[a-zA-Z0-9_-]{1,80}", row.name):
-                        name = row.name.removeprefix("campaign:")
+                    if re.fullmatch(r"campaign/[a-zA-Z0-9_-]{1,80}", row.name):
+                        name = row.name.removeprefix("campaign/")
                         result[name] = result.get(name, 0) + row.count
                 if not page.more:
                     break

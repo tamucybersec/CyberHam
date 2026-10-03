@@ -115,7 +115,9 @@ def test_report_paginates_filters_and_combines_campaigns():
                 200,
                 json={
                     "refs": [
-                        {"name": "campaign:poster-a", "count": count},
+                        {"name": "campaign/poster-a", "count": count},
+                        {"name": "campaign:legacy-marker", "count": 20},
+                        {"name": "campaign/invalid/label", "count": 20},
                         {"name": "https://ignored.example", "count": 20},
                     ],
                     "more": False,
