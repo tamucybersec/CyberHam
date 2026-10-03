@@ -152,3 +152,9 @@ sqlite3 cyberham.db
 `GET /analytics?start=YYYY-MM-DD&end=YYYY-MM-DD` exposes read-only GoatCounter reports to committee/admin dashboard tokens. Set `GOATCOUNTER_URL` to the self-hosted site's HTTPS origin and `GOATCOUNTER_API_TOKEN` to a statistics-only token in the deployment environment; Compose passes both to CyberHam. Without them, the endpoint returns 503. Tokens and upstream error bodies are never returned to the browser. Date ranges are inclusive UTC dates, limited to 90 days, and cannot end in the future. Set the GoatCounter API user's timezone to UTC.
 
 GoatCounter 2.7.0 runs separately with its own SQLite database; reports do not read or write membership/attendance records. The website repository contains the [deployment, campaign, and backup runbook](https://github.com/tamucybersec/cybr.club/blob/main/deploy/goatcounter/README.md). Deploy the companion website changes for the Analytics tab and public tracking.
+
+### Running tests without application secrets
+
+Run `uv sync --frozen`, then `uv run python -m pytest` (or `uv run python -m pytest cyberham/tests/apis/test_analytics.py` for analytics only). The repository-level `conftest.py` creates temporary development configuration, a separate data directory, and synthetic Google credentials before importing CyberHam. Tests do not require local `secrets/config.toml`, a live GoatCounter instance, or real service credentials. Analytics HTTP calls are mocked. Temporary files are removed after the session.
+
+Normal application startup still reads `secrets/` by default. `CYBERHAM_SECRETS_DIR` can explicitly select another secrets directory; pytest uses it to isolate its configuration. Test configuration is never written into your application secrets directory.
