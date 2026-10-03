@@ -32,6 +32,7 @@ def write_full_backup():
         "attendance",
         "points",
         "tokens",
+        "outreach_campaigns",
     ]
 
     db = SQLiteDB(str(data_path / "cyberham.db"))

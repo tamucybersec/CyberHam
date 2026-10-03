@@ -4,6 +4,7 @@ from typing import Any
 from cyberham.database.typeddb import (
     TypedDB,
     attendancedb,
+    campaignsdb,
     eventsdb,
     flaggeddb,
     pointsdb,
@@ -28,6 +29,14 @@ class TableRegistryEntry:
 
 
 TABLE_REGISTRY: tuple[TableRegistryEntry, ...] = (
+    TableRegistryEntry(
+        name="outreach_campaigns",
+        db=campaignsdb,
+        purpose="Stores shared QR campaign labels and sources; traffic remains in GoatCounter. Managed through the analytics campaign API.",
+        dashboard_path="/dashboard/analytics",
+        get_permission=Permissions.COMMITTEE,
+        modify_permission=None,
+    ),
     TableRegistryEntry(
         name="users",
         db=usersdb,

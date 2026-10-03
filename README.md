@@ -153,6 +153,8 @@ sqlite3 cyberham.db
 
 GoatCounter 2.7.0 runs separately with its own SQLite database; reports do not read or write membership/attendance records. The website repository contains the [deployment, campaign, and backup runbook](https://github.com/tamucybersec/cybr.club/blob/main/deploy/goatcounter/README.md). Deploy the companion website changes for the Analytics tab and public tracking.
 
+The dashboard campaign manager uses committee-protected `GET/POST /analytics/campaigns` and `POST /analytics/campaigns/{slug}/archive` (body: `{"archived": true}` or `false`). Names, unique tags, and sources persist in the additive `outreach_campaigns` table in CyberHam's existing data volume and full backups. This metadata has no membership relationships; traffic stays in GoatCounter. Campaign creation does not need a GoatCounter write token. Generated URLs use `website_url` from configuration, so ensure the production origin is correct before printing QR codes. Tags and sources stay fixed; archiving preserves links and reserves the tag. Deploy the backend before the companion frontend campaign manager.
+
 ### Running tests without application secrets
 
 Run `uv sync --frozen`, then `uv run python -m pytest` (or `uv run python -m pytest cyberham/tests/apis/test_analytics.py` for analytics only). The repository-level `conftest.py` creates temporary development configuration, a separate data directory, and synthetic Google credentials before importing CyberHam. Tests do not require local `secrets/config.toml`, a live GoatCounter instance, or real service credentials. Analytics HTTP calls are mocked. Temporary files are removed after the session.

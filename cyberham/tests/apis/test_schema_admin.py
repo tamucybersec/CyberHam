@@ -35,7 +35,7 @@ def test_schema_and_export_use_configured_data_directory(tmp_path: Path) -> None
         schema = client.get("/schema", headers=_headers())
         exported = client.get("/database/export", headers=_headers())
     assert schema.status_code == 200
-    assert len(schema.json()["tables"]) == 10
+    assert len(schema.json()["tables"]) == 11
     assert schema.json()["drift"] == []
     assert exported.status_code == 200
     assert exported.content[:16] == b"SQLite format 3" + bytes([0])
@@ -87,6 +87,7 @@ class TestSchemaAdminApi:
             "register",
             "verify",
             "rsvp",
+            "outreach_campaigns",
         }
 
     @patch("cyberham.apis.auth.token_status")
@@ -400,6 +401,7 @@ def test_registry_documents_all_canonical_tables_and_preserves_crud_permissions(
         "attendance": (Permissions.SPONSOR, Permissions.ADMIN),
         "points": (Permissions.SPONSOR, Permissions.ADMIN),
         "tokens": (Permissions.SUPER_ADMIN, Permissions.SUPER_ADMIN),
+        "outreach_campaigns": (Permissions.COMMITTEE, None),
     }
     for entry in TABLE_REGISTRY:
         assert entry.purpose
