@@ -32,6 +32,7 @@ from cyberham.database.typeddb import (
     usersdb,
 )
 from cyberham.types import Permissions, User, default_user
+from cyberham.utils.audit import log_access
 from cyberham.utils.date import valid_registration_time
 from cyberham.utils.transform import pretty_semester
 
@@ -99,8 +100,11 @@ async def get_ip(request: Request):
 
 
 @app.get("/login")
-async def login(token: str) -> Permissions:
-    permission, _ = token_status(token)
+async def login(token: str, request: Request) -> Permissions:
+    permission, valid = token_status(token)
+    log_access(
+        "LOGIN_SUCCESS" if valid else "LOGIN_FAILED", token, request, success=valid
+    )
     return permission
 
 
