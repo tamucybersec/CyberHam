@@ -146,3 +146,9 @@ sqlite3 cyberham.db
 "python.analysis.inlayHints.functionReturnTypes": true, // optional, but helpful
 "python.analysis.inlayHints.variableTypes": true, // optional, but helpful
 ```
+
+## Website analytics
+
+`GET /analytics?start=YYYY-MM-DD&end=YYYY-MM-DD` exposes read-only GoatCounter reports to committee/admin dashboard tokens. Set `GOATCOUNTER_URL` to the self-hosted site's HTTPS origin and `GOATCOUNTER_API_TOKEN` to a statistics-only token in the deployment environment; Compose passes both to CyberHam. Without them, the endpoint returns 503. Tokens and upstream error bodies are never returned to the browser. Date ranges are inclusive UTC dates, limited to 90 days, and cannot end in the future. Set the GoatCounter API user's timezone to UTC.
+
+GoatCounter 2.7.0 runs separately with its own SQLite database; reports do not read or write membership/attendance records. The website repository contains the [deployment, campaign, and backup runbook](https://github.com/tamucybersec/cybr.club/blob/main/deploy/goatcounter/README.md). Deploy the companion website changes for the Analytics tab and public tracking.

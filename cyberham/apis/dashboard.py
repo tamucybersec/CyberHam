@@ -35,7 +35,10 @@ from cyberham.types import Permissions, User, default_user
 from cyberham.utils.date import valid_registration_time
 from cyberham.utils.transform import pretty_semester
 
+from cyberham.apis.analytics import router as analytics_router
+
 app = FastAPI()
+app.include_router(analytics_router)
 ipc = ipcx.Client(secret_key=ipc_key, port=ipc_port)
 
 app.add_middleware(
