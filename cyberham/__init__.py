@@ -78,7 +78,9 @@ def setup_module_logging(name: str, data_path: Path):
 
 
 project_path = Path(__file__).parent
-secrets_path = project_path.parent / "secrets"
+secrets_path = Path(
+    os.environ.get("CYBERHAM_SECRETS_DIR", project_path.parent / "secrets")
+).resolve()
 config = load_configs(secrets_path)
 
 data_path = Path(config.get("data_dir", project_path.parent)).resolve()
