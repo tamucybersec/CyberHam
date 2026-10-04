@@ -16,6 +16,7 @@ venv/
 .pytest_cache
 *__pycache__/
 *.log
+logs/
 .ruff_cache
 notes/
 backups/
