@@ -15,7 +15,9 @@ from pydantic import BaseModel
 from starlette.types import Receive, Scope, Send
 
 from cyberham import dashboard_config, ipc_key, ipc_port, website_url
+from cyberham.apis.analytics import router as analytics_router
 from cyberham.apis.auth import require_permission, token_status
+from cyberham.apis.campaigns import router as campaigns_router
 from cyberham.apis.crud_factory import create_crud_routes
 from cyberham.backend.register import register, upload_resume
 from cyberham.database.schema import (
@@ -36,6 +38,8 @@ from cyberham.utils.date import valid_registration_time
 from cyberham.utils.transform import pretty_semester
 
 app = FastAPI()
+app.include_router(analytics_router)
+app.include_router(campaigns_router)
 ipc = ipcx.Client(secret_key=ipc_key, port=ipc_port)
 
 app.add_middleware(

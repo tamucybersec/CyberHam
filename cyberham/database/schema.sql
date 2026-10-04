@@ -82,3 +82,11 @@ CREATE TABLE IF NOT EXISTS rsvp (
     FOREIGN KEY (code) REFERENCES events(code) ON UPDATE CASCADE,
     PRIMARY KEY (user_id, code)
 );
+
+CREATE TABLE IF NOT EXISTS outreach_campaigns (
+    slug TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0, 1))
+);

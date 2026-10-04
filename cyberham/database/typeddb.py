@@ -15,6 +15,7 @@ from cyberham.types import (
     Event,
     Flagged,
     Item,
+    OutreachCampaign,
     Points,
     Register,
     Resume,
@@ -154,6 +155,7 @@ pointsdb = TypedDB[Points, tuple[str, Semester, int]](
     db, "points", ["user_id", "semester", "year"]
 )
 tokensdb = TypedDB[Tokens, tuple[str]](db, "tokens", ["token"])
+campaignsdb = TypedDB[OutreachCampaign, tuple[str]](db, "outreach_campaigns", ["slug"])
 registerdb = TypedDB[Register, tuple[str]](db, "register", ["ticket"])
 verifydb = TypedDB[Verify, tuple[str]](db, "verify", ["user_id"])
 rsvpdb = TypedDB[rsvp, tuple[str, str, int]](
