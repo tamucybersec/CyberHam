@@ -96,6 +96,7 @@ type TableName = Literal[
     "register",
     "verify",
     "rsvp",
+    "outreach_campaigns",
 ]
 type Item = Mapping[str, Any]
 
@@ -174,6 +175,14 @@ class Tokens(TypedDict):
     last_accessed: str
     revoked: int  # bool
     permission: Permissions
+
+
+class OutreachCampaign(TypedDict):
+    slug: str
+    name: str
+    source: str
+    created_at: str
+    archived: int
 
 
 type MaybeTokens = Tokens | None

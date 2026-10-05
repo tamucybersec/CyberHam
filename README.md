@@ -146,3 +146,11 @@ sqlite3 cyberham.db
 "python.analysis.inlayHints.functionReturnTypes": true, // optional, but helpful
 "python.analysis.inlayHints.variableTypes": true, // optional, but helpful
 ```
+
+## Website analytics
+
+`GET /analytics?start=YYYY-MM-DD&end=YYYY-MM-DD` exposes read-only GoatCounter reports to committee/admin dashboard tokens. Set `GOATCOUNTER_URL` to the self-hosted site's HTTPS origin and `GOATCOUNTER_API_TOKEN` to a statistics-only token in the deployment environment; Compose passes both to CyberHam. Without them, the endpoint returns 503. Tokens and upstream error bodies are never returned to the browser. Date ranges are inclusive UTC dates, limited to 90 days, and cannot end in the future. Set the GoatCounter API user's timezone to UTC.
+
+GoatCounter 2.7.0 runs separately with its own SQLite database; reports do not read or write membership/attendance records. The Infrastructure repository contains the [deployment and backup runbook](https://github.com/tamucybersec/Infrastructure/blob/main/goatcounter/README.md). Deploy the companion website changes for the Analytics tab and public tracking.
+
+The dashboard campaign manager uses committee-protected `GET/POST /analytics/campaigns` and `POST /analytics/campaigns/{slug}/archive` (body: `{"archived": true}` or `false`). Names, unique tags, and sources persist in the additive `outreach_campaigns` table in CyberHam's existing data volume and full backups. This metadata has no membership relationships; traffic stays in GoatCounter. Campaign creation does not need a GoatCounter write token. Generated URLs use `website_url` from configuration, so ensure the production origin is correct before printing QR codes. Tags and sources stay fixed; archiving preserves links and reserves the tag. Deploy the backend before the companion frontend campaign manager.
