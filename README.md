@@ -146,3 +146,9 @@ sqlite3 cyberham.db
 "python.analysis.inlayHints.functionReturnTypes": true, // optional, but helpful
 "python.analysis.inlayHints.variableTypes": true, // optional, but helpful
 ```
+
+## Running tests without application secrets
+
+Run `uv sync --frozen`, then `uv run python -m pytest`. The repository-level `conftest.py` creates temporary development configuration, a separate database directory, and synthetic Google credentials before importing CyberHam. Unit tests do not require a local `secrets/` directory or real service credentials. Temporary files are removed after the session. Tests that call external APIs must mock them; the synthetic credentials cannot authenticate.
+
+Normal application startup still reads `secrets/` by default. `CYBERHAM_SECRETS_DIR` can explicitly select another secrets directory; pytest uses it to isolate its configuration. This affects pytest runs only unless the environment override is explicitly set for application startup.

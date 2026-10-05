@@ -17,7 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Decrypt secrets
+      - name: Decrypt deployment secrets
+        if: github.event_name == 'push'
         run: decrypt cyberham
 
       - name: Install uv
@@ -42,19 +43,10 @@ jobs:
       - name: Typecheck repo
         run: uv run pyright --level error
 
-      - name: Stage secrets
-        run: |
-          mkdir -p secrets
-          cp -a /decrypted_secrets/cyberham/. secrets/
-
       - name: Run tests
         env:
           CYBERHAM_ENV: dev
         run: uv run python -m pytest
-
-      - name: Unstage secrets
-        if: always()
-        run: rm -rf secrets
 
       - name: Build image
         run: docker build --pull -t $REGISTRY_URI/cyberham:${{ github.sha }} .
