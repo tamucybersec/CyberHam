@@ -3,6 +3,8 @@
 
 from collections import defaultdict
 
+from sqlalchemy import bindparam, text
+
 from cyberham.database.typeddb import db, registerdb, rsvpdb
 from cyberham.types import Register, Semester, rsvp
 from cyberham.utils.date import current_semester, current_year
@@ -15,18 +17,20 @@ def attendance_for_user(
 ) -> int:
     semester = semester or current_semester()
     year = year or current_year()
-    db.cursor.execute(
-        """
+    result = db.conn.execute(
+        text(
+            """
         SELECT COUNT(*)
         FROM attendance
         JOIN events ON attendance.code = events.code
-        WHERE attendance.user_id = ?
-            AND events.semester = ?
-            AND events.year = ?
-    """,
-        (user_id, semester, year),
+        WHERE attendance.user_id = :user_id
+            AND events.semester = :semester
+            AND events.year = :year
+    """
+        ),
+        {"user_id": user_id, "semester": semester, "year": year},
     )
-    return db.cursor.fetchone()[0]
+    return result.scalar_one()
 
 
 def attendance_for_user_specific_category(
@@ -37,20 +41,22 @@ def attendance_for_user_specific_category(
 ) -> int:
     semester = semester or current_semester()
     year = year or current_year()
-    db.cursor.execute(
-        """
+    result = db.conn.execute(
+        text(
+            """
         SELECT COUNT(*)
         FROM attendance
         JOIN events ON attendance.code = events.code
-        WHERE attendance.user_id = ?
-            AND events.semester = ?
-            AND events.year = ?
-            AND events.category = ?
-        """,
-        (user_id, semester, year, category),
+        WHERE attendance.user_id = :user_id
+            AND events.semester = :semester
+            AND events.year = :year
+            AND events.category = :category
+        """
+        ),
+        {"user_id": user_id, "semester": semester, "year": year, "category": category},
     )
 
-    return db.cursor.fetchone()[0]
+    return result.scalar_one()
 
 
 def attendance_for_all_users(
@@ -59,19 +65,21 @@ def attendance_for_all_users(
 ) -> dict[str, int]:
     semester = semester or current_semester()
     year = year or current_year()
-    db.cursor.execute(
-        """
+    result = db.conn.execute(
+        text(
+            """
         SELECT attendance.user_id, COUNT(*) AS attendance
         FROM attendance
         JOIN events ON attendance.code = events.code
-        WHERE events.semester = ?
-            AND events.year = ?
+        WHERE events.semester = :semester
+            AND events.year = :year
         GROUP BY attendance.user_id
-        """,
-        (semester, year),
+        """
+        ),
+        {"semester": semester, "year": year},
     )
 
-    return {row["user_id"]: row["attendance"] for row in db.cursor.fetchall()}
+    return {row["user_id"]: row["attendance"] for row in result.mappings().all()}
 
 
 def points_for_user(
@@ -82,33 +90,37 @@ def points_for_user(
     semester = semester or current_semester()
     year = year or current_year()
     points: int = 0
-    db.cursor.execute(
-        """
+    result = db.conn.execute(
+        text(
+            """
         SELECT points
         FROM points
-        WHERE user_id = ?
-            AND semester = ?
-            AND year = ?
-    """,
-        (user_id, semester, year),
+        WHERE user_id = :user_id
+            AND semester = :semester
+            AND year = :year
+    """
+        ),
+        {"user_id": user_id, "semester": semester, "year": year},
     )
-    row = db.cursor.fetchone()
+    row = result.first()
     if row:
         points += row[0]
 
-    db.cursor.execute(
-        """
+    result = db.conn.execute(
+        text(
+            """
         SELECT SUM(events.points) AS points
         FROM attendance
         JOIN events ON attendance.code = events.code
-        WHERE attendance.user_id = ? 
-            AND events.semester = ?
-            AND events.year = ?
+        WHERE attendance.user_id = :user_id
+            AND events.semester = :semester
+            AND events.year = :year
         GROUP BY attendance.user_id
-    """,
-        (user_id, semester, year),
+    """
+        ),
+        {"user_id": user_id, "semester": semester, "year": year},
     )
-    row = db.cursor.fetchone()
+    row = result.first()
     if row:
         points += row[0]
 
@@ -123,48 +135,53 @@ def points_for_all_users(
     year = year or current_year()
     points: dict[str, int] = defaultdict(int)
 
-    db.cursor.execute(
-        """
+    result = db.conn.execute(
+        text(
+            """
         SELECT user_id, points
         FROM points
-        WHERE semester = ?
-            AND year = ?
-    """,
-        (semester, year),
+        WHERE semester = :semester
+            AND year = :year
+    """
+        ),
+        {"semester": semester, "year": year},
     )
-    for row in db.cursor.fetchall():
+    for row in result.mappings().all():
         points[row["user_id"]] = row["points"]
 
-    db.cursor.execute(
-        """
+    result = db.conn.execute(
+        text(
+            """
         SELECT attendance.user_id, SUM(events.points) AS points
         FROM attendance
         JOIN events ON attendance.code = events.code
-        WHERE events.semester = ?
-            AND events.year = ?
+        WHERE events.semester = :semester
+            AND events.year = :year
         GROUP BY attendance.user_id
-    """,
-        (semester, year),
+    """
+        ),
+        {"semester": semester, "year": year},
     )
-    for row in db.cursor.fetchall():
+    for row in result.mappings().all():
         points[row["user_id"]] += row["points"]
 
     return points
 
 
 def user_attendance_counts_for_events(codes: list[str]) -> dict[str, int]:
-    placeholders = ", ".join("?" for _ in codes)
-    db.cursor.execute(
-        f"""
+    result = db.conn.execute(
+        text(
+            """
         SELECT user_id, COUNT(*) as count
         FROM attendance
-        WHERE code IN ({placeholders})
+        WHERE code IN :codes
         GROUP BY user_id
-        """,
-        codes,
+        """
+        ).bindparams(bindparam("codes", expanding=True)),
+        {"codes": codes},
     )
 
-    rows = db.cursor.fetchall()
+    rows = result.mappings().all()
     return {row["user_id"]: row["count"] for row in rows}
 
 
@@ -172,11 +189,13 @@ def user_attendance_counts_for_events(codes: list[str]) -> dict[str, int]:
 # before inserting the new entry
 def insert_registration(registration: Register):
     db.conn.execute(
-        """
+        text(
+            """
         DELETE FROM register
-        WHERE user_id = ?
-        """,
-        (registration["user_id"],),
+        WHERE user_id = :user_id
+        """
+        ),
+        {"user_id": registration["user_id"]},
     )
     db.conn.commit()
     registerdb.create(registration)
@@ -184,29 +203,33 @@ def insert_registration(registration: Register):
 
 def insert_rsvp(reservation: rsvp):
     db.conn.execute(
-        """
+        text(
+            """
         DELETE FROM rsvp
-        WHERE user_id = ?
-            AND code = ?
-        """,
-        (reservation["user_id"], reservation["code"]),
+        WHERE user_id = :user_id
+            AND code = :code
+        """
+        ),
+        {"user_id": reservation["user_id"], "code": reservation["code"]},
     )
     db.conn.commit()
     rsvpdb.create(reservation)
 
 
 def rsvp_counts_for_event(code: str) -> tuple[int, int, int]:
-    db.cursor.execute(
-        """
-        SELECT COUNT(*) FILTER (WHERE reservation=0) AS yes, 
-        COUNT(*) FILTER (WHERE reservation=1) AS no, 
+    result = db.conn.execute(
+        text(
+            """
+        SELECT COUNT(*) FILTER (WHERE reservation=0) AS yes,
+        COUNT(*) FILTER (WHERE reservation=1) AS no,
         COUNT(*) FILTER (WHERE reservation=2) AS unsure
         FROM rsvp
-        WHERE code = ?
-        """,
-        (code,),
+        WHERE code = :code
+        """
+        ),
+        {"code": code},
     )
-    responses = db.cursor.fetchone()
+    responses = result.mappings().one()
     return (
         responses["yes"],
         responses["no"],

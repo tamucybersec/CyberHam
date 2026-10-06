@@ -1,10 +1,10 @@
 import hashlib
 import logging
-import sqlite3
 from datetime import datetime
 from pathlib import Path
 
 from fastapi.requests import Request
+from sqlalchemy.exc import SQLAlchemyError
 
 from cyberham import data_path
 from cyberham.database.typeddb import tokensdb
@@ -62,7 +62,7 @@ def _describe_key(token: str) -> str:
     try:
         # attempts to find token in db
         record = tokensdb.get((token,))
-    except sqlite3.Error:
+    except SQLAlchemyError:
         # logging must never be the reason a request fails
         return f"lookup failed #{fingerprint}"
     name = record["name"] if record is not None else "unknown key"

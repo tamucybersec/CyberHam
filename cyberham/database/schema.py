@@ -1,13 +1,16 @@
 import os
-import sqlite3
-from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkstemp
+from typing import Any
+
+from sqlalchemy import Connection, inspect, text
+from sqlalchemy.engine.interfaces import ReflectedForeignKeyConstraint
+from sqlalchemy.types import NullType, TypeEngine
 
 from cyberham import data_path
-
-SCHEMA_PATH = Path(__file__).with_name("schema.sql")
+from cyberham.database.engine import make_engine
+from cyberham.database.tables import create_tables
 
 
 @dataclass(frozen=True)
@@ -54,92 +57,81 @@ class SchemaDrift:
     relationships_changed: bool
 
 
-def load_schema_sql() -> str:
-    return SCHEMA_PATH.read_text(encoding="utf-8")
-
-
 def live_database_path() -> Path:
     return data_path / "cyberham.db"
 
 
-def _connect(db_path: str) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
-
-def _connect_readonly(db_path: Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
-
-def introspect_schema(connection: sqlite3.Connection) -> dict[str, TableSchema]:
-    cursor = connection.execute(
-        """
-        SELECT name
-        FROM sqlite_master
-        WHERE type = 'table'
-            AND name NOT LIKE 'sqlite_%'
-        ORDER BY name
-        """
-    )
-    tables = [row["name"] for row in cursor.fetchall()]
+def introspect_schema(conn: Connection) -> dict[str, TableSchema]:
+    inspector = inspect(conn)
+    tables = [name for name in inspector.get_table_names() if name != "alembic_version"]
 
     result: dict[str, TableSchema] = {}
     for table in tables:
-        column_rows = connection.execute(
-            "SELECT * FROM pragma_table_info(?)", (table,)
-        ).fetchall()
-        fk_rows = connection.execute(
-            "SELECT * FROM pragma_foreign_key_list(?)", (table,)
-        ).fetchall()
+        primary_key = inspector.get_pk_constraint(table)["constrained_columns"]
 
         result[table] = TableSchema(
             name=table,
             columns=[
                 ColumnSchema(
-                    name=row["name"],
-                    type=row["type"],
-                    not_null=bool(row["notnull"]),
-                    default_value=row["dflt_value"],
-                    primary_key_index=row["pk"],
+                    name=column["name"],
+                    type=_type_name(column["type"]),
+                    not_null=not column["nullable"],
+                    default_value=column.get("default"),
+                    primary_key_index=(
+                        primary_key.index(column["name"]) + 1
+                        if column["name"] in primary_key
+                        else 0
+                    ),
                 )
-                for row in column_rows
+                for column in inspector.get_columns(table)
             ],
             foreign_keys=[
                 ForeignKeySchema(
-                    column=row["from"],
-                    references_table=row["table"],
-                    references_column=row["to"],
-                    on_update=row["on_update"],
-                    on_delete=row["on_delete"],
+                    column=column,
+                    references_table=fk["referred_table"],
+                    references_column=referred_column,
+                    on_update=_fk_action(fk, "onupdate"),
+                    on_delete=_fk_action(fk, "ondelete"),
                 )
-                for row in fk_rows
+                for fk in inspector.get_foreign_keys(table)
+                for column, referred_column in zip(
+                    fk["constrained_columns"], fk["referred_columns"], strict=True
+                )
             ],
         )
 
     return result
 
 
+def _type_name(column_type: TypeEngine[Any]) -> str:
+    # untyped columns reflect as NullType
+    if isinstance(column_type, NullType):
+        return ""
+    return str(column_type)
+
+
+def _fk_action(fk: ReflectedForeignKeyConstraint, action: str) -> str:
+    options = fk.get("options", {})
+    return (options.get(action) or "NO ACTION").upper()
+
+
 def canonical_schema() -> dict[str, TableSchema]:
-    conn = _connect(":memory:")
+    engine = make_engine(":memory:")
     try:
-        conn.executescript(load_schema_sql())
-        return introspect_schema(conn)
+        with engine.connect() as conn:
+            create_tables(conn)
+            return introspect_schema(conn)
     finally:
-        conn.close()
+        engine.dispose()
 
 
 def live_schema(db_path: Path | None = None) -> dict[str, TableSchema]:
-    path = db_path or live_database_path()
-    conn = _connect_readonly(path)
+    engine = make_engine(db_path or live_database_path(), readonly=True)
     try:
-        return introspect_schema(conn)
+        with engine.connect() as conn:
+            return introspect_schema(conn)
     finally:
-        conn.close()
+        engine.dispose()
 
 
 def detect_schema_drift(
@@ -188,13 +180,13 @@ def snapshot_database(db_path: Path) -> Path:
     descriptor, filename = mkstemp(prefix="cyberham-export-", suffix=".db")
     os.close(descriptor)
     snapshot_path = Path(filename)
+    engine = make_engine(db_path, readonly=True)
     try:
-        with (
-            closing(_connect_readonly(db_path)) as source,
-            closing(sqlite3.connect(snapshot_path)) as destination,
-        ):
-            source.backup(destination)
+        with engine.connect() as conn:
+            conn.execute(text("VACUUM INTO :path"), {"path": str(snapshot_path)})
     except BaseException:
         snapshot_path.unlink(missing_ok=True)
         raise
+    finally:
+        engine.dispose()
     return snapshot_path
