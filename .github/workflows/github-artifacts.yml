@@ -1,4 +1,4 @@
-name: CyberHam
+name: CyberHam 
 
 on:
   push:
@@ -6,16 +6,12 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: cyberham-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   IMAGE: ghcr.io/tamucybersec/cyberham
 
 jobs:
   cyberham:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
