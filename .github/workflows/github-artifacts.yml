@@ -89,7 +89,3 @@ jobs:
       - name: Log out of GHCR
         if: always()
         run: docker logout ghcr.io
-
-      - name: Deploy image
-        if: github.event_name == 'push'
-        run: docker compose pull && docker compose up -d
