@@ -1,5 +1,4 @@
 import asyncio
-import sqlite3
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -8,12 +7,13 @@ from fastapi.testclient import TestClient
 from starlette.types import Message
 
 from cyberham.apis.dashboard import app, export_database
+from cyberham.database.engine import make_engine
 from cyberham.database.schema import (
     canonical_schema,
-    load_schema_sql,
     snapshot_database,
 )
 from cyberham.database.table_registry import TABLE_REGISTRY
+from cyberham.database.tables import create_tables
 from cyberham.types import Permissions
 
 client = TestClient(app)
@@ -42,19 +42,19 @@ def test_schema_and_export_use_configured_data_directory(tmp_path: Path) -> None
 
 
 def _make_database(db_path: Path, *, legacy_resume_columns: bool = False) -> None:
-    conn = sqlite3.connect(db_path)
+    engine = make_engine(db_path)
     try:
-        conn.executescript(load_schema_sql())
-        if legacy_resume_columns:
-            conn.execute(
-                "ALTER TABLE users ADD COLUMN resume_format TEXT NOT NULL DEFAULT ''"
-            )
-            conn.execute(
-                "ALTER TABLE users ADD COLUMN resume_filename TEXT NOT NULL DEFAULT ''"
-            )
-        conn.commit()
+        with engine.begin() as conn:
+            create_tables(conn)
+            if legacy_resume_columns:
+                conn.exec_driver_sql(
+                    "ALTER TABLE users ADD COLUMN resume_format TEXT NOT NULL DEFAULT ''"
+                )
+                conn.exec_driver_sql(
+                    "ALTER TABLE users ADD COLUMN resume_filename TEXT NOT NULL DEFAULT ''"
+                )
     finally:
-        conn.close()
+        engine.dispose()
 
 
 class TestSchemaAdminApi:
@@ -241,9 +241,11 @@ def test_export_missing_database(tmp_path: Path) -> None:
 def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path: Path) -> None:
     db_path = tmp_path / "source.db"
     _make_database(db_path)
-    connection = sqlite3.connect(db_path)
-    connection.execute("PRAGMA journal_mode=WAL")
-    connection.execute("INSERT INTO verify VALUES ('snapshot-user', 12345)")
+    # keep the writer open so the insert stays in the WAL instead of being checkpointed
+    engine = make_engine(db_path)
+    connection = engine.connect()
+    connection.exec_driver_sql("PRAGMA journal_mode=WAL")
+    connection.exec_driver_sql("INSERT INTO verify VALUES ('snapshot-user', 12345)")
     connection.commit()
     snapshots: list[Path] = []
 
@@ -270,13 +272,21 @@ def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path: Path) -> N
         assert snapshots and not snapshots[0].exists()
         downloaded = tmp_path / "download.db"
         downloaded.write_bytes(response.content)
-        with sqlite3.connect(downloaded) as exported:
-            assert exported.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
-            assert exported.execute(
-                "SELECT code FROM verify WHERE user_id = 'snapshot-user'"
-            ).fetchone() == (12345,)
+        exported_engine = make_engine(downloaded, readonly=True)
+        with exported_engine.connect() as exported:
+            assert (
+                exported.exec_driver_sql("PRAGMA integrity_check").scalar_one() == "ok"
+            )
+            assert (
+                exported.exec_driver_sql(
+                    "SELECT code FROM verify WHERE user_id = 'snapshot-user'"
+                ).scalar_one()
+                == 12345
+            )
+        exported_engine.dispose()
     finally:
         connection.close()
+        engine.dispose()
 
 
 @pytest.mark.parametrize(
@@ -356,17 +366,19 @@ def test_schema_uses_live_definitions_and_reports_missing_tables(
 ) -> None:
     db_path = tmp_path / "schema.db"
     _make_database(db_path)
-    with sqlite3.connect(db_path) as connection:
-        connection.execute("DROP TABLE verify")
-        connection.execute(
+    engine = make_engine(db_path)
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DROP TABLE verify")
+        connection.exec_driver_sql(
             "CREATE TABLE verify (user_id INTEGER PRIMARY KEY, code TEXT DEFAULT 'pending')"
         )
-        connection.execute("DROP TABLE rsvp")
-        connection.execute(
+        connection.exec_driver_sql("DROP TABLE rsvp")
+        connection.exec_driver_sql(
             "CREATE TABLE rsvp (user_id TEXT NOT NULL, code TEXT NOT NULL, reservation INTEGER NOT NULL, PRIMARY KEY (user_id, code))"
         )
-        connection.execute("DROP TABLE register")
-        connection.execute('CREATE TABLE "extra\'table" (id TEXT)')
+        connection.exec_driver_sql("DROP TABLE register")
+        connection.exec_driver_sql('CREATE TABLE "extra\'table" (id TEXT)')
+    engine.dispose()
     with (
         patch(
             "cyberham.apis.auth.token_status",

@@ -1,51 +1,70 @@
-import sqlite3
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import (
+    ColumnElement,
+    Connection,
+    Table,
+    and_,
+    delete,
+    func,
+    insert,
+    inspect,
+    or_,
+    select,
+    update,
+)
+from sqlalchemy.exc import IntegrityError
+
 from cyberham.database.backup import write_backup
-from cyberham.database.schema import load_schema_sql
+from cyberham.database.engine import make_engine
+from cyberham.database.tables import metadata
 from cyberham.types import Item, TableName
+
+ALEMBIC_INI = Path(__file__).parents[2] / "alembic.ini"
 
 type PK = tuple[Any, ...]
 
 
 class SQLiteDB:
-    conn: sqlite3.Connection
-    cursor: sqlite3.Cursor
+    conn: Connection
 
     def __init__(self, db_path: str) -> None:
         self.setup(db_path)
 
     # should only be called in the constructor and during testing
     def setup(self, db_path: str) -> None:
-        self.conn = sqlite3.connect(db_path)
-        self.conn.row_factory = sqlite3.Row
-        self.cursor = self.conn.cursor()
-        self._create_tables()
+        self.conn = make_engine(db_path).connect()
+        self._migrate()
 
-    def _create_tables(self):
-        self.conn.execute("PRAGMA foreign_keys = ON")
-        self.conn.executescript(load_schema_sql())
+    def _migrate(self):
+        cfg = Config(ALEMBIC_INI)
+        cfg.attributes["connection"] = self.conn
+        tables = inspect(self.conn).get_table_names()
+        # assume existing db is par with baseline
+        if tables and "alembic_version" not in tables:
+            command.stamp(cfg, "0001")
+        command.upgrade(cfg, "head")
         self.conn.commit()
 
     # create
     def create_row(self, table: TableName, item: Item) -> None:
-        cols = ", ".join(list(item.keys()))
-        placeholders = ", ".join("?" for _ in item)
-        vals = list(item.values())
-
-        self.cursor.execute(
-            f"INSERT INTO {table} ({cols}) VALUES ({placeholders})", vals
-        )
+        self.conn.execute(insert(_table(table)).values(item))
         self.conn.commit()
 
     # read
     def get_row(
         self, table: TableName, pk_names: list[str], pk_values: PK
     ) -> Item | None:
-        wheres = self._wheres(pk_names)
-        self.cursor.execute(f"SELECT * FROM {table} WHERE {wheres}", pk_values)
-        row = self.cursor.fetchone()
+        t = _table(table)
+        row = (
+            self.conn.execute(select(t).where(_wheres(t, pk_names, pk_values)))
+            .mappings()
+            .first()
+        )
         return dict(row) if row else None
 
     # update
@@ -58,13 +77,11 @@ class SQLiteDB:
         if not diffs:
             return  # Nothing to update
 
-        set_clause = ", ".join(f"{col} = ?" for col in diffs)
-        set_values = list(diffs.values())
-        wheres = self._wheres(pk_names)
+        t = _table(table)
         pk_values = [original[pk] for pk in pk_names]
 
-        self.cursor.execute(
-            f"UPDATE {table} SET {set_clause} WHERE {wheres}", set_values + pk_values
+        self.conn.execute(
+            update(t).where(_wheres(t, pk_names, pk_values)).values(diffs)
         )
         self.conn.commit()
 
@@ -74,8 +91,8 @@ class SQLiteDB:
     ) -> Item | None:
         old = self.get_row(table, pk_names, pk_values)
         if old:
-            wheres = self._wheres(pk_names)
-            self.cursor.execute(f"DELETE FROM {table} WHERE {wheres}", pk_values)
+            t = _table(table)
+            self.conn.execute(delete(t).where(_wheres(t, pk_names, pk_values)))
             self.conn.commit()
         return old
 
@@ -88,18 +105,9 @@ class SQLiteDB:
         if pk_values == []:
             return []
 
-        wheres = " OR ".join(f"({self._wheres(pk_names)})" for _ in pk_values)
-
-        # flatten pk_values
-        values: list[Any] = []
-        for vals in pk_values:
-            values.extend(vals)
-
-        self.cursor.execute(
-            f"SELECT * FROM {table} WHERE {wheres}",
-            values,
-        )
-        rows = self.cursor.fetchall()
+        t = _table(table)
+        wheres = or_(*(_wheres(t, pk_names, vals) for vals in pk_values))
+        rows = self.conn.execute(select(t).where(wheres)).mappings().all()
 
         # lookup map of pk values -> row
         row_map: dict[tuple[Any], Item] = {}
@@ -117,27 +125,28 @@ class SQLiteDB:
         return results
 
     def get_all_rows(self, table: TableName) -> list[Item]:
-        self.cursor.execute(f"SELECT * FROM {table}")
-        return [dict(row) for row in self.cursor.fetchall()]
+        rows = self.conn.execute(select(_table(table))).mappings().all()
+        return [dict(row) for row in rows]
 
     def get_count(self, table: TableName) -> int:
-        self.cursor.execute(f"SELECT COUNT(*) FROM {table}")
-        return self.cursor.fetchone()[0]
+        return self.conn.execute(
+            select(func.count()).select_from(_table(table))
+        ).scalar_one()
 
     def reset_table(self, table: TableName) -> None:
-        self.cursor.execute(f"DELETE FROM {table}")
+        self.conn.execute(delete(_table(table)))
         self.conn.commit()
 
     def replace_table(self, table: TableName, items: Sequence[Item]):
         try:
-            self.conn.execute("BEGIN IMMEDIATE")
+            self.conn.commit()
             old_items = self.get_all_rows(table)
-            self.cursor.execute(f"DELETE FROM {table}")
+            self.conn.execute(delete(_table(table)))
             self.batch_insert(table, items)
             write_backup(table, old_items)
             return {"message": "Replacement successful"}
 
-        except sqlite3.IntegrityError as e:
+        except IntegrityError as e:
             self.conn.rollback()
             return {
                 "error": "Replacement failed due to foreign key constraints",
@@ -149,15 +158,15 @@ class SQLiteDB:
             return {"error": "Unexpected failure", "details": str(e)}
 
     def batch_insert(self, table: TableName, items: Sequence[Item]):
-        keys = items[0].keys()
-        placeholders = ", ".join(["?"] * len(keys))
-        columns = ", ".join(keys)
-        sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
-
-        # Convert items to list of tuples
-        values = [tuple(item[key] for key in keys) for item in items]
-        self.cursor.executemany(sql, values)
+        self.conn.execute(insert(_table(table)), [dict(item) for item in items])
         self.conn.commit()
 
-    def _wheres(self, pk_names: list[str]) -> str:
-        return " AND ".join([f"{pk} = ?" for pk in pk_names])
+
+def _table(table: TableName) -> Table:
+    return metadata.tables[table]
+
+
+def _wheres(
+    t: Table, pk_names: list[str], pk_values: Sequence[Any]
+) -> ColumnElement[bool]:
+    return and_(*(t.c[pk] == v for pk, v in zip(pk_names, pk_values, strict=True)))

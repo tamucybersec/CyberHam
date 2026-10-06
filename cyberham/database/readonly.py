@@ -1,31 +1,33 @@
-import sqlite3
 from typing import Any
+
+from sqlalchemy import Connection
+from sqlalchemy.exc import SQLAlchemyError
+
+from cyberham.database.engine import make_engine
 
 
 class ReadonlyDB:
-    conn: sqlite3.Connection
+    conn: Connection
 
     def __init__(
         self,
         db_path: str,
     ):
-        self.conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-        self.conn.row_factory = sqlite3.Row
+        self.conn = make_engine(db_path, readonly=True).connect()
 
     def close(self):
         self.conn.close()
 
     def execute(self, sql: str) -> dict[str, Any]:
-        cursor = self.conn.cursor()
-
         try:
-            cursor.execute(sql)
-        except sqlite3.Error as err:
+            result = self.conn.exec_driver_sql(sql)
+        except SQLAlchemyError as err:
+            self.conn.rollback()
             raise ValueError("Query failed or not allowed.") from err
 
-        if cursor.description is None:
+        if not result.returns_rows:
             return {"columns": [], "rows": []}
 
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
+        columns = list(result.keys())
+        rows = [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
         return {"columns": columns, "rows": rows}
