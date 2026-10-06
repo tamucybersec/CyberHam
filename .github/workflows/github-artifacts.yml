@@ -1,4 +1,4 @@
-name: CyberHam
+name: CyberHam GHCR Image
 
 on:
   push:
@@ -6,61 +6,18 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: cyberham-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   IMAGE: ghcr.io/tamucybersec/cyberham
 
 jobs:
   cyberham:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Decrypt secrets
-        run: decrypt cyberham
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: "0.11.3"
-
-      - name: Install Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Install dependencies
-        run: uv sync --frozen
-
-      - name: Check formatting
-        run: uv run ruff format --check --diff
-
-      - name: Lint repo
-        run: uv run ruff check --output-format=github
-
-      - name: Typecheck repo
-        run: uv run pyright --level error
-
-      - name: Stage secrets
-        run: |
-          mkdir -p secrets
-          cp -a /decrypted_secrets/cyberham/. secrets/
-
-      - name: Run tests
-        env:
-          CYBERHAM_ENV: dev
-        run: uv run python -m pytest
-
-      - name: Unstage secrets
-        if: always()
-        run: rm -rf secrets
 
       - name: Build image
         run: docker build --pull -t $IMAGE:${{ github.sha }} .
@@ -89,7 +46,3 @@ jobs:
       - name: Log out of GHCR
         if: always()
         run: docker logout ghcr.io
-
-      - name: Deploy image
-        if: github.event_name == 'push'
-        run: docker compose pull && docker compose up -d
