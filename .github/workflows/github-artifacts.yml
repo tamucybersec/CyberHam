@@ -1,4 +1,4 @@
-name: CyberHam 
+name: CyberHam GHCR
 
 on:
   push:
