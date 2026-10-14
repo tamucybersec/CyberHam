@@ -125,6 +125,25 @@ def canonical_schema() -> dict[str, TableSchema]:
         engine.dispose()
 
 
+def live_schema_sql(db_path: Path | None = None) -> str:
+    """Read the live database's table and index definitions without row data."""
+    engine = make_engine(db_path or live_database_path(), readonly=True)
+    try:
+        with engine.connect() as conn:
+            query = text("""
+                SELECT sql FROM sqlite_schema
+                WHERE type IN ('table', 'index')
+                  AND tbl_name NOT GLOB 'sqlite_*'
+                  AND tbl_name != 'alembic_version'
+                  AND sql IS NOT NULL
+                ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END, name
+            """)
+            statements = conn.scalars(query).all()
+            return ";\n\n".join(statements) + ";\n" if statements else ""
+    finally:
+        engine.dispose()
+
+
 def live_schema(db_path: Path | None = None) -> dict[str, TableSchema]:
     engine = make_engine(db_path or live_database_path(), readonly=True)
     try:

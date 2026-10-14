@@ -1,19 +1,26 @@
 import asyncio
+import sqlite3
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from alembic.autogenerate import compare_metadata
+from alembic.migration import MigrationContext
 from fastapi.testclient import TestClient
+from sqlalchemy import inspect
+from sqlalchemy.exc import OperationalError
 from starlette.types import Message
 
 from cyberham.apis.dashboard import app, export_database
 from cyberham.database.engine import make_engine
 from cyberham.database.schema import (
     canonical_schema,
+    live_schema,
+    live_schema_sql,
     snapshot_database,
 )
 from cyberham.database.table_registry import TABLE_REGISTRY
-from cyberham.database.tables import create_tables
+from cyberham.database.tables import create_tables, metadata
 from cyberham.types import Permissions
 
 client = TestClient(app)
@@ -33,10 +40,13 @@ def test_schema_and_export_use_configured_data_directory(tmp_path: Path) -> None
         ),
     ):
         schema = client.get("/schema", headers=_headers())
+        schema_sql = client.get("/schema/sql", headers=_headers())
         exported = client.get("/database/export", headers=_headers())
     assert schema.status_code == 200
     assert len(schema.json()["tables"]) == 10
     assert schema.json()["drift"] == []
+    assert schema_sql.status_code == 200
+    assert "CREATE TABLE users" in schema_sql.text
     assert exported.status_code == 200
     assert exported.content[:16] == b"SQLite format 3" + bytes([0])
 
@@ -58,6 +68,47 @@ def _make_database(db_path: Path, *, legacy_resume_columns: bool = False) -> Non
 
 
 class TestSchemaAdminApi:
+    @patch("cyberham.apis.auth.token_status")
+    def test_schema_sql_recreates_live_schema(
+        self,
+        mock_token_status: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        mock_token_status.return_value = (Permissions.SUPER_ADMIN, True)
+        source = tmp_path / "source.db"
+        _make_database(source)
+        with sqlite3.connect(source) as conn:
+            conn.execute("INSERT INTO verify VALUES ('private-user', 12345)")
+            conn.execute("CREATE TABLE alembic_version (version_num TEXT PRIMARY KEY)")
+        with patch(
+            "cyberham.database.schema.live_database_path",
+            return_value=source,
+        ):
+            response = client.get("/schema/sql", headers=_headers())
+
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "text/plain; charset=utf-8"
+        assert "private-user" not in response.text
+        db_path = tmp_path / "generated.db"
+        with sqlite3.connect(db_path) as conn:
+            conn.executescript(response.text)
+
+        engine = make_engine(db_path)
+        try:
+            with engine.connect() as conn:
+                context = MigrationContext.configure(
+                    conn, opts={"compare_server_default": True}
+                )
+                assert compare_metadata(context, metadata) == []
+                inspector = inspect(conn)
+                assert set(inspector.get_table_names()) == set(metadata.tables)
+                assert inspector.get_check_constraints("rsvp") == [
+                    {"sqltext": "reservation IN (0, 1, 2)", "name": None}
+                ]
+                assert conn.exec_driver_sql("SELECT * FROM verify").all() == []
+        finally:
+            engine.dispose()
+
     @patch("cyberham.apis.auth.token_status")
     def test_schema_lists_all_tables(
         self,
@@ -194,7 +245,7 @@ class TestSchemaAdminApi:
         assert allowed.headers["content-disposition"].endswith('filename="schema.db"')
 
 
-@pytest.mark.parametrize("endpoint", ["/schema", "/database/export"])
+@pytest.mark.parametrize("endpoint", ["/schema", "/schema/sql", "/database/export"])
 @pytest.mark.parametrize(
     "permission,valid",
     [
@@ -211,12 +262,12 @@ def test_schema_endpoints_deny_insufficient_or_invalid_tokens(
     assert response.status_code == 403
 
 
-@pytest.mark.parametrize("endpoint", ["/schema", "/database/export"])
+@pytest.mark.parametrize("endpoint", ["/schema", "/schema/sql", "/database/export"])
 def test_schema_endpoints_require_authentication(endpoint: str) -> None:
     assert client.get(endpoint).status_code == 403
 
 
-@pytest.mark.parametrize("endpoint", ["/schema", "/database/export"])
+@pytest.mark.parametrize("endpoint", ["/schema", "/schema/sql", "/database/export"])
 @pytest.mark.parametrize("permission", [Permissions.COMMITTEE, Permissions.ADMIN])
 def test_schema_endpoints_deny_below_super_admin(
     endpoint: str, permission: Permissions
@@ -236,6 +287,46 @@ def test_export_missing_database(tmp_path: Path) -> None:
     ):
         assert client.get("/database/export", headers=_headers()).status_code == 404
     assert not missing.exists()
+
+
+def test_schema_sql_does_not_create_missing_database(tmp_path: Path) -> None:
+    missing = tmp_path / "missing.db"
+    with pytest.raises(OperationalError):
+        live_schema_sql(missing)
+    assert not missing.exists()
+
+
+def test_schema_sql_preserves_sqlite_definitions(tmp_path: Path) -> None:
+    source = tmp_path / "source.db"
+    table_sql = (
+        "CREATE TABLE entries (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "label TEXT COLLATE NOCASE UNIQUE, payload)"
+    )
+    index_sql = (
+        "CREATE INDEX entries_label_idx ON entries (lower(label)) "
+        "WHERE label IS NOT NULL"
+    )
+    with sqlite3.connect(source) as conn:
+        conn.execute(table_sql)
+        conn.execute(index_sql)
+        conn.execute("CREATE TABLE alembic_version (version_num TEXT PRIMARY KEY)")
+        conn.execute("CREATE INDEX version_idx ON alembic_version (version_num)")
+        conn.execute("CREATE VIEW labels AS SELECT label FROM entries")
+
+    sql = live_schema_sql(source)
+    assert sql == f"{table_sql};\n\n{index_sql};\n"
+    with sqlite3.connect(tmp_path / "recreated.db") as conn:
+        conn.executescript(sql)
+        conn.execute("INSERT INTO entries (label) VALUES ('Example')")
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute("INSERT INTO entries (label) VALUES ('example')")
+
+
+def test_schema_sql_empty_database(tmp_path: Path) -> None:
+    source = tmp_path / "empty.db"
+    with sqlite3.connect(source) as conn:
+        conn.execute("CREATE TABLE alembic_version (version_num TEXT PRIMARY KEY)")
+    assert live_schema_sql(source) == ""
 
 
 def test_export_includes_wal_and_removes_temporary_snapshot(tmp_path: Path) -> None:
@@ -378,6 +469,7 @@ def test_schema_uses_live_definitions_and_reports_missing_tables(
         )
         connection.exec_driver_sql("DROP TABLE register")
         connection.exec_driver_sql('CREATE TABLE "extra\'table" (id TEXT)')
+        connection.exec_driver_sql("CREATE INDEX verify_code_idx ON verify (code)")
     engine.dispose()
     with (
         patch(
@@ -387,7 +479,16 @@ def test_schema_uses_live_definitions_and_reports_missing_tables(
         patch("cyberham.database.schema.live_database_path", return_value=db_path),
     ):
         response = client.get("/schema", headers=_headers())
+        schema_sql = client.get("/schema/sql", headers=_headers())
     assert response.status_code == 200
+    assert schema_sql.status_code == 200
+    recreated = tmp_path / "recreated.db"
+    with sqlite3.connect(recreated) as conn:
+        conn.executescript(schema_sql.text)
+        assert (
+            conn.execute("PRAGMA index_list(verify)").fetchone()[1] == "verify_code_idx"
+        )
+    assert live_schema(recreated) == live_schema(db_path)
     tables = {table["name"]: table for table in response.json()["tables"]}
     assert "register" not in tables
     assert "extra'table" in tables
