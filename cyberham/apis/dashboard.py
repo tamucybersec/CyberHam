@@ -10,7 +10,7 @@ from discord.ext import ipcx
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 from starlette.types import Receive, Scope, Send
 
@@ -22,6 +22,7 @@ from cyberham.database.schema import (
     detect_schema_drift,
     live_database_path,
     live_schema,
+    live_schema_sql,
     snapshot_database,
 )
 from cyberham.database.table_registry import TABLE_REGISTRY, TABLE_REGISTRY_BY_NAME
@@ -183,6 +184,15 @@ async def query_readonly(body: QueryPayload):
         return readonlydb.execute(body.sql)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@app.get(
+    "/schema/sql",
+    response_class=PlainTextResponse,
+    dependencies=[Depends(require_permission(Permissions.SUPER_ADMIN))],
+)
+def get_schema_sql() -> str:
+    return live_schema_sql()
 
 
 @app.get(
