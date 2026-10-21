@@ -47,7 +47,10 @@ def setup_commands(bot: Bot):
 
             user = usersdb.get((str(interaction.user.id),))
 
-            if user is not None and user["email"].endswith("tamu.edu"):
+            if (
+                user is not None
+                and user["email"].partition("@")[2].lower() == "tamu.edu"
+            ):
                 await member.add_roles(
                     discord.Object(id=aggie_role_id), reason="TAMU email verified"
                 )
@@ -161,7 +164,10 @@ def setup_commands(bot: Bot):
                     continue
 
             has_role = any(role.id == aggie_role_id for role in member.roles)
-            is_tamu = dict["verified"] and dict["email"].endswith("tamu.edu")
+            is_tamu = (
+                dict["verified"]
+                and dict["email"].partition("@")[2].lower() == "tamu.edu"
+            )
 
             if is_tamu and not has_role:
                 await member.add_roles(
