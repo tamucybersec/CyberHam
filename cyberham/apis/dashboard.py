@@ -11,11 +11,12 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from starlette.types import Receive, Scope, Send
 
 from cyberham import dashboard_config, ipc_key, ipc_port, website_url
-from cyberham.apis.auth import require_permission, token_status
+from cyberham.apis.auth import require_permission, security, token_status
 from cyberham.apis.crud_factory import create_crud_routes
 from cyberham.backend.register import register, upload_resume
 from cyberham.database.schema import (
@@ -101,7 +102,11 @@ async def get_ip(request: Request):
 
 
 @app.get("/login")
-async def login(token: str, request: Request) -> Permissions:
+async def login(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> Permissions:
+    token = credentials.credentials
     permission, valid = token_status(token)
     log_access(
         "LOGIN_SUCCESS" if valid else "LOGIN_FAILED", token, request, success=valid

@@ -50,18 +50,19 @@ class TestDashboard:
         """
         mock_token_status.return_value = mock_return
 
-        resp = client.get("/login", params={"token": token_val})
+        resp = client.get("/login", headers={"Authorization": f"Bearer {token_val}"})
 
         assert resp.status_code == 200
         assert resp.json() == expected_body
         mock_token_status.assert_called_once_with(token_val)
 
-    def test_login_missing_token(self) -> None:
+    @pytest.mark.parametrize("params", [{}, {"token": "legacy-token"}])
+    def test_login_missing_token(self, params: dict[str, str]) -> None:
         """
-        Verifies that the API rejects login attempts that omit the token parameter entirely.
+        Verifies that login requires a bearer token, including for legacy query requests.
         """
-        resp = client.get("/login")
-        assert resp.status_code == 422
+        resp = client.get("/login", params=params)
+        assert resp.status_code == 403
 
     # ------------------------------------------------------------------
     # /register
