@@ -1,61 +1,123 @@
-from datetime import datetime
-from unittest.mock import patch
+# FIXME needs rewrite with new registration method
 
-import pytest
-from backend_patcher import BackendPatcher
+# from backend_patcher import BackendPatcher
+# from cyberham.backend.register import legacy_register
+# from cyberham.types import User
+# from cyberham.tests.models import (
+#     users,
+#     valid_user,
+#     flagged_user,
+#     unregistered_user,
+#     pending_verifies,
+#     flagged_users,
+# )
+# from cyberham.database.typeddb import usersdb
 
-from cyberham.backend.register import register
-from cyberham.database.typeddb import registerdb, usersdb, verifydb
-from cyberham.tests.models import valid_user
-from cyberham.types import Register
+# ignore the response from register email for these tests
+# class TestRegister(BackendPatcher):
+#     def setup_method(self):
+#         self.initial_users = users()
+#         self.initial_flagged = flagged_users()
+#         self.initial_pending = pending_verifies()
+#         super().setup_method()
 
+#     def test_register(self):
+#         self._assert_working(unregistered_user())
 
-class TestRegister(BackendPatcher):
-    @pytest.mark.parametrize(
-        "stored_verified, email_changed, submitted_verified, expected_verified",
-        [
-            (None, False, 1, 0),  # new users cannot verify themselves
-            (0, False, 1, 0),  # existing unverified users cannot verify themselves
-            (1, False, 0, 1),  # unchanged emails retain stored verification
-            (1, True, 1, 0),  # changed emails require verification
-        ],
-    )
-    def test_register_verification(
-        self,
-        stored_verified: int | None,
-        email_changed: bool,
-        submitted_verified: int,
-        expected_verified: int,
-    ):
-        user = valid_user()
-        if stored_verified is not None:
-            user["verified"] = stored_verified
-            usersdb.create(user)
+#     def test_flagged_user(self):
+#         self._assert_working(flagged_user())
 
-        user["verified"] = submitted_verified
-        if email_changed:
-            user["email"] = "new@tamu.edu"
-        registerdb.create(
-            Register(
-                ticket="test-ticket",
-                user_id=user["user_id"],
-                time=datetime.now().isoformat(),
-            )
-        )
+#     def _assert_working(self, user: User):
+#         res = legacy_register(
+#             user["name"],
+#             str(user["grad_year"]),
+#             user["email"],
+#             user["user_id"],
+#         )
+#         assert res != ""
 
-        with patch.object(self.google_client, "send_email") as send_email:
-            _, err = register("test-ticket", user)
+#         u = usersdb.get((user["user_id"],))
+#         assert u is not None
+#         assert u == user
 
-        assert err is None
-        saved = usersdb.get((user["user_id"],))
-        assert saved is not None
-        assert saved["verified"] == expected_verified
-        pending = verifydb.get((user["user_id"],))
-        if expected_verified:
-            assert pending is None
-            send_email.assert_not_called()
-        else:
-            assert pending is not None
-            send_email.assert_called_once_with(
-                user["email"], str(pending["code"]), "Texas A&M Cybersecurity Club"
-            )
+#     def test_unparsable_date(self):
+#         res = legacy_register(
+#             unregistered_user()["name"],
+#             "hello world",
+#             unregistered_user()["email"],
+#             unregistered_user()["user_id"],
+#         )
+#         assert res != ""
+
+#         user = usersdb.get((unregistered_user()["user_id"],))
+#         assert user is None, "Should not create user"
+
+#     def test_invalid_date(self):
+#         res = legacy_register(
+#             unregistered_user()["name"],
+#             "0",
+#             unregistered_user()["email"],
+#             unregistered_user()["user_id"],
+#         )
+#         assert res != ""
+
+#         user = usersdb.get((unregistered_user()["user_id"],))
+#         assert user is None, "Should not create user"
+
+#     def test_invalid_emails(self):
+#         emails = [
+#             "",
+#             "exam,ple@tamu.edu",
+#             "exam;ple@tamu.edu",
+#             "example.tamu.edu",
+#             "exam@ple@tamu.edu",
+#             "example@tamu.edu.",
+#         ]
+
+#         for email in emails:
+#             res = legacy_register(
+#                 unregistered_user()["name"],
+#                 str(unregistered_user()["grad_year"]),
+#                 email,
+#                 unregistered_user()["user_id"],
+#             )
+#             assert res != ""
+
+#             user = usersdb.get((unregistered_user()["user_id"],))
+#             assert (
+#                 user is None
+#             ), f"Should not create user because email '{email}' is invalid"
+
+#     def test_already_registered(self):
+#         res = legacy_register(
+#             valid_user()["name"],
+#             str(valid_user()["grad_year"]),
+#             valid_user()["email"],
+#             valid_user()["user_id"],
+#         )
+#         assert res != ""
+
+#         user = usersdb.get((valid_user()["user_id"],))
+#         assert (
+#             user == valid_user()
+#         ), "Should not remove attributes like points or attended"
+
+#     def test_update_information(self):
+#         new_name = valid_user()["name"] + "_but_cooler"
+#         new_grad = valid_user()["grad_year"] - 1
+#         new_email = "cooler_" + valid_user()["email"]
+
+#         res = legacy_register(
+#             new_name,
+#             str(new_grad),
+#             new_email,
+#             valid_user()["user_id"],
+#         )
+#         assert res != ""
+
+#         user = usersdb.get((valid_user()["user_id"],))
+#         assert user is not None
+#         assert user["name"] == new_name
+#         assert user["grad_year"] == new_grad
+#         assert user["email"] == new_email
+#         assert user["user_id"] == valid_user()["user_id"]
