@@ -103,6 +103,7 @@ def register(ticket: str, user: User) -> tuple[str, MaybeError]:
             )
 
         if u is None:
+            user["verified"] = 0
             user["join_date"] = datetime_to_datestr(datetime.now())
             return user
 
@@ -111,7 +112,7 @@ def register(ticket: str, user: User) -> tuple[str, MaybeError]:
         if not u["join_date"]:
             user["join_date"] = datetime_to_datestr(datetime.now())
 
-        verified = u["email"] == user["email"] and user["verified"]
+        verified = u["email"] == user["email"] and u["verified"]
         user["verified"] = 1 if verified else 0
         return user
 
