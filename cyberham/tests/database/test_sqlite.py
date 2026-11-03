@@ -1,7 +1,7 @@
-import sqlite3
 from typing import Any
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from cyberham.database.sqlite import SQLiteDB
 from cyberham.tests.models import (
@@ -35,7 +35,7 @@ class TestSQLiteCrud:
         assert after == unregistered_user_item()
 
     def test_create_item_fails_overwrite(self):
-        with pytest.raises(sqlite3.IntegrityError):
+        with pytest.raises(IntegrityError):
             self.sqlite.create_row(table, valid_user_item())
 
     def test_get_item(self):

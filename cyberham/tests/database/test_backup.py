@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from cyberham.database.backup import load_latest_backup, write_backup
 from cyberham.database.typeddb import (
     attendancedb,
@@ -33,7 +35,7 @@ class TestRecovery:
         assert True, "Only recover the database when necessary"
         return
 
-        db.conn.execute("PRAGMA foreign_keys = OFF")
+        db.conn.execute(text("PRAGMA foreign_keys = OFF"))
         db.conn.commit()
 
         users = load_latest_backup("users")
@@ -54,7 +56,7 @@ class TestRecovery:
         tokens = load_latest_backup("tokens")
         tokensdb.replace(tokens)
 
-        db.conn.execute("PRAGMA foreign_keys = ON")
+        db.conn.execute(text("PRAGMA foreign_keys = ON"))
         db.conn.commit()
 
         raise AssertionError()

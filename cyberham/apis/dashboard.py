@@ -10,7 +10,7 @@ from discord.ext import ipcx
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 from starlette.types import Receive, Scope, Send
 
@@ -22,6 +22,7 @@ from cyberham.database.schema import (
     detect_schema_drift,
     live_database_path,
     live_schema,
+    live_schema_sql,
     snapshot_database,
 )
 from cyberham.database.table_registry import TABLE_REGISTRY, TABLE_REGISTRY_BY_NAME
@@ -32,6 +33,7 @@ from cyberham.database.typeddb import (
     usersdb,
 )
 from cyberham.types import Permissions, User, default_user
+from cyberham.utils.audit import log_access
 from cyberham.utils.date import valid_registration_time
 from cyberham.utils.transform import pretty_semester
 
@@ -99,8 +101,11 @@ async def get_ip(request: Request):
 
 
 @app.get("/login")
-async def login(token: str) -> Permissions:
-    permission, _ = token_status(token)
+async def login(token: str, request: Request) -> Permissions:
+    permission, valid = token_status(token)
+    log_access(
+        "LOGIN_SUCCESS" if valid else "LOGIN_FAILED", token, request, success=valid
+    )
     return permission
 
 
@@ -160,15 +165,10 @@ async def register_user(
 
 @app.get("/user/{user_id}")
 async def username(user_id: int):
-    try:
-        user = await ipc.request("fetch_username", user_id=user_id)  # type: ignore
-        return user
-    except Exception as exc:
-        return JSONResponse(
-            status_code=500,
-            content={"details": str(exc), "error": "Internal Server Error"},
-            headers={"Access-Control-Allow-Origin": website_url},
-        )
+    user: str = await ipc.request("fetch_username", user_id=user_id)
+    if isinstance(user, dict) and user.get("error"):
+        raise HTTPException(status_code=500, detail="Username lookup failed")
+    return user
 
 
 class QueryPayload(BaseModel):
@@ -184,6 +184,15 @@ async def query_readonly(body: QueryPayload):
         return readonlydb.execute(body.sql)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@app.get(
+    "/schema/sql",
+    response_class=PlainTextResponse,
+    dependencies=[Depends(require_permission(Permissions.SUPER_ADMIN))],
+)
+def get_schema_sql() -> str:
+    return live_schema_sql()
 
 
 @app.get(

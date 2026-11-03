@@ -66,6 +66,16 @@ uv run ruff format .        # format
 uv run pre-commit run -a    # everything, across the whole repo
 ```
 
+## Database Schema Changes
+
+The schema lives in `cyberham/database/tables.py` and is versioned with Alembic. After editing it, generate a migration and review it (autogenerate does not pick up some constraints):
+
+```bash
+uv run alembic revision --autogenerate -m "describe the change"
+```
+
+> Migrations are applied automatically on startup.
+
 # Pull Requests (PRs)
 
 ## PR Etiquette

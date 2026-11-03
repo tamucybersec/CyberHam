@@ -1,6 +1,5 @@
-import sqlite3
-
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from cyberham.database.typeddb import usersdb
 from cyberham.tests.backend.backend_patcher import BackendPatcher
@@ -24,7 +23,7 @@ class TestTypedDB(BackendPatcher):
         assert after == unregistered_user()
 
     def test_create_item_fails_overwrite(self):
-        with pytest.raises(sqlite3.IntegrityError):
+        with pytest.raises(IntegrityError):
             usersdb.create(valid_user())
 
     def test_get_item(self):
