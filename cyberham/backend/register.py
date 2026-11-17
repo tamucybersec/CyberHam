@@ -115,8 +115,11 @@ def register(ticket: str, user: User) -> tuple[str, MaybeError]:
         user["verified"] = 1 if verified else 0
         return user
 
+    previous = usersdb.get((user["user_id"],))
     usersdb.update(update_user, pk_values=(user["user_id"],))
     registerdb.delete((registration["ticket"],))
+    if previous is not None and previous["email"] != user["email"]:
+        invalidate_pending_code(user["user_id"])
     return register_email(user["user_id"], user["email"])
 
 
@@ -197,3 +200,23 @@ def verify_email(code: int, user_id: str) -> str:
 
 def remove_pending(user_id: str) -> None:
     verifydb.delete((user_id,))
+
+
+def invalidate_pending_code(user_id: str) -> None:
+    """
+    Swaps a pending code for one that is never sent, so a code emailed to a previous
+    address cannot verify a new one. The row itself is kept because register_email
+    uses it to count resend attempts.
+    """
+
+    def replace_code(pending: Maybe[Verify]) -> Maybe[Verify]:
+        if pending is None:
+            return None
+
+        code = pending["code"]
+        while code == pending["code"]:
+            code = random.randint(1000, 10000)
+        pending["code"] = code
+        return pending
+
+    verifydb.update(replace_code, pk_values=(user_id,))
