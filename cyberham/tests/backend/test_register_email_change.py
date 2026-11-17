@@ -1,10 +1,11 @@
 from datetime import datetime
+from unittest.mock import patch
 from uuid import uuid4
 
 from backend_patcher import BackendPatcher
 
 from cyberham.backend.register import register, verify_email
-from cyberham.database.typeddb import registerdb, usersdb, verifydb
+from cyberham.database.typeddb import flaggeddb, registerdb, usersdb, verifydb
 from cyberham.tests.models import unregistered_user
 from cyberham.types import MaybeError, Register, User
 
@@ -41,6 +42,38 @@ class TestRegisterEmailChange(BackendPatcher):
         user = self._user()
         assert user["email"] == self.email
         assert user["verified"]
+
+    def test_blocked_email_change_rejects_all_previous_codes(self):
+        # The next random draw would reuse a code sent to the original address.
+        with patch(
+            "cyberham.backend.register.random.randint",
+            side_effect=[1111, 2222, 3333, 1111],
+        ):
+            self._register_until_last_resend()
+            assert self._register("someone_else@tamu.edu") is not None
+
+        for code in [1111, 2222, 3333, self._pending_code()]:
+            assert verify_email(code, self.user_id) == "This code is not correct!"
+        assert not self._user()["verified"]
+
+    def test_repeated_blocked_email_changes_remain_invalid(self):
+        previous_code = self._register_until_last_resend()
+
+        with patch.object(self.google_client, "send_email") as send_email:
+            for offenses, email in enumerate(
+                ["someone_else@tamu.edu", self.email], start=3
+            ):
+                assert self._register(email) is not None
+                assert flaggeddb.get((self.user_id,)) == {
+                    "user_id": self.user_id,
+                    "offenses": offenses,
+                }
+                for code in [previous_code, self._pending_code()]:
+                    assert (
+                        verify_email(code, self.user_id) == "This code is not correct!"
+                    )
+                assert not self._user()["verified"]
+            send_email.assert_not_called()
 
     def test_email_change_sends_new_code(self):
         new_email = "someone_else@tamu.edu"

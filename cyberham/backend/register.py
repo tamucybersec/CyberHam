@@ -33,6 +33,9 @@ from cyberham.utils.date import (
     valid_registration_time,
 )
 
+# Outside the generated code range; verify_email must never accept this value.
+INVALID_VERIFICATION_CODE = 0
+
 
 async def upload_resume(user_id: str, resume: UploadFile) -> bool:
     try:
@@ -184,7 +187,10 @@ def verify_email(code: int, user_id: str) -> str:
     if not verification:
         return "Please use /register to set your email first."
 
-    if verification["code"] != code:
+    if (
+        verification["code"] == INVALID_VERIFICATION_CODE
+        or verification["code"] != code
+    ):
         return "This code is not correct!"
 
     def update_user(user: MaybeUser) -> MaybeUser:
@@ -204,19 +210,16 @@ def remove_pending(user_id: str) -> None:
 
 def invalidate_pending_code(user_id: str) -> None:
     """
-    Swaps a pending code for one that is never sent, so a code emailed to a previous
-    address cannot verify a new one. The row itself is kept because register_email
-    uses it to count resend attempts.
+    Marks a pending code invalid, so no code can verify the new address until a
+    new one is sent. The row itself is kept because register_email uses it to
+    count resend attempts.
     """
 
     def replace_code(pending: Maybe[Verify]) -> Maybe[Verify]:
         if pending is None:
             return None
 
-        code = pending["code"]
-        while code == pending["code"]:
-            code = random.randint(1000, 10000)
-        pending["code"] = code
+        pending["code"] = INVALID_VERIFICATION_CODE
         return pending
 
     verifydb.update(replace_code, pk_values=(user_id,))
